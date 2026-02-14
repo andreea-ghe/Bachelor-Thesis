@@ -50,7 +50,6 @@ def test_model(config):
         logger_name = f"{config.MODEL_NAME}_{config.LOG_FILE_NAME}"
     else:
         logger_name = f"{config.MODEL_NAME}_{NOW_TIME}"
-
     logger = CSVLogger(
         save_dir=model_save_path,
         name=logger_name,
