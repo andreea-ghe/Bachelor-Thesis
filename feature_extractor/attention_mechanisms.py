@@ -170,8 +170,8 @@ class CrossAttention(nn.Module):
         Output:
             cross_features: transformed tensor [B, len_seq, d_input]
         """
-        attn_output, attn_weights = self.multi_head_attn(x, x, x, pair_bias=pair_bias)  # self-attention + pair bias
-        cross_features = self.ffn(attn_output)
+        attn_output, attn_weights = self.attn(x, x, x, pair_bias=pair_bias)  # self-attention + pair bias
+        cross_features = self.pos_ffn(attn_output)
 
         return cross_features
 
