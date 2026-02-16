@@ -24,7 +24,7 @@ CALLBACK:
   CHECKPOINT_MODE: max
 
 DATA:
-  DATA_DIR: /workspace/everyday_all_2
+  DATA_DIR: /workspace/artifact_all_2
   SUBSET: artifact
   DATA_FN: 'artifact.{}.txt'
   MAX_NUM_PART: 20
