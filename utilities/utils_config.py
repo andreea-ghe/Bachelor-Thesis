@@ -42,6 +42,9 @@ __C.TRAIN.OPTIMIZER = "SGD"
 # Start learning rate
 __C.TRAIN.LR = 0.001
 
+# Learning rate multiplier for pair_geometric_encoder (trains from scratch, needs higher LR)
+__C.TRAIN.PAIR_LR_MULT = 10.0
+
 # LR Scheduler
 __C.TRAIN.LR_SCHEDULER = "cosine"
 
