@@ -465,6 +465,8 @@ class MatchingBaseModel(pytorch_lightning.LightningModule):
         """
         learning_rate = self.config.TRAIN.LR # 1e-4
         weight_decay = self.config.TRAIN.WEIGHT_DECAY # 1e-4
+        # pair_geometric_encoder starts from scratch and needs a higher learning rate than pretrained layers
+        pair_lr_mult = getattr(self.config.TRAIN, 'PAIR_LR_MULT', 10.0)
 
         # separate parameters for weight decay: apply weight decay only to weights, not biases or batch norm params
         if weight_decay > 0:
@@ -481,7 +483,26 @@ class MatchingBaseModel(pytorch_lightning.LightningModule):
             ]
             optimizer = optim.AdamW(wd_params, lr=learning_rate)
         else:
-            optimizer = optim.Adam(self.parameters(), lr=learning_rate, weight_decay=0.0)
+            # split parameters: pretrained layers vs. new pair encoder to have different learning rates
+            pair_params = []
+            base_params = []
+            for name, param in self.named_parameters():
+                if not param.requires_grad:
+                    continue
+                if 'pair_geometric_encoder' in name:
+                    pair_params.append(param)
+                else:
+                    base_params.append(param)
+
+            param_groups = [
+                {'params': base_params, 'lr': learning_rate},
+            ]
+            if pair_params:
+                param_groups.append(
+                    {'params': pair_params, 'lr': learning_rate * pair_lr_mult}
+                )
+
+            optimizer = optim.Adam(param_groups, weight_decay=0.0)
 
         # learning rate scheduler: cosine annealing with warm-up
         if self.config.TRAIN.LR_SCHEDULER:

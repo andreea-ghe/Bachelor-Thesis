@@ -15,6 +15,7 @@ NUM_WORKERS: 4
 TRAIN:
   NUM_EPOCHS: 100        # fine-tuning needs fewer epochs than training from scratch
   LR: 0.0001             # 10x lower than training from scratch (0.001)
+  PAIR_LR_MULT: 10.0     # pair_geometric_encoder gets 10x higher LR (0.001) since it trains from scratch
   WEIGHT_DECAY: 0.
   WARMUP_RATIO: 0.
   LR_SCHEDULER: 'cosine'
