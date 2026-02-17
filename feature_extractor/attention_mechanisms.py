@@ -24,7 +24,7 @@ class DotProductAttention(nn.Module):
             k: keys tensor [B, n_head, len_k, d_k]
             v: values tensor [B, n_head, len_v, d_v]
             mask: attention mask tensor [B, 1, len_k] or [B, len_q, len_k]
-            pair_bias: geometric pair attention bias [B, n_head, len_q, len_k] (optional)
+            pair_bias: geometric pair attention bias [B, 1, len_q, len_k] (optional, broadcast across heads)
         
         Output:
             head_output: attended values [B, n_head, len_q, d_v]
@@ -83,7 +83,7 @@ class MultiHeadAttention(nn.Module):
             k: keys tensor [B, len_k, d_model]
             v: values tensor [B, len_v, d_model]
             mask: attention mask tensor [B, len_q, len_k]
-            pair_bias: geometric pair attention bias [B, n_head, len_q, len_k] (optional)
+            pair_bias: geometric pair attention bias [B, 1, len_q, len_k] (optional)
         
         Output:
             attended_features: attended values [B, len_q, d_model]
@@ -165,7 +165,7 @@ class CrossAttention(nn.Module):
         """
         Input:
             x: input tensor [B, len_seq, d_input]
-            pair_bias: geometric pair attention bias [B, n_head, len_seq, len_seq] (optional)
+            pair_bias: geometric pair attention bias [B, 1, len_seq, len_seq] (optional)
         
         Output:
             cross_features: transformed tensor [B, len_seq, d_input]
@@ -322,7 +322,7 @@ if __name__ == "__main__":
     x_ca = cross_attention_layer(x)
     print(f"CrossAttention (no bias): {x_ca.shape}")
 
-    # With pair bias (pair attention) — per-head bias
-    pair_bias = torch.randn(3, 2, 4, 4)  # [B, n_head, N_SUM, N_SUM]
+    # With pair bias (pair attention)
+    pair_bias = torch.randn(3, 1, 4, 4)  # [B, 1, N_SUM, N_SUM]
     x_ca_biased = cross_attention_layer(x, pair_bias=pair_bias)
     print(f"CrossAttention (with pair bias): {x_ca_biased.shape}")

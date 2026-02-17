@@ -232,8 +232,8 @@ class JointSegmentationAlignmentModel(MatchingBaseModel):
         if part_features is None:
             part_features = self._extract_part_features(part_pcs, batch_length)  # [B, N_SUM, F]
             
-            # compute per-head pair geometric bias for cross-attention (Pair Attention)
-            pair_bias = self.pair_geometric_encoder(part_pcs, n_pcs)  # [B, n_heads, N_SUM, N_SUM]
+            # compute pair geometric bias for cross-attention (Pair Attention)
+            pair_bias = self.pair_geometric_encoder(part_pcs, n_pcs)  # [B, 1, N_SUM, N_SUM]
 
             # apply self-attention and cross-attention layers
             for name, layer in self.tf_layers:

@@ -13,31 +13,30 @@ class PairGeometricEncoder(nn.Module):
         2. Pairwise distance: d_ij = RBF(||p_i - p_j||)
         3. Triplet angles:    r_ij = Σ_k RBF(cos ∠_ijk)
 
-    Projects [d_ij; r_ij] → per-head bias via a 2-layer MLP, then expands from
-    part-level [B, P, P, n_heads] to point-level [B, n_heads, N_SUM, N_SUM] so it
-    can be added to attention scores before softmax.
+    Projects [d_ij; r_ij] → scalar bias per pair via a 2-layer MLP, then
+    expands from part-level [B, P, P] to point-level [B, 1, N_SUM, N_SUM]
+    so it can be added to attention scores before softmax (broadcast across heads).
     """
 
     def __init__(self, num_bases=16, n_heads=8, distance_range=(0.0, 10.0), angle_range=(-1.0, 1.0)):
         """
         Input:
             num_bases: number of Gaussian RBF centers (d in the paper)
-            n_heads: number of attention heads (produces per-head bias)
+            n_heads: unused, kept for config compatibility
             distance_range: (min, max) range for distance RBF centers
             angle_range: (min, max) range for angle RBF centers (cosine values live in [-1, 1])
         """
         super().__init__()
-        self.n_heads = n_heads
         self.distance_rbf = GaussianRBF(num_bases=num_bases, distance_range=distance_range)
         self.angle_rbf = GaussianRBF(num_bases=num_bases, distance_range=angle_range)
 
-        # 2-layer MLP: [d_ij; r_ij] → hidden → per-head bias
-        # deeper projection gives more expressiveness than a single linear layer
+        # 2-layer MLP: [d_ij; r_ij] → hidden → scalar bias
+        # deeper than a single linear layer → can learn non-linear geometric patterns
         hidden_dim = num_bases * 2  # same as input dim
         self.bias_proj = nn.Sequential(
             nn.Linear(num_bases * 2, hidden_dim),
             nn.ReLU(inplace=True),
-            nn.Linear(hidden_dim, n_heads),
+            nn.Linear(hidden_dim, 1),
         )
 
     def _compute_centroids(self, part_pcs: Tensor, n_pcs: Tensor) -> Tensor:
@@ -121,21 +120,20 @@ class PairGeometricEncoder(nn.Module):
 
     def _expand_to_point_level(self, pair_bias: Tensor, n_pcs: Tensor, N_SUM: int) -> Tensor:
         """
-        Expand part-level bias [B, P, P, H] to point-level [B, H, N_SUM, N_SUM].
+        Expand part-level bias [B, P, P] to point-level [B, 1, N_SUM, N_SUM].
         Each point inherits the bias of the part it belongs to.
 
         Input:
-            pair_bias: [B, P, P, H] part-level per-head attention bias
+            pair_bias: [B, P, P] part-level attention bias
             n_pcs: [B, P] number of points per piece
             N_SUM: total number of points
         Output:
-            point_bias: [B, H, N_SUM, N_SUM] per-head bias for each attention head
+            point_bias: [B, 1, N_SUM, N_SUM] broadcastable across attention heads
         """
         B, P = n_pcs.shape
-        H = pair_bias.shape[-1]
         device = pair_bias.device
 
-        point_bias = torch.zeros(B, N_SUM, N_SUM, H, device=device, dtype=pair_bias.dtype)
+        point_bias = torch.zeros(B, N_SUM, N_SUM, device=device, dtype=pair_bias.dtype)
 
         for b in range(B):
             # Build part assignment: point i → part index
@@ -152,11 +150,11 @@ class PairGeometricEncoder(nn.Module):
                 part_idx = torch.cat([part_idx, pad])
 
             # Each point inherits pair bias from its part:
-            # point_bias[b, i, j, h] = pair_bias[b, part_of(i), part_of(j), h]
+            # point_bias[b, i, j] = pair_bias[b, part_of(i), part_of(j)]
             point_bias[b] = pair_bias[b][part_idx][:, part_idx]
 
-        # Permute to [B, H, N_SUM, N_SUM] for attention head dimension
-        return point_bias.permute(0, 3, 1, 2)
+        # Add head dimension for broadcasting: [B, 1, N_SUM, N_SUM]
+        return point_bias.unsqueeze(1)
 
     def forward(self, part_pcs: Tensor, n_pcs: Tensor) -> Tensor:
         """
@@ -166,7 +164,7 @@ class PairGeometricEncoder(nn.Module):
             part_pcs: [B, N_SUM, 3] concatenated point clouds of all pieces
             n_pcs: [B, P] number of points per piece
         Output:
-            pair_bias: [B, n_heads, N_SUM, N_SUM] per-head additive attention bias
+            pair_bias: [B, 1, N_SUM, N_SUM] additive attention bias
         """
         N_SUM = part_pcs.shape[1]
 
@@ -180,12 +178,12 @@ class PairGeometricEncoder(nn.Module):
         # Step 3: r_ij = Σ_k RBF(cos ∠_ijk) — triplet angle features
         angle_features = self._compute_triplet_angles(centroids, n_pcs)  # [B, P, P, num_bases]
 
-        # Step 4: project [d_ij; r_ij] → per-head bias via MLP
+        # Step 4: project [d_ij; r_ij] → scalar bias via MLP
         pair_features = torch.cat([dist_features, angle_features], dim=-1)  # [B, P, P, 2*num_bases]
-        pair_bias = self.bias_proj(pair_features)  # [B, P, P, n_heads]
+        pair_bias = self.bias_proj(pair_features).squeeze(-1)  # [B, P, P]
 
         # Step 5: expand part-level → point-level
-        pair_bias = self._expand_to_point_level(pair_bias, n_pcs, N_SUM)  # [B, n_heads, N_SUM, N_SUM]
+        pair_bias = self._expand_to_point_level(pair_bias, n_pcs, N_SUM)  # [B, 1, N_SUM, N_SUM]
 
         return pair_bias
 
@@ -193,20 +191,18 @@ class PairGeometricEncoder(nn.Module):
 if __name__ == "__main__":
     # Quick verification that the module runs correctly
     B, P = 2, 4
-    n_heads = 8
     # Simulate 4 parts with varying number of points
     n_pcs = torch.tensor([[30, 25, 20, 15], [35, 20, 25, 10]])
     N_SUM = n_pcs.sum(dim=1).max().item()  # 90
 
     part_pcs = torch.randn(B, N_SUM, 3)
 
-    encoder = PairGeometricEncoder(num_bases=16, n_heads=n_heads)
+    encoder = PairGeometricEncoder(num_bases=16)
     pair_bias = encoder(part_pcs, n_pcs)
-    print(f"pair_bias shape: {pair_bias.shape}")  # [2, 8, 90, 90]
+    print(f"pair_bias shape: {pair_bias.shape}")  # [2, 1, 90, 90]
 
-    # Verify bias is symmetric-ish and centroids make sense
+    # Verify centroids make sense
     centroids = encoder._compute_centroids(part_pcs, n_pcs)
     print(f"centroids shape: {centroids.shape}")  # [2, 4, 3]
     print(f"centroid[0,0]: {centroids[0, 0]}")
     print(f"pair_bias stats: mean={pair_bias.mean():.4f}, std={pair_bias.std():.4f}")
-
