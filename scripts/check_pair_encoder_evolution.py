@@ -1,0 +1,196 @@
+"""
+Quick diagnostic: check if the pair geometric encoder is actually learning.
+
+Run on the remote after a few epochs of training to verify the LR fix works.
+Usage:
+    python scripts/check_pair_encoder_evolution.py results/jigsaw_finetune_everyday_pair_attn/model_save/
+
+It will:
+  1. Load all checkpoints in the directory
+  2. Print pair_geometric_encoder weight stats per checkpoint
+  3. Show how much the weights changed from the first checkpoint
+  4. Show the output bias magnitude on a dummy input
+"""
+
+import sys
+import os
+import glob
+import re
+import torch
+import numpy as np
+
+def extract_epoch(filename):
+    """Extract epoch number from checkpoint filename."""
+    basename = os.path.basename(filename)
+    if 'last' in basename:
+        return 99999  # sort last checkpoints at the end
+    match = re.search(r'epoch=(\d+)', basename)
+    if match:
+        return int(match.group(1))
+    return -1
+
+def analyze_checkpoint(filepath, reference_sd=None):
+    """Analyze pair_geometric_encoder weights in a checkpoint."""
+    ckpt = torch.load(filepath, map_location='cpu')
+    sd = ckpt.get('state_dict', ckpt)
+
+    pair_keys = sorted([k for k in sd.keys() if 'pair_geometric' in k])
+    if not pair_keys:
+        return None
+
+    results = {}
+    for k in pair_keys:
+        v = sd[k]
+        short_name = k.replace('pair_geometric_encoder.', '')
+        stats = {
+            'mean': v.mean().item(),
+            'std': v.std().item() if v.numel() > 1 else 0.0,
+            'min': v.min().item(),
+            'max': v.max().item(),
+            'norm': v.norm().item(),
+        }
+        if reference_sd and k in reference_sd:
+            ref = reference_sd[k]
+            diff = (v - ref).abs()
+            stats['diff_mean'] = diff.mean().item()
+            stats['diff_max'] = diff.max().item()
+        results[short_name] = stats
+
+    # Also check LR if available
+    lr_info = {}
+    if 'lr_schedulers' in ckpt:
+        for i, sched in enumerate(ckpt['lr_schedulers']):
+            if 'lr_ratios' in sched:
+                lr_info['lr_ratios'] = sched['lr_ratios']
+    if 'optimizer_states' in ckpt:
+        for i, opt_state in enumerate(ckpt['optimizer_states']):
+            if 'param_groups' in opt_state:
+                for j, pg in enumerate(opt_state['param_groups']):
+                    lr_info[f'pg{j}_lr'] = pg.get('lr', '?')
+                    lr_info[f'pg{j}_initial_lr'] = pg.get('initial_lr', '?')
+
+    return {'weights': results, 'lr_info': lr_info, 'state_dict': sd}
+
+def test_output_magnitude(sd):
+    """Compute pair bias output on dummy data using checkpoint weights."""
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        from feature_extractor.pair_geometric_encoder import PairGeometricEncoder
+
+        model = PairGeometricEncoder(num_bases=16)
+        clean_sd = {k.replace('pair_geometric_encoder.', ''): v
+                    for k, v in sd.items() if 'pair_geometric' in k}
+        model.load_state_dict(clean_sd)
+        model.eval()
+
+        n_pcs = torch.tensor([[500, 300, 200, 0]])
+        pcs = torch.randn(1, 1000, 3) * 0.5
+        with torch.no_grad():
+            bias = model(pcs, n_pcs)
+            return {
+                'mean': bias.mean().item(),
+                'std': bias.std().item(),
+                'min': bias.min().item(),
+                'max': bias.max().item(),
+                'abs_mean': bias.abs().mean().item(),
+            }
+    except Exception as e:
+        return {'error': str(e)}
+
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: python scripts/check_pair_encoder_evolution.py <checkpoint_dir>")
+        print("Example: python scripts/check_pair_encoder_evolution.py results/jigsaw_finetune_everyday_pair_attn/model_save/")
+        sys.exit(1)
+
+    ckpt_dir = sys.argv[1]
+
+    # Find all checkpoints
+    patterns = [os.path.join(ckpt_dir, '*.ckpt')]
+    ckpt_files = []
+    for pattern in patterns:
+        ckpt_files.extend(glob.glob(pattern))
+
+    if not ckpt_files:
+        print(f"No .ckpt files found in {ckpt_dir}")
+        sys.exit(1)
+
+    # Sort by epoch
+    ckpt_files.sort(key=extract_epoch)
+
+    print(f"Found {len(ckpt_files)} checkpoints in {ckpt_dir}\n")
+
+    # Analyze first checkpoint as reference
+    reference_sd = None
+    first_results = None
+
+    for i, filepath in enumerate(ckpt_files):
+        epoch = extract_epoch(filepath)
+        epoch_str = f"epoch={epoch}" if epoch < 99999 else "last"
+        basename = os.path.basename(filepath)
+
+        print(f"{'='*80}")
+        print(f"[{basename}]  ({epoch_str})")
+        print(f"{'='*80}")
+
+        results = analyze_checkpoint(filepath, reference_sd)
+        if results is None:
+            print("  No pair_geometric_encoder keys found!\n")
+            continue
+
+        if reference_sd is None:
+            reference_sd = results['state_dict']
+            first_results = results
+
+        # Print weight stats
+        for name, stats in results['weights'].items():
+            print(f"  {name}:")
+            print(f"    mean={stats['mean']:+.6f}  std={stats['std']:.6f}  "
+                  f"min={stats['min']:+.6f}  max={stats['max']:+.6f}  norm={stats['norm']:.6f}")
+            if 'diff_mean' in stats:
+                print(f"    Δ from first ckpt:  mean_abs_diff={stats['diff_mean']:.8f}  max_diff={stats['diff_max']:.8f}")
+
+        # Print LR info
+        if results['lr_info']:
+            print(f"\n  LR info:")
+            for k, v in results['lr_info'].items():
+                print(f"    {k}: {v}")
+
+        # Test output magnitude
+        output = test_output_magnitude(results['state_dict'])
+        print(f"\n  Output bias (dummy input):")
+        if 'error' in output:
+            print(f"    Error: {output['error']}")
+        else:
+            print(f"    mean={output['mean']:+.6f}  std={output['std']:.6f}  "
+                  f"range=[{output['min']:+.6f}, {output['max']:+.6f}]  abs_mean={output['abs_mean']:.6f}")
+            if output['std'] < 0.1:
+                print(f"    ⚠️  LOW VARIANCE — bias is nearly constant, minimal effect on attention")
+            else:
+                print(f"    ✅  Good variance — bias differentiates between pairs")
+
+        print()
+
+    # Summary
+    print(f"\n{'='*80}")
+    print("SUMMARY")
+    print(f"{'='*80}")
+    if reference_sd and len(ckpt_files) > 1:
+        last_results = analyze_checkpoint(ckpt_files[-1], reference_sd)
+        if last_results:
+            print(f"\nWeight changes (first → last checkpoint):")
+            for name, stats in last_results['weights'].items():
+                if 'diff_mean' in stats:
+                    if stats['diff_mean'] < 1e-6:
+                        verdict = "❌ FROZEN — not learning at all"
+                    elif stats['diff_mean'] < 1e-4:
+                        verdict = "⚠️  BARELY MOVING — LR may still be too low"
+                    elif stats['diff_mean'] < 1e-2:
+                        verdict = "🟡 LEARNING SLOWLY — some movement"
+                    else:
+                        verdict = "✅ LEARNING — significant weight changes"
+                    print(f"  {name}: mean_abs_diff={stats['diff_mean']:.8f}  → {verdict}")
+
+if __name__ == '__main__':
+    main()
+
