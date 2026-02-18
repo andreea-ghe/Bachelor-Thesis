@@ -49,28 +49,42 @@ class CosineAnnealingWarmupRestarts(_LRScheduler):
 
     def init_lr(self):
         """
-        Initialize learning rates to min_lr.
+        Initialize learning rates to min_lr, respecting per-group LR ratios.
+
+        Each param group may have a different initial LR (e.g. differential LR
+        for newly added modules).  We compute a per-group ratio so the cosine
+        schedule scales each group proportionally:
+            ratio = initial_lr / global_max_lr
+            pg_min_lr = global_min_lr * ratio
+            pg_max_lr = global_max_lr * ratio  (applied in get_lr via self.max_lr * ratio)
         """
-        self.base_lrs = [] # starting learning rates for each param group
+        self.base_lrs = []  # per-group min learning rates
+        self.lr_ratios = []  # per-group scaling factors
         for param_group in self.optimizer.param_groups:
-            param_group['lr'] = self.min_lr
-            self.base_lrs.append(self.min_lr) 
+            # initial_lr is saved by _LRScheduler.__init__ from the optimizer
+            initial_lr = param_group.get('initial_lr', self.max_lr)
+            ratio = initial_lr / self.max_lr if self.max_lr > 0 else 1.0
+            pg_min_lr = self.min_lr * ratio
+            param_group['lr'] = pg_min_lr
+            self.base_lrs.append(pg_min_lr)
+            self.lr_ratios.append(ratio)
 
     def get_lr(self):
         """
         Compute learning rates for the current step.
+        Each param group is scaled by its own ratio so differential LRs are preserved.
         """
-        if self.step_in_cycle == -1: # before the first step
+        if self.step_in_cycle == -1:  # before the first step
             return self.base_lrs
-        elif self.step_in_cycle < self.warmup_steps: # in warmup phase
+        elif self.step_in_cycle < self.warmup_steps:  # in warmup phase
             return [
-                (self.max_lr - base_lr) * self.step_in_cycle / self.warmup_steps + base_lr
-                for base_lr in self.base_lrs
+                (self.max_lr * ratio - base_lr) * self.step_in_cycle / self.warmup_steps + base_lr
+                for base_lr, ratio in zip(self.base_lrs, self.lr_ratios)
             ]
-        else: # in cosine annealing phase
+        else:  # in cosine annealing phase
             return [
-                base_lr + (self.max_lr - base_lr) * (1 + math.cos(math.pi * (self.step_in_cycle - self.warmup_steps) / (self.cur_cycle_steps - self.warmup_steps))) / 2
-                for base_lr in self.base_lrs
+                base_lr + (self.max_lr * ratio - base_lr) * (1 + math.cos(math.pi * (self.step_in_cycle - self.warmup_steps) / (self.cur_cycle_steps - self.warmup_steps))) / 2
+                for base_lr, ratio in zip(self.base_lrs, self.lr_ratios)
             ]
 
     def step(self, epoch=None):
