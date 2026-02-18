@@ -38,4 +38,4 @@ MODEL:
 # STATS is for eval only
 STATS: "./results/jigsaw_finetune_everyday_pair_attn/stats/eval"
 
-WEIGHT_FILE: results/jigsaw_finetune_everyday_pair_attn/model_save/last.ckpt
+WEIGHT_FILE: results/jigsaw_finetune_everyday_pair_attn/model_save/last-v1.ckpt
