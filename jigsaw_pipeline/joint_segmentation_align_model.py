@@ -62,12 +62,14 @@ class JointSegmentationAlignmentModel(MatchingBaseModel):
             d_input=self.part_comp_feat_dim,
         )
         # Pair geometric encoder: computes per-head geometric bias for cross-attention (Pair Attention)
-        self.pair_geometric_encoder = PairGeometricEncoder(
-            num_bases=16,
-            n_heads=self.config.MODEL.TF_NUM_HEADS,
-            distance_range=(0.0, 10.0),
-            angle_range=(-1.0, 1.0),
-        )
+        self.use_pair_bias = self.config.MODEL.USE_PAIR_BIAS
+        if self.use_pair_bias:
+            self.pair_geometric_encoder = PairGeometricEncoder(
+                num_bases=16,
+                n_heads=self.config.MODEL.TF_NUM_HEADS,
+                distance_range=(0.0, 10.0),
+                angle_range=(-1.0, 1.0),
+            )
         self.tf_layers = [("self", self.tf_self1), ("cross", self.tf_cross1)]
 
         # Initialize model components (names must match checkpoint: encoder, pc_classifier)
@@ -233,7 +235,7 @@ class JointSegmentationAlignmentModel(MatchingBaseModel):
             part_features = self._extract_part_features(part_pcs, batch_length)  # [B, N_SUM, F]
             
             # compute pair geometric bias for cross-attention (Pair Attention)
-            pair_bias = self.pair_geometric_encoder(part_pcs, n_pcs)  # [B, 1, N_SUM, N_SUM]
+            pair_bias = self.pair_geometric_encoder(part_pcs, n_pcs) if self.use_pair_bias else None  # [B, 1, N_SUM, N_SUM]
 
             # apply self-attention and cross-attention layers
             for name, layer in self.tf_layers:

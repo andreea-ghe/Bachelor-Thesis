@@ -46,6 +46,10 @@ __C.JIGSAW.SINKHORN_TAU = 0.05  # Temperature parameter τ
 __C.JIGSAW.TF_NUM_HEADS = 8  # Number of attention heads
 __C.JIGSAW.TF_NUM_SAMPLE = 16  # Number of neighbor samples for local feature aggregation
 
+# Whether to use pair geometric bias in cross-attention (Pair Attention)
+# Set to True only when using a checkpoint trained with pair attention
+__C.JIGSAW.USE_PAIR_BIAS = False
+
 # Loss function weights and scheduling
 # ℒ = αℒ_seg + βℒ_mat + γℒ_rig
 __C.JIGSAW.LOSS = edict()
