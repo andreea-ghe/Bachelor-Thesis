@@ -2,7 +2,7 @@ import numpy as np
 
 list_of_results = [
     {
-      "test/chamfer_distance": 0.07176706939935684,
+      "test/chamfer_distance": 0.07176706939935684, 
       "test/cls_acc": 1.0,
       "test/cls_f1": 1.0,
       "test/cls_loss": 0.017431654036045074,
@@ -84,6 +84,27 @@ list_of_results = [
       "test/trans_mae": 0.04887920245528221,
       "test/trans_mse": 0.01821354776620865,
       "test/trans_rmse": 0.06630094349384308
+    },
+    {
+      "test/chamfer_distance": 0.07030308991670609,
+      "test/cls_acc": 1.0,
+      "test/cls_f1": 1.0,
+      "test/cls_loss": 0.0172664076089859,
+      "test/cls_precision": 1.0,
+      "test/cls_recall": 1.0,
+      "test/loss": 10.296439170837402,
+      "test/mat_f1": 0.08765444904565811,
+      "test/mat_loss": 10.279172897338867,
+      "test/mat_precision": 0.0876544862985611,
+      "test/mat_recall": 0.0876544862985611,
+      "test/n_critical_max": 121.54126739501953,
+      "test/part_acc": 0.767754316329956,
+      "test/rot_mae": 23.150222778320312,
+      "test/rot_mse": 2558.75048828125,
+      "test/rot_rmse": 26.914520263671875,
+      "test/trans_mae": 0.04687217250466347,
+      "test/trans_mse": 0.017687717452645302,
+      "test/trans_rmse": 0.06377626210451126
     }
 ]
 
