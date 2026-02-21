@@ -34,6 +34,7 @@ DATA:
 
 MODEL:
   PC_CLS_METHOD: multi
+  USE_PAIR_BIAS: true
 
 # STATS is for eval only
 STATS: "./results/jigsaw_finetune_everyday_pair_attn/stats/eval"
