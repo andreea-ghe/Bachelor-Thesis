@@ -59,6 +59,7 @@ def global_alignment(edges, transformations, uncertainties, n_valid):
 
     # Step 5: Fall back to Spanning Tree if Shonan fails
     if success == 0:
+        print("Shonan Averaging failed, falling back to Spanning Tree alignment")
         global_pose_results, _ = spanning_tree_alignment(
             n_nodes, all_edges, all_transformations, all_uncertainties
         )
