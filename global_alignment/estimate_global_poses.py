@@ -96,6 +96,8 @@ def global_transform(pred_match_matrix, part_pcs, n_valid, n_pcs, critical_point
                 target_pcd = o3d.geometry.PointCloud()
                 target_pcd.points = o3d.utility.Vector3dVector(critical_target_points)
 
+                print("THIS CASE WITH MANY CORRESPONDENCES")
+
                 refined_rigid_transform = o3d.pipelines.registration.registration_icp(
                     source=source_pcd,
                     target=target_pcd,
