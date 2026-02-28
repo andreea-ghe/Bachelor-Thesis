@@ -70,6 +70,18 @@ class JointSegmentationAlignmentModel(MatchingBaseModel):
                 distance_range=(0.0, 10.0),
                 angle_range=(-1.0, 1.0),
             )
+
+        # Point-level distance bias: learn distance-dependent attention patterns per head
+        # Inspired by PMTR's spatial attention (Appendix C): pairwise distances → MLP → per-head bias
+        self.use_distance_bias = self.config.MODEL.USE_DISTANCE_BIAS
+        if self.use_distance_bias:
+            n_heads = self.config.MODEL.TF_NUM_HEADS
+            self.distance_bias_mlp = nn.Sequential(
+                nn.Linear(1, 16),
+                nn.ReLU(inplace=True),
+                nn.Linear(16, n_heads),
+            )
+
         self.tf_layers = [("self", self.tf_self1), ("cross", self.tf_cross1)]
 
         # Initialize model components (names must match checkpoint: encoder, pc_classifier)
@@ -234,8 +246,15 @@ class JointSegmentationAlignmentModel(MatchingBaseModel):
         if part_features is None:
             part_features = self._extract_part_features(part_pcs, batch_length)  # [B, N_SUM, F]
             
-            # compute pair geometric bias for cross-attention (Pair Attention)
-            pair_bias = self.pair_geometric_encoder(part_pcs, n_pcs) if self.use_pair_bias else None  # [B, 1, N_SUM, N_SUM]
+            # compute attention bias for cross-attention
+            pair_bias = None
+            if self.use_pair_bias:
+                pair_bias = self.pair_geometric_encoder(part_pcs, n_pcs)  # [B, 1, N_SUM, N_SUM]
+            if self.use_distance_bias:
+                pairwise_dist = torch.cdist(part_pcs, part_pcs)  # [B, N_SUM, N_SUM]
+                dist_bias = self.distance_bias_mlp(pairwise_dist.unsqueeze(-1))  # [B, N_SUM, N_SUM, n_heads]
+                dist_bias = dist_bias.permute(0, 3, 1, 2)  # [B, n_heads, N_SUM, N_SUM]
+                pair_bias = dist_bias if pair_bias is None else pair_bias + dist_bias
 
             # apply self-attention and cross-attention layers
             for name, layer in self.tf_layers:
@@ -373,8 +392,8 @@ class JointSegmentationAlignmentModel(MatchingBaseModel):
         if not self.training:
             # during testing we compute discrete matching using Hungarian algorithm
             hard_matching_matrix = hungarian(soft_matching_matrix, n_critical_pcs_object, n_critical_pcs_object)  # [B, N_CRIT_MAX, N_CRIT_MAX] discrete matching matrix
-            confidence_mask = (soft_matching_matrix > 0.05).float()
-            hard_matching_matrix = hard_matching_matrix * confidence_mask
+            # confidence_mask = (soft_matching_matrix > 0.05).float()
+            # hard_matching_matrix = hard_matching_matrix * confidence_mask
             out_dict.update({
                 'perm_mat': hard_matching_matrix, # hard matching matrix
             })

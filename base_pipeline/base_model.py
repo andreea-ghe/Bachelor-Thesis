@@ -483,13 +483,14 @@ class MatchingBaseModel(pytorch_lightning.LightningModule):
             ]
             optimizer = optim.AdamW(wd_params, lr=learning_rate)
         else:
-            # split parameters: pretrained layers vs. new pair encoder to have different learning rates
+            # split parameters: pretrained layers vs. new modules that train from scratch (have different learning rates)
+            new_module_keywords = ['pair_geometric_encoder', 'distance_bias_mlp']
             pair_params = []
             base_params = []
             for name, param in self.named_parameters():
                 if not param.requires_grad:
                     continue
-                if 'pair_geometric_encoder' in name:
+                if any(kw in name for kw in new_module_keywords):
                     pair_params.append(param)
                 else:
                     base_params.append(param)

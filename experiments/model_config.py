@@ -38,7 +38,7 @@ __C.JIGSAW.PC_CLS_METHOD = 'binary'  # ['binary', 'multi']
 __C.JIGSAW.PC_NUM_CLS = 2  # Number of classes for segmentation
 
 # Sinkhorn algorithm parameters for soft matching
-__C.JIGSAW.SINKHORN_MAXITER = 50  # Maximum iterations for Sinkhorn
+__C.JIGSAW.SINKHORN_MAXITER = 20  # Maximum iterations for Sinkhorn
 __C.JIGSAW.SINKHORN_TAU = 0.05  # Temperature parameter τ
 
 # Transformer attention layer parameters
@@ -46,9 +46,13 @@ __C.JIGSAW.SINKHORN_TAU = 0.05  # Temperature parameter τ
 __C.JIGSAW.TF_NUM_HEADS = 8  # Number of attention heads
 __C.JIGSAW.TF_NUM_SAMPLE = 16  # Number of neighbor samples for local feature aggregation
 
-# Whether to use pair geometric bias in cross-attention (Pair Attention)
-# Set to True only when using a checkpoint trained with pair attention
+# Whether to use piece-level geometric bias in cross-attention (GPAT / Pair Attention)
+# Must match checkpoint: set True only for training/evaluating with pair attention
 __C.JIGSAW.USE_PAIR_BIAS = False
+
+# Whether to use point-level distance bias in cross-attention (PMTR-inspired)
+# Must match checkpoint: set True only for training/evaluating with distance bias
+__C.JIGSAW.USE_DISTANCE_BIAS = False
 
 # Loss function weights and scheduling
 # ℒ = αℒ_seg + βℒ_mat + γℒ_rig
