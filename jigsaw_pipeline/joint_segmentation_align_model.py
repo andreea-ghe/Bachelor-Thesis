@@ -250,9 +250,8 @@ class JointSegmentationAlignmentModel(MatchingBaseModel):
                 pair_bias = self.pair_geometric_encoder(part_pcs, n_pcs)  # [B, 1, N_SUM, N_SUM]
             if self.use_distance_bias:
                 pairwise_dist = torch.cdist(part_pcs, part_pcs)  # [B, N_SUM, N_SUM]
-                w = self.distance_bias_weight.view(1, -1, 1, 1)  # [1, n_heads, 1, 1]
-                b = self.distance_bias_offset.view(1, -1, 1, 1)  # [1, n_heads, 1, 1]
-                dist_bias = w * pairwise_dist.unsqueeze(1) + b  # [B, n_heads, N_SUM, N_SUM]
+                dist_bias = self.distance_bias_weight * pairwise_dist + self.distance_bias_offset  # [B, N_SUM, N_SUM]
+                dist_bias = dist_bias.unsqueeze(1)  # [B, 1, N_SUM, N_SUM] broadcast across heads
                 pair_bias = dist_bias if pair_bias is None else pair_bias + dist_bias
 
             # apply self-attention and cross-attention layers
