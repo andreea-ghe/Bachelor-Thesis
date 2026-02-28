@@ -9,7 +9,7 @@ DATASET: breaking_bad.all_piece_matching
 # With 1 GPU: BATCH_SIZE 4 should work (model is ~25MB)
 # If you get OOM, try BATCH_SIZE 2
 GPUS: [0]
-BATCH_SIZE: 4
+BATCH_SIZE: 2
 NUM_WORKERS: 4
 
 TRAIN:
