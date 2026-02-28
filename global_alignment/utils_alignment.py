@@ -63,6 +63,8 @@ def global_alignment(edges, transformations, uncertainties, n_valid):
         global_pose_results, _ = spanning_tree_alignment(
             n_nodes, all_edges, all_transformations, all_uncertainties
         )
+    else:
+        print("Shonan Averaging succeeded")
 
     # Step 6: Canonicalize poses relative to piece 0
     # Transform all poses so piece 0 has identity pose
