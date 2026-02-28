@@ -38,7 +38,7 @@ __C.JIGSAW.PC_CLS_METHOD = 'binary'  # ['binary', 'multi']
 __C.JIGSAW.PC_NUM_CLS = 2  # Number of classes for segmentation
 
 # Sinkhorn algorithm parameters for soft matching
-__C.JIGSAW.SINKHORN_MAXITER = 20  # Maximum iterations for Sinkhorn
+__C.JIGSAW.SINKHORN_MAXITER = 50  # Maximum iterations for Sinkhorn
 __C.JIGSAW.SINKHORN_TAU = 0.05  # Temperature parameter τ
 
 # Transformer attention layer parameters

@@ -373,6 +373,8 @@ class JointSegmentationAlignmentModel(MatchingBaseModel):
         if not self.training:
             # during testing we compute discrete matching using Hungarian algorithm
             hard_matching_matrix = hungarian(soft_matching_matrix, n_critical_pcs_object, n_critical_pcs_object)  # [B, N_CRIT_MAX, N_CRIT_MAX] discrete matching matrix
+            confidence_mask = (soft_matching_matrix > 0.05).float()
+            hard_matching_matrix = hard_matching_matrix * confidence_mask
             out_dict.update({
                 'perm_mat': hard_matching_matrix, # hard matching matrix
             })
