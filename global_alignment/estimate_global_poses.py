@@ -92,9 +92,9 @@ def global_transform(pred_match_matrix, part_pcs, n_valid, n_pcs, critical_point
                 rigid_transform = estimate_rigid_transform_from_matching(critical_source_points, critical_target_points, match_submatrix)
                 
                 source_pcd = o3d.geometry.PointCloud()
-                source_pcd.points = o3d.utility.Vector3dVector(critical_source_points)
+                source_pcd.points = o3d.utility.Vector3dVector(pc_piece1)
                 target_pcd = o3d.geometry.PointCloud()
-                target_pcd.points = o3d.utility.Vector3dVector(critical_target_points)
+                target_pcd.points = o3d.utility.Vector3dVector(pc_piece2)
 
                 refined_rigid_transform = o3d.pipelines.registration.registration_icp(
                     source=source_pcd,
@@ -176,9 +176,9 @@ def global_transform(pred_match_matrix, part_pcs, n_valid, n_pcs, critical_point
                 rigid_transform[:3, 3] = np.mean(critical_target_points[matching2], axis=0) - np.mean(critical_source_points[matchin1], axis=0)
                 
                 source_pcd = o3d.geometry.PointCloud()
-                source_pcd.points = o3d.utility.Vector3dVector(critical_source_points)
+                source_pcd.points = o3d.utility.Vector3dVector(pc_piece1)
                 target_pcd = o3d.geometry.PointCloud()
-                target_pcd.points = o3d.utility.Vector3dVector(critical_target_points)
+                target_pcd.points = o3d.utility.Vector3dVector(pc_piece2)
 
                 refined_rigid_transform = o3d.pipelines.registration.registration_icp(
                     source=source_pcd,
