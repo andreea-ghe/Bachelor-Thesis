@@ -84,8 +84,6 @@ def train_model(config):
         # 'detect_anomaly': True,
         'benchmark': True,  # enable cuDNN benchmark for speed
     }
-    if config.FP16:
-        training_log_dict['precision'] = 16
 
     trainer = pl.Trainer(**training_log_dict)
 
