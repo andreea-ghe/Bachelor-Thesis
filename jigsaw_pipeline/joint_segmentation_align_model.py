@@ -82,7 +82,6 @@ class JointSegmentationAlignmentModel(MatchingBaseModel):
                 nn.ReLU(inplace=True),
                 nn.Linear(n_heads, n_heads),
             )
-            self.distance_bias_radius = self.config.MODEL.DISTANCE_BIAS_RADIUS
 
         self.tf_layers = [("self", self.tf_self1), ("cross", self.tf_cross1)]
 
@@ -273,8 +272,14 @@ class JointSegmentationAlignmentModel(MatchingBaseModel):
                 intra_mask = piece_ids.unsqueeze(2) == piece_ids.unsqueeze(1)  # [B, N_SUM, N_SUM]
                 dist_bias = dist_bias * intra_mask.unsqueeze(1)  # zero inter-piece, keep intra-piece
 
-                # only mask far points WITHIN the same piece (don't touch inter-piece zeros)
-                far_intra = (pairwise_dist > self.distance_bias_radius) & intra_mask
+                with torch.no_grad():
+                    # Compute resolution r = avg nearest-neighbor distance (intra-piece only)
+                    exclude = ~intra_mask | torch.eye(N_SUM, device=part_pcs.device, dtype=torch.bool)
+                    nn_dist = pairwise_dist.masked_fill(exclude, float('inf')).min(dim=2).values
+                    r = nn_dist[nn_dist < float('inf')].mean()
+                    radius = self.distance_bias_radius * r
+
+                far_intra = (pairwise_dist > radius) & intra_mask
                 dist_bias = dist_bias.masked_fill(far_intra.unsqueeze(1), float('-inf'))
 
                 pair_bias = dist_bias if pair_bias is None else pair_bias + dist_bias
