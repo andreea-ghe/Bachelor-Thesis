@@ -72,13 +72,16 @@ class JointSegmentationAlignmentModel(MatchingBaseModel):
             )
 
         # Point-level distance bias: learn distance-dependent attention patterns per head
-        # Inspired by PMTR's spatial attention (Appendix C): pairwise distances → per-head bias
-        # Each head learns weight_h * dist + offset_h (no intermediate tensor, memory-efficient)
+        # Matches PMTR's att_layer (pmt.py lines 34-38): Linear(1,nhead) → ReLU → Linear(nhead,nhead)
+        # Pairwise Euclidean distances → MLP → per-head attention bias added to QK^T
         self.use_distance_bias = self.config.MODEL.USE_DISTANCE_BIAS
         if self.use_distance_bias:
             n_heads = self.config.MODEL.TF_NUM_HEADS
-            self.distance_bias_weight = nn.Parameter(torch.zeros(n_heads))
-            self.distance_bias_offset = nn.Parameter(torch.zeros(n_heads))
+            self.distance_bias_mlp = nn.Sequential(
+                nn.Linear(1, n_heads),
+                nn.ReLU(inplace=True),
+                nn.Linear(n_heads, n_heads),
+            )
 
         self.tf_layers = [("self", self.tf_self1), ("cross", self.tf_cross1)]
 
@@ -250,9 +253,8 @@ class JointSegmentationAlignmentModel(MatchingBaseModel):
                 pair_bias = self.pair_geometric_encoder(part_pcs, n_pcs)  # [B, 1, N_SUM, N_SUM]
             if self.use_distance_bias:
                 pairwise_dist = torch.cdist(part_pcs, part_pcs)  # [B, N_SUM, N_SUM]
-                w = self.distance_bias_weight.view(1, -1, 1, 1)  # [1, n_heads, 1, 1]
-                b = self.distance_bias_offset.view(1, -1, 1, 1)  # [1, n_heads, 1, 1]
-                dist_bias = w * pairwise_dist.unsqueeze(1) + b  # [B, n_heads, N_SUM, N_SUM]
+                dist_bias = self.distance_bias_mlp(pairwise_dist.unsqueeze(-1))  # [B, N_SUM, N_SUM, n_heads]
+                dist_bias = dist_bias.permute(0, 3, 1, 2)  # [B, n_heads, N_SUM, N_SUM]
                 pair_bias = dist_bias if pair_bias is None else pair_bias + dist_bias
 
             # apply self-attention and cross-attention layers
