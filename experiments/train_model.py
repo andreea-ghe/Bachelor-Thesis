@@ -85,6 +85,9 @@ def train_model(config):
         'benchmark': True,  # enable cuDNN benchmark for speed
     }
 
+    if getattr(config, 'FP16', False):
+        training_log_dict['precision'] = 16
+
     trainer = pl.Trainer(**training_log_dict)
 
     ckp_files = os.listdir(model_save_path)
