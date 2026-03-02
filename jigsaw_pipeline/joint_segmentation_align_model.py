@@ -276,8 +276,8 @@ class JointSegmentationAlignmentModel(MatchingBaseModel):
                     # Compute resolution r = avg nearest-neighbor distance (intra-piece only)
                     exclude = ~intra_mask | torch.eye(N_SUM, device=part_pcs.device, dtype=torch.bool)
                     nn_dist = pairwise_dist.masked_fill(exclude, float('inf')).min(dim=2).values
-                    r = nn_dist[nn_dist < float('inf')].mean()
-                    radius = self.distance_bias_radius * r
+                    r = nn_dist[nn_dist < float('inf')].mean() 
+                    radius = r * 6 # The best performance for local geometric matching is achieved when the radius is 6×r
 
                 far_intra = (pairwise_dist > radius) & intra_mask
                 dist_bias = dist_bias.masked_fill(far_intra.unsqueeze(1), float('-inf'))
