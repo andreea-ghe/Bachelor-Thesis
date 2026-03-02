@@ -54,6 +54,9 @@ __C.JIGSAW.USE_PAIR_BIAS = False
 # Must match checkpoint: set True only for training/evaluating with distance bias
 __C.JIGSAW.USE_DISTANCE_BIAS = False
 
+# Radius for distance bias locality (PMTR-style): points farther than this get -inf bias
+__C.JIGSAW.DISTANCE_BIAS_RADIUS = 10.0
+
 # Loss function weights and scheduling
 # ℒ = αℒ_seg + βℒ_mat + γℒ_rig
 __C.JIGSAW.LOSS = edict()

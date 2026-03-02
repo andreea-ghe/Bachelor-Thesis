@@ -82,6 +82,7 @@ class JointSegmentationAlignmentModel(MatchingBaseModel):
                 nn.ReLU(inplace=True),
                 nn.Linear(n_heads, n_heads),
             )
+            self.distance_bias_radius = self.config.MODEL.DISTANCE_BIAS_RADIUS
 
         self.tf_layers = [("self", self.tf_self1), ("cross", self.tf_cross1)]
 
@@ -255,6 +256,27 @@ class JointSegmentationAlignmentModel(MatchingBaseModel):
                 pairwise_dist = torch.cdist(part_pcs, part_pcs)  # [B, N_SUM, N_SUM]
                 dist_bias = self.distance_bias_mlp(pairwise_dist.unsqueeze(-1))  # [B, N_SUM, N_SUM, n_heads]
                 dist_bias = dist_bias.permute(0, 3, 1, 2)  # [B, n_heads, N_SUM, N_SUM]
+
+                # Zero out inter-piece bias: pieces are in arbitrary poses so cross-piece
+                # distances are noise. Only intra-piece distances carry geometric meaning.
+                piece_ids = torch.zeros(B, N_SUM, device=part_pcs.device, dtype=torch.long)
+                for b in range(B):
+                    offset = 0
+                    for p in range(n_pcs.shape[1]):
+                        count = n_pcs[b, p].item()
+                        if count > 0:
+                            piece_ids[b, offset:offset + count] = p
+                            offset += count
+                
+                # Mask out inter-piece distances (arbitrary noise) and mask out far intra-piece 
+                # distances to enforce local attention
+                intra_mask = piece_ids.unsqueeze(2) == piece_ids.unsqueeze(1)  # [B, N_SUM, N_SUM]
+                dist_bias = dist_bias * intra_mask.unsqueeze(1)  # zero inter-piece, keep intra-piece
+
+                # only mask far points WITHIN the same piece (don't touch inter-piece zeros)
+                far_intra = (pairwise_dist > self.distance_bias_radius) & intra_mask
+                dist_bias = dist_bias.masked_fill(far_intra.unsqueeze(1), float('-inf'))
+
                 pair_bias = dist_bias if pair_bias is None else pair_bias + dist_bias
 
             # apply self-attention and cross-attention layers
