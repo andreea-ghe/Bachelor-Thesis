@@ -39,4 +39,4 @@ MODEL:
 # STATS is for eval only
 STATS: "./results/jigsaw_finetune_everyday_dist_bias/stats/eval"
 
-WEIGHT_FILE: results/jigsaw_finetune_everyday_dist_bias/model_save/last.ckpt
+WEIGHT_FILE: results/jigsaw_finetune_everyday_dist_bias/model_save/modelepoch=089.ckpt
