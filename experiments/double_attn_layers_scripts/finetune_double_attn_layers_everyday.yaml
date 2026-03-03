@@ -10,7 +10,7 @@ DATASET: breaking_bad.all_piece_matching
 # If you get OOM, try BATCH_SIZE 2
 GPUS: [0]
 BATCH_SIZE: 3
-FP16: false
+FP16: true
 NUM_WORKERS: 4
 
 TRAIN:
