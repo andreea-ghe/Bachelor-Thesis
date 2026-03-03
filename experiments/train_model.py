@@ -112,6 +112,14 @@ def train_model(config):
                 print(f"WARNING: {len(result.unexpected_keys)} unexpected keys when loading weights")
             if not result.missing_keys and not result.unexpected_keys:
                 print("INFO: All weights loaded successfully for fine-tuning")
+
+            # Initialize new layers by cloning pretrained ones (avoids random init instability)
+            if hasattr(model, 'tf_self2') and hasattr(model, 'tf_self1'):
+                model.tf_self2.load_state_dict(model.tf_self1.state_dict())
+                print("INFO: Initialized tf_self2 from tf_self1")
+            if hasattr(model, 'tf_cross2') and hasattr(model, 'tf_cross1'):
+                model.tf_cross2.load_state_dict(model.tf_cross1.state_dict())
+                print("INFO: Initialized tf_cross2 from tf_cross1")
     elif ckp_files: # load from last checkpoint in model save path
         ckp_files = sorted(
             ckp_files,
