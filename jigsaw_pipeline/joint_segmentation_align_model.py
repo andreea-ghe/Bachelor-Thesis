@@ -272,16 +272,6 @@ class JointSegmentationAlignmentModel(MatchingBaseModel):
                 intra_mask = piece_ids.unsqueeze(2) == piece_ids.unsqueeze(1)  # [B, N_SUM, N_SUM]
                 dist_bias = dist_bias * intra_mask.unsqueeze(1)  # zero inter-piece, keep intra-piece
 
-                with torch.no_grad():
-                    # Compute resolution r = avg nearest-neighbor distance (intra-piece only)
-                    exclude = ~intra_mask | torch.eye(N_SUM, device=part_pcs.device, dtype=torch.bool)
-                    nn_dist = pairwise_dist.masked_fill(exclude, float('inf')).min(dim=2).values
-                    r = nn_dist[nn_dist < float('inf')].mean() 
-                    radius = r * 6 # The best performance for local geometric matching is achieved when the radius is 6×r
-
-                far_intra = (pairwise_dist > radius) & intra_mask
-                dist_bias = dist_bias.masked_fill(far_intra.unsqueeze(1), float('-inf'))
-
                 pair_bias = dist_bias if pair_bias is None else pair_bias + dist_bias
 
             # apply self-attention and cross-attention layers
