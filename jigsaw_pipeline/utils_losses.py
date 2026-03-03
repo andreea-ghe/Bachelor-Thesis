@@ -25,7 +25,7 @@ def permutation_loss(pred_matching, gt_matching, n_source, n_target):
         L_mat: matching loss
     """
     B = pred_matching.shape[0]
-    pred_matching_fp32 = pred_matching.to(dtype=torch.float32).clamp(0, 1)
+    pred_matching_fp32 = torch.nan_to_num(pred_matching.to(dtype=torch.float32), nan=0.0).clamp(0, 1)
 
     # make sure matrices represent probabilities
     try:
