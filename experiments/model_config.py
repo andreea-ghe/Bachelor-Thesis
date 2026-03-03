@@ -50,10 +50,6 @@ __C.JIGSAW.TF_NUM_SAMPLE = 16  # Number of neighbor samples for local feature ag
 # Must match checkpoint: set True only for training/evaluating with pair attention
 __C.JIGSAW.USE_PAIR_BIAS = False
 
-# Whether to use point-level distance bias in cross-attention (PMTR-inspired)
-# Must match checkpoint: set True only for training/evaluating with distance bias
-__C.JIGSAW.USE_DISTANCE_BIAS = False
-
 # Loss function weights and scheduling
 # ℒ = αℒ_seg + βℒ_mat + γℒ_rig
 __C.JIGSAW.LOSS = edict()

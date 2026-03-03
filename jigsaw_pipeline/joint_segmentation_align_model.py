@@ -61,6 +61,20 @@ class JointSegmentationAlignmentModel(MatchingBaseModel):
             n_head=self.config.MODEL.TF_NUM_HEADS,
             d_input=self.part_comp_feat_dim,
         )
+
+        # Second self-attention layer: refine local features with cross-piece context
+        self.tf_self2 = PointTransformer(
+            in_features=self.part_comp_feat_dim,
+            out_features=self.part_comp_feat_dim,
+            n_heads=self.config.MODEL.TF_NUM_HEADS,
+            k_neighbors=self.config.MODEL.TF_NUM_SAMPLE
+        )
+        # Second cross-attention layer: refined matching after updated local features
+        self.tf_cross2 = CrossAttention(
+            n_head=self.config.MODEL.TF_NUM_HEADS,
+            d_input=self.part_comp_feat_dim,
+        )
+
         # Pair geometric encoder: computes per-head geometric bias for cross-attention (Pair Attention)
         self.use_pair_bias = self.config.MODEL.USE_PAIR_BIAS
         if self.use_pair_bias:
@@ -71,19 +85,10 @@ class JointSegmentationAlignmentModel(MatchingBaseModel):
                 angle_range=(-1.0, 1.0),
             )
 
-        # Point-level distance bias: learn distance-dependent attention patterns per head
-        # Matches PMTR's att_layer (pmt.py lines 34-38): Linear(1,nhead) → ReLU → Linear(nhead,nhead)
-        # Pairwise Euclidean distances → MLP → per-head attention bias added to QK^T
-        self.use_distance_bias = self.config.MODEL.USE_DISTANCE_BIAS
-        if self.use_distance_bias:
-            n_heads = self.config.MODEL.TF_NUM_HEADS
-            self.distance_bias_mlp = nn.Sequential(
-                nn.Linear(1, n_heads),
-                nn.ReLU(inplace=True),
-                nn.Linear(n_heads, n_heads),
-            )
-
-        self.tf_layers = [("self", self.tf_self1), ("cross", self.tf_cross1)]
+        self.tf_layers = [
+            ("self", self.tf_self1), ("cross", self.tf_cross1),
+            ("self", self.tf_self2), ("cross", self.tf_cross2),
+        ]
 
         # Initialize model components (names must match checkpoint: encoder, pc_classifier)
         self.encoder = self._init_feature_extractor()  # PointNet++ based feature extractor
@@ -251,28 +256,6 @@ class JointSegmentationAlignmentModel(MatchingBaseModel):
             pair_bias = None
             if self.use_pair_bias:
                 pair_bias = self.pair_geometric_encoder(part_pcs, n_pcs)  # [B, 1, N_SUM, N_SUM]
-            if self.use_distance_bias:
-                pairwise_dist = torch.cdist(part_pcs, part_pcs)  # [B, N_SUM, N_SUM]
-                dist_bias = self.distance_bias_mlp(pairwise_dist.unsqueeze(-1))  # [B, N_SUM, N_SUM, n_heads]
-                dist_bias = dist_bias.permute(0, 3, 1, 2)  # [B, n_heads, N_SUM, N_SUM]
-
-                # Zero out inter-piece bias: pieces are in arbitrary poses so cross-piece
-                # distances are noise. Only intra-piece distances carry geometric meaning.
-                piece_ids = torch.zeros(B, N_SUM, device=part_pcs.device, dtype=torch.long)
-                for b in range(B):
-                    offset = 0
-                    for p in range(n_pcs.shape[1]):
-                        count = n_pcs[b, p].item()
-                        if count > 0:
-                            piece_ids[b, offset:offset + count] = p
-                            offset += count
-                
-                # Mask out inter-piece distances (arbitrary noise) and mask out far intra-piece 
-                # distances to enforce local attention
-                intra_mask = piece_ids.unsqueeze(2) == piece_ids.unsqueeze(1)  # [B, N_SUM, N_SUM]
-                dist_bias = dist_bias * intra_mask.unsqueeze(1)  # zero inter-piece, keep intra-piece
-
-                pair_bias = dist_bias if pair_bias is None else pair_bias + dist_bias
 
             # apply self-attention and cross-attention layers
             for name, layer in self.tf_layers:

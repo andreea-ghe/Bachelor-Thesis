@@ -25,17 +25,3 @@ for i in {1..10}; do
   echo "--- Run $i/10 ---"
   python -m experiments.eval_model --cfg experiments/pair_attn_finetuned_scripts/artifact_eval.yaml
 done
-
-echo "=== Dist Bias Everyday (10 runs) ==="
-for i in {1..10}; do
-  echo "--- Run $i/10 ---"
-  python -m experiments.eval_model --cfg experiments/dist_bias_finetuned_scripts/everyday_eval.yaml
-done
-
-echo "=== Dist Bias Artifact (10 runs) ==="
-for i in {1..10}; do
-  echo "--- Run $i/10 ---"
-  python -m experiments.eval_model --cfg experiments/dist_bias_finetuned_scripts/artifact_eval.yaml
-done
-
-echo "=== All done! ==="
