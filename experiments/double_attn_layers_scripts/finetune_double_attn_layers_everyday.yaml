@@ -41,9 +41,9 @@ MODEL:
   PC_CLS_METHOD: multi
   LOSS:
     w_cls_loss: 1.0
-    w_mat_loss: 1.0
+    w_mat_loss: 0.0
     mat_epoch: 9
-    w_rig_loss: 1.0
+    w_rig_loss: 0.0
     rig_epoch: 199
 
 STATS: "./results/jigsaw_train_everyday_double_attn_layers/stats/eval"
