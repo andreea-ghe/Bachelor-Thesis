@@ -11,7 +11,7 @@ DATASET: breaking_bad.all_piece_matching
 GPUS: [0]
 BATCH_SIZE: 3
 FP16: false
-NUM_WORKERS: 4
+NUM_WORKERS: 8
 
 TRAIN:
   NUM_EPOCHS: 250        # fine-tuning needs fewer epochs than training from scratch
