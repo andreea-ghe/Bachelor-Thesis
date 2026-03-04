@@ -482,7 +482,7 @@ class JointSegmentationAlignmentModel(MatchingBaseModel):
             'cls_f1': cls_f1_score
         })
 
-        if self.training and self.w_mat_loss == 0:
+        if self.w_mat_loss == 0:
             # early return during warm-up phase (before matching loss is activated)
             loss_dict.update({"loss": cls_loss})
             return loss_dict
