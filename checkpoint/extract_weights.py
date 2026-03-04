@@ -25,7 +25,7 @@ def main():
         sys.exit(1)
 
     print(f"Loading checkpoint: {ckpt_path}")
-    ckp = torch.load(ckpt_path, map_location="cpu")
+    ckp = torch.load(ckpt_path, map_location="cpu", weights_only=False)
 
     if "state_dict" not in ckp:
         print("This checkpoint already contains only weights (no 'state_dict' key).")

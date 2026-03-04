@@ -42,7 +42,7 @@ def permutation_loss(pred_matching, gt_matching, n_source, n_target):
     for b in range(B):
         batch_slice = [b, slice(n_source[b]), slice(n_target[b])]
         # compute loss for current batch slice
-        with torch.cuda.amp.autocast(enabled=False):
+        with torch.amp.autocast("cuda", enabled=False):
             loss += F.binary_cross_entropy(pred_matching_fp32[batch_slice], gt_matching[batch_slice].float(), reduction='sum')
         total_num_points += n_source[b].to(total_num_points.dtype).to(pred_matching_fp32.device)
 

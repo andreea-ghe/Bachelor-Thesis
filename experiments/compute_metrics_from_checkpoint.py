@@ -9,7 +9,7 @@ import torch
 def compute_metrics(checkpoint_path):
     """Load checkpoint and compute aggregated metrics."""
     print(f"Loading checkpoint: {checkpoint_path}")
-    outputs = torch.load(checkpoint_path)
+    outputs = torch.load(checkpoint_path, weights_only=False)
     print(f"Loaded {len(outputs)} batch results")
     
     # Find all keys that appear in any output

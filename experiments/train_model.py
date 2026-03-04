@@ -86,7 +86,7 @@ def train_model(config):
     }
 
     if getattr(config, 'FP16', False):
-        training_log_dict['precision'] = 16
+        training_log_dict['precision'] = '16-mixed'
 
     trainer = pl.Trainer(**training_log_dict)
 
@@ -96,7 +96,7 @@ def train_model(config):
     ]
 
     if config.WEIGHT_FILE: # load from specified checkpoint
-        ckp = torch.load(config.WEIGHT_FILE, map_location='cpu')
+        ckp = torch.load(config.WEIGHT_FILE, map_location='cpu', weights_only=False)
 
         if 'state_dict' in ckp.keys():
             # full checkpoint with optimizer etc.

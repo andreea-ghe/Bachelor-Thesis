@@ -587,7 +587,7 @@ class JointSegmentationAlignmentModel(MatchingBaseModel):
 
         return loss_dict
 
-    def training_epoch_end(self, outputs):
+    def on_train_epoch_end(self):
         """
         Callback at the end of each training epoch.
         It implements loss weight scheduling:

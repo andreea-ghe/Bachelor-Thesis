@@ -77,7 +77,7 @@ def test_model(config):
     weights_already_loaded = False
 
     if config.WEIGHT_FILE: # load specified weight file
-        ckp = torch.load(config.WEIGHT_FILE, map_location='cpu')
+        ckp = torch.load(config.WEIGHT_FILE, map_location='cpu', weights_only=False)
 
         if 'state_dict' in ckp: # full checkpoint provided
             ckp_path = config.WEIGHT_FILE

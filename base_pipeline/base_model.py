@@ -27,6 +27,9 @@ class MatchingBaseModel(pytorch_lightning.LightningModule):
         self.max_num_part = self.config.DATA.MAX_NUM_PART # max nr of pieces per object
         self.part_comp_feat_dim = self.config.MODEL.PC_FEAT_DIM # feature dimension (default: 512)
 
+        self._val_outputs = []
+        self._test_outputs = []
+
         self.test_results = None
         if len(self.config.STATS):
             os.makedirs(self.config.STATS, exist_ok=True)
@@ -77,18 +80,20 @@ class MatchingBaseModel(pytorch_lightning.LightningModule):
             loss_dict: dict - dictionary with validation losses and metrics
         """
         loss_dict = self.forward_pass(data_dict, mode='val', optimizer_idx=optimizer_idx)
+        self._val_outputs.append(loss_dict)
         return loss_dict
 
-    def validation_epoch_end(self, outputs):
+    def on_validation_epoch_end(self):
         """
         Aggregate validation results at the end of an epoch.
         Computes weighted average of losses across all validation batches,
         accounting for different batch sizes. This gives more accurate 
         average loss than simple mean.
-
-        Input:
-            outputs: list of loss_dict from each validation step
         """
+        outputs = self._val_outputs
+        if not outputs:
+            return
+
         # handle both int and tensor batch sizes
         if isinstance(outputs[0]['batch_size'], int):
             func = torch.tensor
@@ -108,6 +113,7 @@ class MatchingBaseModel(pytorch_lightning.LightningModule):
         }
 
         self.log_dict(avg_loss, sync_dist=True)
+        self._val_outputs.clear()
 
     def test_step(self, data_dict: dict, batch_idx: int, optimizer_idx: int = -1):
         """
@@ -124,10 +130,6 @@ class MatchingBaseModel(pytorch_lightning.LightningModule):
         """
         loss_dict = self.forward_pass(data_dict, mode='test', optimizer_idx=optimizer_idx)
         
-        # Periodic checkpoint: save intermediate results every 500 batches
-        if not hasattr(self, '_test_outputs'):
-            self._test_outputs = []
-        
         # Convert tensors to CPU for saving
         save_dict = {k: v.cpu() if torch.is_tensor(v) else v for k, v in loss_dict.items()}
         self._test_outputs.append(save_dict)
@@ -140,19 +142,19 @@ class MatchingBaseModel(pytorch_lightning.LightningModule):
         
         return loss_dict
 
-    def test_epoch_end(self, outputs):
+    def on_test_epoch_end(self):
         """
         Aggregate test results at the end of an epoch.
         Compute final evaluation metrics and saves stats.
-
-        Input:
-            outputs: list of loss_dict from each test step
         """
+        outputs = self._test_outputs
+        if not outputs:
+            return
+
         # Save final checkpoint with all results
-        if hasattr(self, '_test_outputs') and len(self._test_outputs) > 0:
-            final_checkpoint_path = os.path.join(self.config.OUTPUT_PATH, 'test_checkpoint_final.pt')
-            torch.save(self._test_outputs, final_checkpoint_path)
-            print(f"\n[Checkpoint] Saved final {len(self._test_outputs)} results to {final_checkpoint_path}")
+        final_checkpoint_path = os.path.join(self.config.OUTPUT_PATH, 'test_checkpoint_final.pt')
+        torch.save(outputs, final_checkpoint_path)
+        print(f"\n[Checkpoint] Saved final {len(outputs)} results to {final_checkpoint_path}")
         
         # handle both int and tensor batch sizes
         if isinstance(outputs[0]['batch_size'], int):
@@ -184,6 +186,8 @@ class MatchingBaseModel(pytorch_lightning.LightningModule):
         if self.config.STATS is not None:
             with open(os.path.join(self.config.STATS, 'saved_stats.pk'), 'wb') as f:
                 pickle.dump(self.stats, f)
+
+        self._test_outputs.clear()
 
     @torch.no_grad()
     def calc_metric(self, data_dict, trans_dict, valid_obj_mask=None):
@@ -427,7 +431,7 @@ class MatchingBaseModel(pytorch_lightning.LightningModule):
 
         loss_dict = self.loss_function(data_dict, optimizer_idx, mode)
         
-        if mode == "train" and self.local_rank == 0:
+        if mode == "train" and self.global_rank == 0:
             # log losses for monitoring
             log_dict = {
                 f'{mode}/{key}': value.item() if isinstance(value, torch.Tensor) else value

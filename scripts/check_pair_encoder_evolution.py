@@ -31,7 +31,7 @@ def extract_epoch(filename):
 
 def analyze_checkpoint(filepath, reference_sd=None):
     """Analyze pair_geometric_encoder weights in a checkpoint."""
-    ckpt = torch.load(filepath, map_location='cpu')
+    ckpt = torch.load(filepath, map_location='cpu', weights_only=False)
     sd = ckpt.get('state_dict', ckpt)
 
     pair_keys = sorted([k for k in sd.keys() if 'pair_geometric' in k])
