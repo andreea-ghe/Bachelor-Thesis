@@ -402,7 +402,7 @@ class JointSegmentationAlignmentModel(MatchingBaseModel):
 
         return out_dict
 
-    def _loss_function(self, data_dict, out_dict, optimizer_idx=-1):
+    def _loss_function(self, data_dict, out_dict):
         """
         Compute the complete loss function for training.
         This is: L = α * L_seg + β * L_mat + γ * L_rig
@@ -417,7 +417,6 @@ class JointSegmentationAlignmentModel(MatchingBaseModel):
         Input:
             data_dict: input data dictionary
             out_dict: output data dictionary from forward pass
-            optimizer_idx: int - index of the optimizer (for multi-optimizer setups)
 
         Output:
             loss_dict

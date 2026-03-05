@@ -52,7 +52,7 @@ class MatchingBaseModel(pytorch_lightning.LightningModule):
         """
         raise NotImplementedError("Forward method must be implemented per model.")
 
-    def training_step(self, data_dict: dict, batch_idx: int, optimizer_idx: int = -1):
+    def training_step(self, data_dict: dict, batch_idx: int):
         """
         PyTorch Lightning training step.
         Called for each training batch; it computes forward pass and loss.
@@ -60,14 +60,13 @@ class MatchingBaseModel(pytorch_lightning.LightningModule):
         Input:
             data_dict: batch data from dataloader
             batch_idx: index of the current batch
-            optimizer_idx: index of the optimizer (if multiple optimizers are used)
         Output:
             loss: scalar loss for backpropagation
         """
-        loss_dict = self.forward_pass(data_dict, mode='train', optimizer_idx=optimizer_idx)
+        loss_dict = self.forward_pass(data_dict, mode='train')
         return loss_dict['loss']
 
-    def validation_step(self, data_dict: dict, batch_idx: int, optimizer_idx: int = -1):
+    def validation_step(self, data_dict: dict, batch_idx: int):
         """
         PyTorch Lightning validation step.
         Called for each validation batch; it computes losses and metrics.
@@ -75,11 +74,10 @@ class MatchingBaseModel(pytorch_lightning.LightningModule):
         Input:
             data_dict: batch data from dataloader
             batch_idx: index of the current batch
-            optimizer_idx: index of the optimizer (if multiple optimizers are used)
         Output:
             loss_dict: dict - dictionary with validation losses and metrics
         """
-        loss_dict = self.forward_pass(data_dict, mode='val', optimizer_idx=optimizer_idx)
+        loss_dict = self.forward_pass(data_dict, mode='val')
         self._val_outputs.append(loss_dict)
         return loss_dict
 
@@ -115,7 +113,7 @@ class MatchingBaseModel(pytorch_lightning.LightningModule):
         self.log_dict(avg_loss, sync_dist=True)
         self._val_outputs.clear()
 
-    def test_step(self, data_dict: dict, batch_idx: int, optimizer_idx: int = -1):
+    def test_step(self, data_dict: dict, batch_idx: int):
         """
         PyTorch Lightning test step.
         Called for each test batch; it performs forward pass, global alignment,
@@ -124,11 +122,10 @@ class MatchingBaseModel(pytorch_lightning.LightningModule):
         Input:
             data_dict: batch data from dataloader
             batch_idx: index of the current batch
-            optimizer_idx: index of the optimizer (if multiple optimizers are used)
         Output:
             loss_dict: dictionary with losses and metrics
         """
-        loss_dict = self.forward_pass(data_dict, mode='test', optimizer_idx=optimizer_idx)
+        loss_dict = self.forward_pass(data_dict, mode='test')
         
         # Convert tensors to CPU for saving
         save_dict = {k: v.cpu() if torch.is_tensor(v) else v for k, v in loss_dict.items()}
@@ -286,7 +283,7 @@ class MatchingBaseModel(pytorch_lightning.LightningModule):
 
         return metric_dict
 
-    def _loss_function(self, data_dict, out_dict, optimizer_idx=-1):
+    def _loss_function(self, data_dict, out_dict):
         """
         Compute loss for fracture assembly.
         Implemented in subclass.
@@ -354,13 +351,12 @@ class MatchingBaseModel(pytorch_lightning.LightningModule):
 
         return predicted
 
-    def loss_function(self, data_dict, optimizer_idx, mode):
+    def loss_function(self, data_dict, mode):
         """
         Orchestrates forward pass and loss computation.
 
         Input:
             data_dict: input data dictionary
-            optimizer_idx: index of the optimizer (if multiple optimizers are used)
             mode: 'train', 'val', or 'test'
 
         Output:
@@ -370,7 +366,7 @@ class MatchingBaseModel(pytorch_lightning.LightningModule):
         out_dict = self.forward(data_dict)
 
         # compute loss
-        loss_dict = self._loss_function(data_dict, out_dict, optimizer_idx)
+        loss_dict = self._loss_function(data_dict, out_dict)
 
         # add batch size to loss_dict for weighted averaging
         if not self.training:
@@ -416,20 +412,19 @@ class MatchingBaseModel(pytorch_lightning.LightningModule):
 
         return loss_dict
 
-    def forward_pass(self, data_dict, optimizer_idx, mode):
+    def forward_pass(self, data_dict, mode):
         """
         Wrapper for forward pass and loss computation.
 
         Input:
             data_dict: input data dictionary
-            optimizer_idx: index of the optimizer (if multiple optimizers are used)
             mode: 'train', 'val', or 'test'
 
         Output:
             loss_dict: dictionary with losses and metrics
         """
 
-        loss_dict = self.loss_function(data_dict, optimizer_idx, mode)
+        loss_dict = self.loss_function(data_dict, mode)
         
         if mode == "train" and self.global_rank == 0:
             # log losses for monitoring
