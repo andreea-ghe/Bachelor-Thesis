@@ -38,6 +38,7 @@ DATA:
   FRACTURE_LABEL_THRESHOLD: 0.025
 
 MODEL:
+  USE_DOUBLE_ATTN: true
   PC_CLS_METHOD: multi
   LOSS:
     w_cls_loss: 1.0

@@ -62,18 +62,19 @@ class JointSegmentationAlignmentModel(MatchingBaseModel):
             d_input=self.part_comp_feat_dim,
         )
 
-        # Second self-attention layer: refine local features with cross-piece context
-        self.tf_self2 = PointTransformer(
-            in_features=self.part_comp_feat_dim,
-            out_features=self.part_comp_feat_dim,
-            n_heads=self.config.MODEL.TF_NUM_HEADS,
-            k_neighbors=self.config.MODEL.TF_NUM_SAMPLE
-        )
-        # Second cross-attention layer: refined matching after updated local features
-        self.tf_cross2 = CrossAttention(
-            n_head=self.config.MODEL.TF_NUM_HEADS,
-            d_input=self.part_comp_feat_dim,
-        )
+        # Optional second attention layers for deeper feature refinement
+        self.use_double_attn = getattr(self.config.MODEL, 'USE_DOUBLE_ATTN', False)
+        if self.use_double_attn:
+            self.tf_self2 = PointTransformer(
+                in_features=self.part_comp_feat_dim,
+                out_features=self.part_comp_feat_dim,
+                n_heads=self.config.MODEL.TF_NUM_HEADS,
+                k_neighbors=self.config.MODEL.TF_NUM_SAMPLE
+            )
+            self.tf_cross2 = CrossAttention(
+                n_head=self.config.MODEL.TF_NUM_HEADS,
+                d_input=self.part_comp_feat_dim,
+            )
 
         # Pair geometric encoder: computes per-head geometric bias for cross-attention (Pair Attention)
         self.use_pair_bias = self.config.MODEL.USE_PAIR_BIAS
@@ -87,8 +88,11 @@ class JointSegmentationAlignmentModel(MatchingBaseModel):
 
         self.tf_layers = [
             ("self", self.tf_self1), ("cross", self.tf_cross1),
-            ("self", self.tf_self2), ("cross", self.tf_cross2),
         ]
+        if self.use_double_attn:
+            self.tf_layers += [
+                ("self", self.tf_self2), ("cross", self.tf_cross2),
+            ]
 
         # Initialize model components (names must match checkpoint: encoder, pc_classifier)
         self.encoder = self._init_feature_extractor()  # PointNet++ based feature extractor

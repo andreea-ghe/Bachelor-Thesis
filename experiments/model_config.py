@@ -50,6 +50,10 @@ __C.JIGSAW.TF_NUM_SAMPLE = 16  # Number of neighbor samples for local feature ag
 # Must match checkpoint: set True only for training/evaluating with pair attention
 __C.JIGSAW.USE_PAIR_BIAS = False
 
+# Whether to use double attention layers (self1→cross1→self2→cross2)
+# Must match checkpoint: set True only for training/evaluating with double attention
+__C.JIGSAW.USE_DOUBLE_ATTN = False
+
 # Loss function weights and scheduling
 # ℒ = αℒ_seg + βℒ_mat + γℒ_rig
 __C.JIGSAW.LOSS = edict()
