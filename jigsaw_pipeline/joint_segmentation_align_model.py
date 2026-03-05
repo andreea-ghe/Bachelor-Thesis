@@ -486,8 +486,14 @@ class JointSegmentationAlignmentModel(MatchingBaseModel):
         })
 
         if self.w_mat_loss == 0:
-            # early return during warm-up phase (before matching loss is activated)
-            loss_dict.update({"loss": cls_loss})
+            zero = torch.tensor(0.0, device=self.device)
+            loss_dict.update({
+                "loss": cls_loss,
+                "mat_loss": zero,
+                "mat_precision": zero,
+                "mat_recall": zero,
+                "mat_f1": zero,
+            })
             return loss_dict
 
         # Handle edge case: no critical points found (rare edge case not handled in original)
