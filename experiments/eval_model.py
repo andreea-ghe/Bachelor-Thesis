@@ -63,7 +63,7 @@ def test_model(config):
         logger=logger,
         accelerator="gpu",
         devices=all_gpus,
-        strategy="dp" if len(all_gpus) > 1 else None,
+        strategy="ddp" if len(all_gpus) > 1 else "auto",
         callbacks=callbacks,
     )
 
