@@ -8,6 +8,7 @@ from utilities.utils_parse_args import parse_args
 from utilities.utils_config import CONFIG
 from utilities.utils_edict import print_edict
 from jigsaw_pipeline import build_jigsaw_model
+from jigsaw_pipeline.joint_segmentation_align_model import JointSegmentationAlignmentModel
 from pytorch_lightning.loggers import CSVLogger
 
 
@@ -120,7 +121,7 @@ def test_model(config):
 
     # load model with trained weights (skip if already loaded from weights-only file)
     if not weights_already_loaded and ckp_path is not None:
-        model = model.load_from_checkpoint(checkpoint_path=ckp_path, strict=False, config=config)
+        model = JointSegmentationAlignmentModel.load_from_checkpoint(checkpoint_path=ckp_path, strict=False, config=config)
     elif not weights_already_loaded:
         print("WARNING: No checkpoint found — evaluating with random weights!")
     
