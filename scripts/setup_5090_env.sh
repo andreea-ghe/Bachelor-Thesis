@@ -32,7 +32,8 @@ pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv \
 # Step 4: Install pytorch3d from source (no prebuilt wheels for PyTorch 2.7)
 echo ""
 echo "[4/6] Installing pytorch3d from source (this may take a few minutes)..."
-pip install "git+https://github.com/facebookresearch/pytorch3d.git"
+pip install fvcore iopath
+pip install --no-build-isolation "git+https://github.com/facebookresearch/pytorch3d.git"
 
 # Step 5: Install PyTorch Lightning and core ML packages
 echo ""
