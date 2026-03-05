@@ -10,8 +10,8 @@ DATASET: breaking_bad.all_piece_matching
 # If you get OOM, try BATCH_SIZE 2
 GPUS: [0]
 BATCH_SIZE: 3
-FP16: true
-NUM_WORKERS: 4
+FP16: false
+NUM_WORKERS: 8
 
 TRAIN:
   NUM_EPOCHS: 250        # fine-tuning needs fewer epochs than training from scratch
@@ -41,9 +41,9 @@ MODEL:
   PC_CLS_METHOD: multi
   LOSS:
     w_cls_loss: 1.0
-    w_mat_loss: 1.0
+    w_mat_loss: 0.0
     mat_epoch: 9
-    w_rig_loss: 1.0
+    w_rig_loss: 0.0
     rig_epoch: 199
 
 STATS: "./results/jigsaw_train_everyday_double_attn_layers/stats/eval"
