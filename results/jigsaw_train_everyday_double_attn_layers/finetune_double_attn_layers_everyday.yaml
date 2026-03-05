@@ -9,7 +9,7 @@ DATASET: breaking_bad.all_piece_matching
 # With 1 GPU: BATCH_SIZE 4 should work (model is ~25MB)
 # If you get OOM, try BATCH_SIZE 2
 GPUS: [0]
-BATCH_SIZE: 3
+BATCH_SIZE: 4
 FP16: false
 NUM_WORKERS: 8
 
@@ -38,6 +38,7 @@ DATA:
   FRACTURE_LABEL_THRESHOLD: 0.025
 
 MODEL:
+  USE_DOUBLE_ATTN: true
   PC_CLS_METHOD: multi
   LOSS:
     w_cls_loss: 1.0

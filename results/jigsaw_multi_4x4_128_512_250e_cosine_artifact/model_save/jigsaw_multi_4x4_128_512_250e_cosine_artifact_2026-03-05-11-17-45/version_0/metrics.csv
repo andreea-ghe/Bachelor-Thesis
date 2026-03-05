@@ -1,0 +1,2 @@
+epoch,step,test/chamfer_distance,test/cls_acc,test/cls_f1,test/cls_loss,test/cls_precision,test/cls_recall,test/loss,test/part_acc,test/rot_mae,test/rot_mse,test/rot_rmse,test/trans_mae,test/trans_mse,test/trans_rmse
+0,0,0.08261825144290924,1.0,1.0,0.03155537694692612,1.0,1.0,0.03155537694692612,0.6701323390007019,29.902345657348633,3362.65673828125,34.895652770996094,0.06403177976608276,0.02217205800116062,0.08053860068321228
