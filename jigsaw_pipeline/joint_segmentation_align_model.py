@@ -75,6 +75,12 @@ class JointSegmentationAlignmentModel(MatchingBaseModel):
                 n_head=self.config.MODEL.TF_NUM_HEADS,
                 d_input=self.part_comp_feat_dim,
             )
+            # Gated residual: gates start at 0 so new layers are initially bypassed,
+            # preserving pretrained feature distribution for the classifier.
+            # PointTransformer has no internal residual, so without gating,
+            # applying it twice produces f(f(x)) instead of f(x).
+            self.gate_self2 = nn.Parameter(torch.tensor(0.0))
+            self.gate_cross2 = nn.Parameter(torch.tensor(0.0))
 
         # Pair geometric encoder: computes per-head geometric bias for cross-attention (Pair Attention)
         self.use_pair_bias = self.config.MODEL.USE_PAIR_BIAS
@@ -265,14 +271,22 @@ class JointSegmentationAlignmentModel(MatchingBaseModel):
             for name, layer in self.tf_layers:
                 if name == "self":
                     # self attention: aggregate local features within each piece
-                    part_features = layer(
+                    new_features = layer(
                             part_pcs.reshape(-1, 3).contiguous(), # point transformer expects a (flat) point cloud input
                             part_features.view(-1, self.part_comp_feat_dim), # we flatten this too because coordinates and features must be aligned
                             batch_length
                         ).view(B, N_SUM, -1).contiguous() # reshape back to (B, N_SUM, F)
+                    if self.use_double_attn and layer is self.tf_self2:
+                        part_features = part_features + self.gate_self2 * (new_features - part_features)
+                    else:
+                        part_features = new_features
                 elif name == "cross":
                     # cross attention with pair geometric bias: propagate info between pieces
-                    part_features = layer(part_features, pair_bias=pair_bias)  # [B, N_SUM, F]
+                    new_features = layer(part_features, pair_bias=pair_bias) # [B, N_SUM, F]
+                    if self.use_double_attn and layer is self.tf_cross2:
+                        part_features = part_features + self.gate_cross2 * (new_features - part_features)
+                    else:
+                        part_features = new_features
             
             data_dict.update({'part_feats': part_features}) # cache extracted features for later reuse
         
