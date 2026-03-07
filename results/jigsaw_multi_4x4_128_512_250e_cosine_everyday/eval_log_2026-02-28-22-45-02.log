@@ -1,92 +1,0 @@
-MODEL_NAME: jigsaw_multi_4x4_128_512_250e_cosine_everyday
-MODULE: experiments
-BATCH_SIZE: 1
-NUM_WORKERS: 0
-LOG_FILE_NAME: 
-MODEL_SAVE_PATH: results/jigsaw_multi_4x4_128_512_250e_cosine_everyday/model_save
-DATASET: breaking_bad.all_piece_matching
-PROJECT: jigsaw
-TRAIN:
-  NUM_EPOCHS: 200
-  OPTIMIZER: SGD
-  LR: 0.001
-  PAIR_LR_MULT: 10.0
-  LR_SCHEDULER: cosine
-  LR_DECAY: 100.0
-  LR_STEP: [10, 20]
-  WARMUP_RATIO: 0.0
-  CLIP_GRAD: None
-  beta1: 0
-  beta2: 0.9
-  WEIGHT_DECAY: 0.0
-  MOMENTUM: 0.9
-  VAL_EVERY: 5
-  VIS: True
-  VAL_SAMPLE_VIS: 5
-  LOSS: 
-CALLBACK:
-  MATCHING_TASK: ['trans']
-  CHECKPOINT_MONITOR: val/loss
-  CHECKPOINT_MODE: min
-LOSS:
-EVAL:
-GPUS: [0]
-PARALLEL_STRATEGY: ddp
-FP16: False
-CUDNN: False
-WEIGHT_FILE: results/jigsaw_finetune_everyday/model_save/last.ckpt
-OUTPUT_PATH: results/jigsaw_multi_4x4_128_512_250e_cosine_everyday
-STATISTIC_STEP: 100
-RANDOM_SEED: 42
-STATS: ./results/jigsaw_finetune_everyday/stats/eval
-MODEL:
-  ROT_TYPE: rmat
-  PC_FEAT_DIM: 128
-  AFF_FEAT_DIM: 512
-  AFFINITY: aff_dual
-  ENCODER: pointnet2_pt.msg.dynamic
-  TEST_S_MASK: True
-  PC_CLS_METHOD: multi
-  PC_NUM_CLS: 2
-  SINKHORN_MAXITER: 20
-  SINKHORN_TAU: 0.05
-  TF_NUM_HEADS: 8
-  TF_NUM_SAMPLE: 16
-  USE_PAIR_BIAS: False
-  USE_DISTANCE_BIAS: False
-  LOSS:
-    w_cls_loss: 1.0
-    w_mat_loss: 0.0
-    mat_epoch: 9
-    w_rig_loss: 0.0
-    rig_epoch: 199
-DATA:
-  DATA_DIR: /workspace/everyday_all_2
-  DATA_FN: everyday.{}.txt
-  DATA_KEYS: ['part_ids']
-  SUBSET: everyday
-  CATEGORY: 
-  ALL_CATEGORY: ['BeerBottle', 'Bowl', 'Cup', 'DrinkingUtensil', 'Mug', 'Plate', 'Spoon', 'Teacup', 'ToyFigure', 'WineBottle', 'Bottle', 'Cookie', 'DrinkBottle', 'Mirror', 'PillBottle', 'Ring', 'Statue', 'Teapot', 'Vase', 'WineGlass']
-  ROT_RANGE: -1.0
-  NUM_PC_POINTS: 5000
-  MIN_PART_POINT: 30
-  MIN_NUM_PART: 2
-  MAX_NUM_PART: 20
-  SHUFFLE_PARTS: False
-  SAMPLE_BY: area
-  LENGTH: -1
-  TEST_LENGTH: -1
-  OVERFIT: -1
-  FRACTURE_LABEL_THRESHOLD: 0.025
-  COLORS: [[0, 204, 0], [204, 0, 0], [0, 0, 204], [127, 127, 0], [127, 0, 127], [0, 127, 127], [76, 153, 0], [153, 0, 76], [76, 0, 153], [153, 76, 0], [76, 0, 153], [153, 0, 76], [204, 51, 127], [204, 51, 127], [51, 204, 127], [51, 127, 204], [127, 51, 204], [127, 204, 51], [76, 76, 178], [76, 178, 76], [178, 76, 76]]
-[test] Loaded 561 pairs from /workspace/everyday_all_2/everyday.test.txt
-All checkpoint keys match model keys!
-Finish Setting -----
-Testing: 0it [00:00, ?it/s]Testing:   0%|          | 0/561 [00:00<?, ?it/s]Testing DataLoader 0:   0%|          | 0/561 [00:00<?, ?it/s]Testing DataLoader 0:   0%|          | 1/561 [00:00<08:09,  1.14it/s]Testing DataLoader 0:   0%|          | 2/561 [00:01<05:10,  1.80it/s]Testing DataLoader 0:   1%|          | 3/561 [00:01<04:10,  2.23it/s]Testing DataLoader 0:   1%|          | 4/561 [00:01<03:42,  2.50it/s]Testing DataLoader 0:   1%|          | 5/561 [00:01<03:25,  2.70it/s]Testing DataLoader 0:   1%|1         | 6/561 [00:02<03:12,  2.89it/s]Testing DataLoader 0:   1%|1         | 7/561 [00:02<03:02,  3.03it/s]Testing DataLoader 0:   1%|1         | 8/561 [00:02<02:56,  3.14it/s]Testing DataLoader 0:   2%|1         | 9/561 [00:02<02:50,  3.24it/s]Testing DataLoader 0:   2%|1         | 10/561 [00:03<02:45,  3.32it/s]Testing DataLoader 0:   2%|1         | 11/561 [00:03<02:41,  3.40it/s]Testing DataLoader 0:   2%|2         | 12/561 [00:03<02:38,  3.46it/s]Testing DataLoader 0:   2%|2         | 13/561 [00:03<02:35,  3.52it/s]Testing DataLoader 0:   2%|2         | 14/561 [00:03<02:33,  3.57it/s]Testing DataLoader 0:   3%|2         | 15/561 [00:04<02:30,  3.62it/s]Testing DataLoader 0:   3%|2         | 16/561 [00:04<02:28,  3.66it/s]Testing DataLoader 0:   3%|3         | 17/561 [00:04<02:26,  3.70it/s]Testing DataLoader 0:   3%|3         | 18/561 [00:04<02:25,  3.73it/s]Testing DataLoader 0:   3%|3         | 19/561 [00:05<02:23,  3.77it/s]Testing DataLoader 0:   4%|3         | 20/561 [00:05<02:22,  3.79it/s]Testing DataLoader 0:   4%|3         | 21/561 [00:05<02:22,  3.80it/s]WARNING: No critical points found in batch. Skipping matching.
-WARNING: Skipping metric computation for batch (no fracture points).
-Testing DataLoader 0:   4%|3         | 22/561 [00:05<02:21,  3.82it/s]Testing DataLoader 0:   4%|4         | 23/561 [00:06<02:20,  3.82it/s]Testing DataLoader 0:   4%|4         | 24/561 [00:06<02:20,  3.83it/s]Testing DataLoader 0:   4%|4         | 25/561 [00:06<02:19,  3.84it/s]Testing DataLoader 0:   5%|4         | 26/561 [00:06<02:19,  3.85it/s]Testing DataLoader 0:   5%|4         | 27/561 [00:07<02:19,  3.84it/s]Testing DataLoader 0:   5%|4         | 28/561 [00:07<02:18,  3.85it/s]WARNING: No critical points found in batch. Skipping matching.
-WARNING: Skipping metric computation for batch (no fracture points).
-Testing DataLoader 0:   5%|5         | 29/561 [00:07<02:18,  3.85it/s]Testing DataLoader 0:   5%|5         | 30/561 [00:07<02:16,  3.89it/s]Testing DataLoader 0:   6%|5         | 31/561 [00:07<02:15,  3.92it/s]Testing DataLoader 0:   6%|5         | 32/561 [00:08<02:15,  3.91it/s]Testing DataLoader 0:   6%|5         | 33/561 [00:08<02:14,  3.91it/s]Testing DataLoader 0:   6%|6         | 34/561 [00:08<02:13,  3.95it/s]Testing DataLoader 0:   6%|6         | 35/561 [00:08<02:13,  3.94it/s]Testing DataLoader 0:   6%|6         | 36/561 [00:09<02:13,  3.94it/s]Testing DataLoader 0:   7%|6         | 37/561 [00:09<02:12,  3.95it/s]Testing DataLoader 0:   7%|6         | 38/561 [00:09<02:11,  3.98it/s]Testing DataLoader 0:   7%|6         | 39/561 [00:09<02:10,  3.99it/s]Testing DataLoader 0:   7%|7         | 40/561 [00:09<02:09,  4.01it/s]Testing DataLoader 0:   7%|7         | 41/561 [00:10<02:08,  4.03it/s]WARNING: No critical points found in batch. Skipping matching.
-WARNING: Skipping metric computation for batch (no fracture points).
-Testing DataLoader 0:   7%|7         | 42/561 [00:10<02:08,  4.03it/s]Testing DataLoader 0:   8%|7         | 43/561 [00:10<02:08,  4.03it/s]Testing DataLoader 0:   8%|7         | 44/561 [00:10<02:07,  4.06it/s]Testing DataLoader 0:   8%|8         | 45/561 [00:11<02:06,  4.06it/s]Testing DataLoader 0:   8%|8         | 46/561 [00:11<02:06,  4.07it/s]Testing DataLoader 0:   8%|8         | 47/561 [00:11<02:06,  4.08it/s]Testing DataLoader 0:   9%|8         | 48/561 [00:11<02:05,  4.08it/s]Testing DataLoader 0:   9%|8         | 49/561 [00:12<02:05,  4.08it/s]Testing DataLoader 0:   9%|8         | 50/561 [00:12<02:05,  4.08it/s]Testing DataLoader 0:   9%|9         | 51/561 [00:12<02:04,  4.08it/s]Testing DataLoader 0:   9%|9         | 52/561 [00:12<02:04,  4.10it/s]Testing DataLoader 0:   9%|9         | 53/561 [00:12<02:04,  4.10it/s]Testing DataLoader 0:  10%|9         | 54/561 [00:13<02:03,  4.11it/s]Testing DataLoader 0:  10%|9         | 55/561 [00:13<02:02,  4.13it/s]Testing DataLoader 0:  10%|9         | 56/561 [00:13<02:02,  4.13it/s]Testing DataLoader 0:  10%|#         | 57/561 [00:13<02:01,  4.13it/s]Testing DataLoader 0:  10%|#         | 58/561 [00:14<02:01,  4.13it/s]Testing DataLoader 0:  11%|#         | 59/561 [00:14<02:01,  4.13it/s]Testing DataLoader 0:  11%|#         | 60/561 [00:14<02:01,  4.12it/s]Testing DataLoader 0:  11%|#         | 61/561 [00:14<02:01,  4.12it/s]Testing DataLoader 0:  11%|#1        | 62/561 [00:15<02:01,  4.11it/s]Testing DataLoader 0:  11%|#1        | 63/561 [00:15<02:01,  4.11it/s]Testing DataLoader 0:  11%|#1        | 64/561 [00:15<02:00,  4.11it/s]Testing DataLoader 0:  12%|#1        | 65/561 [00:15<02:00,  4.10it/s]Testing DataLoader 0:  12%|#1        | 66/561 [00:16<02:00,  4.10it/s]Testing DataLoader 0:  12%|#1        | 67/561 [00:16<02:00,  4.10it/s]Testing DataLoader 0:  12%|#2        | 68/561 [00:16<02:00,  4.10it/s]Testing DataLoader 0:  12%|#2        | 69/561 [00:16<02:00,  4.10it/s]Testing DataLoader 0:  12%|#2        | 70/561 [00:17<01:59,  4.10it/s]Testing DataLoader 0:  13%|#2        | 71/561 [00:17<01:59,  4.09it/s]Testing DataLoader 0:  13%|#2        | 72/561 [00:17<01:59,  4.09it/s]Testing DataLoader 0:  13%|#3        | 73/561 [00:17<01:59,  4.09it/s]Testing DataLoader 0:  13%|#3        | 74/561 [00:18<01:59,  4.09it/s]Testing DataLoader 0:  13%|#3        | 75/561 [00:18<01:58,  4.08it/s]Testing DataLoader 0:  14%|#3        | 76/561 [00:18<01:58,  4.10it/s]Testing DataLoader 0:  14%|#3        | 77/561 [00:18<01:57,  4.11it/s]Testing DataLoader 0:  14%|#3        | 78/561 [00:19<01:58,  4.08it/s]Skipping corrupted sample 78: string is not a file: /workspace/everyday_all_2/Bottle_d74bc917899133e080c257afea181fa2_fractured_23_piece_0.obj
-Testing DataLoader 0:  14%|#4        | 79/561 [00:19<01:58,  4.07it/s]Testing DataLoader 0:  14%|#4        | 80/561 [00:19<01:57,  4.08it/s]Testing DataLoader 0:  14%|#4        | 81/561 [00:19<01:57,  4.09it/s]Testing DataLoader 0:  15%|#4        | 82/561 [00:20<01:57,  4.08it/s]Testing DataLoader 0:  15%|#4        | 83/561 [00:20<01:57,  4.08it/s]Testing DataLoader 0:  15%|#4        | 84/561 [00:20<01:56,  4.08it/s]Testing DataLoader 0:  15%|#5        | 85/561 [00:20<01:56,  4.08it/s]Testing DataLoader 0:  15%|#5        | 86/561 [00:21<01:56,  4.08it/s]Testing DataLoader 0:  16%|#5        | 87/561 [00:21<01:55,  4.09it/s]Testing DataLoader 0:  16%|#5        | 88/561 [00:21<01:55,  4.10it/s]Testing DataLoader 0:  16%|#5        | 89/561 [00:21<01:55,  4.09it/s]Testing DataLoader 0:  16%|#6        | 90/561 [00:21<01:55,  4.09it/s]Testing DataLoader 0:  16%|#6        | 91/561 [00:22<01:54,  4.09it/s]Done evaluation

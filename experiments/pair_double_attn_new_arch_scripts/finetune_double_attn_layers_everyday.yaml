@@ -1,0 +1,53 @@
+MODEL_NAME: jigsaw_finetune_everyday_pair_double_attn_new_arch
+MODULE: experiments
+
+PROJECT: jigsaw
+
+DATASET: breaking_bad.all_piece_matching
+
+# Adjust GPUS and BATCH_SIZE to your hardware
+# With 1 GPU: BATCH_SIZE 4 should work (model is ~25MB)
+# If you get OOM, try BATCH_SIZE 2
+GPUS: [0]
+BATCH_SIZE: 4
+FP16: false
+NUM_WORKERS: 8
+
+TRAIN:
+  NUM_EPOCHS: 100
+  LR: 0.0001
+  PAIR_LR_MULT: 10.0     # new layers (tf_self2, tf_cross2) get 0.0001*10 = 0.001
+  WEIGHT_DECAY: 0.
+  WARMUP_RATIO: 0.
+  LR_SCHEDULER: 'cosine'
+  LR_DECAY: 100.
+  VAL_EVERY: 5
+
+CALLBACK:
+  CHECKPOINT_MONITOR: val/mat_f1
+  CHECKPOINT_MODE: max
+
+DATA:
+  DATA_DIR: /workspace/everyday_all_2
+  SUBSET: everyday
+  DATA_FN: 'everyday.{}.txt'
+  MAX_NUM_PART: 20
+  NUM_PC_POINTS: 5000
+  SAMPLE_BY: area
+  MIN_PART_POINT: 30
+  FRACTURE_LABEL_THRESHOLD: 0.025
+
+MODEL:
+  USE_DOUBLE_ATTN: true
+  USE_PAIR_BIAS: true
+  PC_CLS_METHOD: multi
+  LOSS:
+    w_cls_loss: 1.0
+    w_mat_loss: 0.0
+    mat_epoch: 9
+    w_rig_loss: 0.0
+    rig_epoch: 199
+
+STATS: "./results/jigsaw_finetune_everyday_pair_double_attn_new_arch/stats/eval"
+
+WEIGHT_FILE: results/jigsaw_finetune_everyday_new_arch/model_save/modelepoch=069_weights.pt
