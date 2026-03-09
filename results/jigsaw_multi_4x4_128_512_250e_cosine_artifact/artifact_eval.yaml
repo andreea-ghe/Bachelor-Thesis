@@ -35,9 +35,10 @@ DATA:
 
 MODEL:
   USE_DOUBLE_ATTN: true
+  USE_PAIR_BIAS: true
   PC_CLS_METHOD: multi
 
-# STATS is for eval only
-STATS: "./results/jigsaw_finetune_everyday_new_arch/stats/eval"
+# STATS is for eval only — update WEIGHT_FILE after training completes
+STATS: "./results/jigsaw_finetune_everyday_pair_double_attn_new_arch/stats/eval"
 
-WEIGHT_FILE: results/jigsaw_finetune_everyday_new_arch/model_save/modelepoch=069.ckpt
+WEIGHT_FILE: results/jigsaw_finetune_everyday_pair_double_attn_new_arch/model_save/modelepoch=069.ckpt
