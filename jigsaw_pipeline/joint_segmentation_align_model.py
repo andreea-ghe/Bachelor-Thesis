@@ -349,9 +349,8 @@ class JointSegmentationAlignmentModel(MatchingBaseModel):
             else:
                 fracture_preds = data_dict['critical_label']
             
-            # early return during warm-up phase (before matching loss is activated)
-            if self.w_mat_loss == 0:
-                # only train segmentation in early epochs (before epoch 9) to stabilize segmentation training
+            # early return during training warm-up (before matching loss is activated)
+            if self.w_mat_loss == 0 and self.training:
                 return out_dict
 
 
@@ -499,7 +498,7 @@ class JointSegmentationAlignmentModel(MatchingBaseModel):
             'cls_f1': cls_f1_score
         })
 
-        if self.w_mat_loss == 0:
+        if self.w_mat_loss == 0 and self.training:
             zero = torch.tensor(0.0, device=self.device)
             loss_dict.update({
                 "loss": cls_loss,
