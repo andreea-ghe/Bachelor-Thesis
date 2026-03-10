@@ -195,7 +195,7 @@ config: !!python/object/new:easydict.EasyDict
     PROJECT: jigsaw
     RANDOM_SEED: 42
     STATISTIC_STEP: 100
-    STATS: ./results/jigsaw_finetune_everyday_pair_double_attn_new_arch/stats/eval
+    STATS: ./results/jigsaw_finetune_everyday_pair_double_attn/stats/eval
     TRAIN: &id013 !!python/object/new:easydict.EasyDict
       dictitems:
         CLIP_GRAD: null
@@ -235,7 +235,7 @@ config: !!python/object/new:easydict.EasyDict
         WEIGHT_DECAY: 0.0
         beta1: 0
         beta2: 0.9
-    WEIGHT_FILE: results/jigsaw_finetune_everyday_pair_double_attn_new_arch/model_save/modelepoch=069.ckpt
+    WEIGHT_FILE: results/jigsaw_finetune_everyday_pair_double_attn/model_save/modelepoch=069.ckpt
   state:
     BATCH_SIZE: 1
     CALLBACK: *id007
@@ -257,6 +257,6 @@ config: !!python/object/new:easydict.EasyDict
     PROJECT: jigsaw
     RANDOM_SEED: 42
     STATISTIC_STEP: 100
-    STATS: ./results/jigsaw_finetune_everyday_pair_double_attn_new_arch/stats/eval
+    STATS: ./results/jigsaw_finetune_everyday_pair_double_attn/stats/eval
     TRAIN: *id013
-    WEIGHT_FILE: results/jigsaw_finetune_everyday_pair_double_attn_new_arch/model_save/modelepoch=069.ckpt
+    WEIGHT_FILE: results/jigsaw_finetune_everyday_pair_double_attn/model_save/modelepoch=069.ckpt
