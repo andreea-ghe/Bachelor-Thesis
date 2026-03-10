@@ -10,9 +10,3 @@ Piece 1:
   Pred t = [-0.00307701  0.00335281 -0.28461457]
   GT   t = [-0.0027512   0.00586705 -0.29412395]
 ==================================================
-
-Saved to results/viz_output/
-  assembled.obj        - both pieces in predicted positions
-  ground_truth.obj     - both pieces in original positions
-  piece{0,1}_assembled.obj   - individual predicted pieces
-  piece{0,1}_ground_truth.obj - individual GT pieces
