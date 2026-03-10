@@ -72,6 +72,13 @@ if __name__ == "__main__":
     model = load_model(CONFIG)
     data_dict = prepare_pair(args.piece1, args.piece2, CONFIG)
 
+    # attach a minimal trainer so model.forward() can check self.trainer.testing
+    import pytorch_lightning as pl
+    from pytorch_lightning.trainer.states import TrainerFn, TrainerState, RunningStage
+    trainer = pl.Trainer(accelerator="gpu", devices=[0], logger=False, enable_progress_bar=False)
+    trainer.state = TrainerState(fn=TrainerFn.TESTING, stage=RunningStage.TESTING)
+    model.trainer = trainer
+
     with torch.no_grad():
         out_dict = model.forward(data_dict)
     pred_transforms = model.global_alignment(data_dict, out_dict)
