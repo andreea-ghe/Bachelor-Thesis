@@ -35,7 +35,7 @@ def set_equal_axes(ax, meshes):
         fn(center[i] - max_range, center[i] + max_range)
 
 
-def visualize(save_dir="results/viz_output/wine_glass"):
+def visualize(save_dir="results/viz_output/wine_glass_2"):
     p0_assembled = load_mesh(f"{save_dir}/piece0_assembled.obj")
     p1_assembled = load_mesh(f"{save_dir}/piece1_assembled.obj")
     p0_gt = load_mesh(f"{save_dir}/piece0_ground_truth.obj")
