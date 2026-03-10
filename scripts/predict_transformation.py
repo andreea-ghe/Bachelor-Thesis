@@ -165,10 +165,13 @@ if __name__ == "__main__":
     parser.add_argument("--piece1", required=True)
     parser.add_argument("--piece2", required=True)
     parser.add_argument("--save_dir", type=str, default="results/viz_output")
+    # parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility")
     args = parser.parse_args()
 
     config_from_file(args.cfg)
     torch.manual_seed(CONFIG.RANDOM_SEED)
+    # np.random.seed(args.seed)
+    # torch.manual_seed(args.seed)
 
     model = load_model(CONFIG)
     data_dict = prepare_pair(args.piece1, args.piece2, CONFIG)
