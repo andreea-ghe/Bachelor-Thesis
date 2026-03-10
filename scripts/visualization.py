@@ -13,7 +13,7 @@ import numpy as np
 import argparse
 import open3d as o3d
 
-from utilities.utils_config import CONFIG
+from utilities.utils_config import CONFIG, config_from_file
 from jigsaw_pipeline import build_jigsaw_model
 from jigsaw_pipeline.joint_segmentation_align_model import JointSegmentationAlignmentModel
 from dataset_preprocessing.fracture_pairs_dataset import FracturePairsDataset
@@ -66,7 +66,7 @@ if __name__ == "__main__":
     parser.add_argument("--save_dir", type=str, default="results/viz_output")
     args = parser.parse_args()
 
-    CONFIG.merge_from_file(args.cfg)
+    config_from_file(args.cfg)
     torch.manual_seed(CONFIG.RANDOM_SEED)
 
     model = load_model(CONFIG)
