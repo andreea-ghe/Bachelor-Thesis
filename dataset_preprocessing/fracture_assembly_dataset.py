@@ -471,3 +471,33 @@ def build_data_loaders(config):
         persistent_workers=(config.NUM_WORKERS > 0),
     )
     return train_loader, val_loader
+
+
+def build_test_loader(config):
+    """Build test dataloader for FractureAssemblyDataset (nested Breaking Bad format)."""
+    data_dict = {
+        'dataset_dir': config.DATA.DATA_DIR,
+        'split': config.DATA.DATA_FN.format('test'),
+        'additional_data': config.DATA.DATA_KEYS,
+        'num_points': config.DATA.NUM_PC_POINTS,
+        'min_num_points': config.DATA.MIN_PART_POINT,
+        'min_parts': config.DATA.MIN_NUM_PART,
+        'max_parts': config.DATA.MAX_NUM_PART,
+        'rot_range': config.DATA.ROT_RANGE,
+        'shuffle_parts': False,
+        'overfit': -1,
+        'length': config.DATA.TEST_LENGTH,
+        'fracture_label_threshold': config.DATA.FRACTURE_LABEL_THRESHOLD,
+    }
+
+    test_dataset = FractureAssemblyDataset(**data_dict)
+    test_loader = DataLoader(
+        dataset=test_dataset,
+        batch_size=config.BATCH_SIZE,
+        shuffle=False,
+        num_workers=config.NUM_WORKERS,
+        pin_memory=True,
+        drop_last=False,
+        persistent_workers=(config.NUM_WORKERS > 0),
+    )
+    return test_loader
