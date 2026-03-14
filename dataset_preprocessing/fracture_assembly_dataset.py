@@ -477,7 +477,7 @@ def build_test_loader(config):
     """Build test dataloader for FractureAssemblyDataset (nested Breaking Bad format)."""
     data_dict = {
         'dataset_dir': config.DATA.DATA_DIR,
-        'split': config.DATA.DATA_FN.format('test'),
+        'split': config.DATA.DATA_FN.format('val'),
         'additional_data': config.DATA.DATA_KEYS,
         'num_points': config.DATA.NUM_PC_POINTS,
         'min_num_points': config.DATA.MIN_PART_POINT,
