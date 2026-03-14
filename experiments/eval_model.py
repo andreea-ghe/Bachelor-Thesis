@@ -3,7 +3,7 @@ import torch
 torch.set_float32_matmul_precision('medium')
 import pytorch_lightning as pl
 from datetime import datetime
-from dataset_preprocessing import build_data_loaders, build_pairs_data_loaders, build_pairs_test_loader
+from dataset_preprocessing import build_pairs_test_loader
 from utilities.utils_stdout import DuplicateStdoutFileManager
 from utilities.utils_parse_args import parse_args
 from utilities.utils_config import CONFIG
