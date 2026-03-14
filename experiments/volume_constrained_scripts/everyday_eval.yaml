@@ -38,4 +38,4 @@ MODEL:
 # STATS is for eval only
 STATS: "./results/jigsaw_train_everyday_volume_constrained/stats/eval"
 
-WEIGHT_FILE: results/jigsaw_train_everyday_volume_constrained/model_save/last.ckpt
+WEIGHT_FILE: checkpoint/jigsaw_multi_4x4_128_512_250e_cosine_everyday.ckpt
