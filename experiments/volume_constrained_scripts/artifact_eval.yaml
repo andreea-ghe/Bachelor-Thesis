@@ -27,7 +27,7 @@ DATA:
   DATA_DIR: /workspace/artifact_volume_constrained
   SUBSET: artifact
   DATA_FN: 'artifact.{}.txt'
-  MAX_NUM_PART: 20
+  MAX_NUM_PART: 2
   NUM_PC_POINTS: 5000
   SAMPLE_BY: area
   MIN_PART_POINT: 30
