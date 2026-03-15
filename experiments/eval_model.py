@@ -4,7 +4,6 @@ torch.set_float32_matmul_precision('medium')
 import pytorch_lightning as pl
 from datetime import datetime
 from dataset_preprocessing.fracture_assembly_dataset import build_test_loader
-from dataset_preprocessing.fracture_pairs_dataset import build_pairs_test_loader
 from utilities.utils_stdout import DuplicateStdoutFileManager
 from utilities.utils_parse_args import parse_args
 from utilities.utils_config import CONFIG
@@ -39,7 +38,6 @@ def test_model(config):
 
     # Step 1: initialize test data loader
     # Uses the test split file (e.g. everyday.test.txt)
-    # test_loader = build_pairs_test_loader(config)
     test_loader = build_test_loader(config)
 
     # Step 2: initialize model architecture

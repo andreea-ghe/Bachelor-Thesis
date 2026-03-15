@@ -99,13 +99,13 @@ config: !!python/object/new:easydict.EasyDict
         - - 178
           - 76
           - 76
-        DATA_DIR: /workspace/artifact_all_2
+        DATA_DIR: /workspace/artifact 
         DATA_FN: artifact.{}.txt
         DATA_KEYS: &id004
         - part_ids
         FRACTURE_LABEL_THRESHOLD: 0.025
         LENGTH: -1
-        MAX_NUM_PART: 20
+        MAX_NUM_PART: 2
         MIN_NUM_PART: 2
         MIN_PART_POINT: 30
         NUM_PC_POINTS: 5000
@@ -119,12 +119,12 @@ config: !!python/object/new:easydict.EasyDict
         ALL_CATEGORY: *id002
         CATEGORY: ''
         COLORS: *id003
-        DATA_DIR: /workspace/artifact_all_2
+        DATA_DIR: /workspace/artifact
         DATA_FN: artifact.{}.txt
         DATA_KEYS: *id004
         FRACTURE_LABEL_THRESHOLD: 0.025
         LENGTH: -1
-        MAX_NUM_PART: 20
+        MAX_NUM_PART: 2
         MIN_NUM_PART: 2
         MIN_PART_POINT: 30
         NUM_PC_POINTS: 5000

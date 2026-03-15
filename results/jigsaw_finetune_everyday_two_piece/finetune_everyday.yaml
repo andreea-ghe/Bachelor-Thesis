@@ -26,10 +26,10 @@ CALLBACK:
   CHECKPOINT_MODE: max
 
 DATA:
-  DATA_DIR: /workspace/everyday_all_2
+  DATA_DIR: /workspace/everyday
   SUBSET: everyday
   DATA_FN: 'everyday.{}.txt'
-  MAX_NUM_PART: 20
+  MAX_NUM_PART: 2
   NUM_PC_POINTS: 5000
   SAMPLE_BY: area
   MIN_PART_POINT: 30

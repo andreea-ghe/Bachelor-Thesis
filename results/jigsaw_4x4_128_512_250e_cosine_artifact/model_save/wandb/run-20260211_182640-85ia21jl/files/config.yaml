@@ -227,7 +227,7 @@ config/DATA/COLORS:
     - 76
 config/DATA/DATA_DIR:
   desc: null
-  value: /home/dataset/artifact_all_2
+  value: /home/dataset/artifact
 config/DATA/DATA_FN:
   desc: null
   value: artifact.{}.txt
@@ -243,7 +243,7 @@ config/DATA/LENGTH:
   value: -1
 config/DATA/MAX_NUM_PART:
   desc: null
-  value: 20
+  value: 2
 config/DATA/MIN_NUM_PART:
   desc: null
   value: 2
