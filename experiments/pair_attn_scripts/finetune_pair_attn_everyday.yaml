@@ -1,4 +1,4 @@
-MODEL_NAME: jigsaw_finetune_everyday_pair_attn
+MODEL_NAME: jigsaw_finetune_everyday_pair_attn_correct_ds
 MODULE: experiments
 
 PROJECT: jigsaw
@@ -10,7 +10,7 @@ DATASET: breaking_bad.all_piece_matching
 # If you get OOM, try BATCH_SIZE 2
 GPUS: [0]
 BATCH_SIZE: 4
-NUM_WORKERS: 4
+NUM_WORKERS: 8
 
 TRAIN:
   NUM_EPOCHS: 100        # fine-tuning needs fewer epochs than training from scratch
@@ -50,4 +50,4 @@ MODEL:
 WEIGHT_FILE: checkpoint/jigsaw_multi_4x4_128_512_250e_cosine_everyday_weights.pt
 
 # STATS is for eval
-STATS: "./results/jigsaw_finetune_everyday_pair_attn/stats/eval"
+STATS: "./results/jigsaw_finetune_everyday_pair_attn_correct_ds/stats/eval"
