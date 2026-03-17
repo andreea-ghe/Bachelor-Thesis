@@ -38,6 +38,7 @@ DATA:
 
 MODEL:
   PC_CLS_METHOD: multi
+  USE_PAIR_BIAS: true
   LOSS:
     w_cls_loss: 1.0
     w_mat_loss: 1.0       # matching loss ON from epoch 0 (pre-trained model is ready)
