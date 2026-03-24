@@ -6,8 +6,8 @@ PROJECT: jigsaw
 DATASET: breaking_bad.all_piece_matching
 
 GPUS: [0]
-BATCH_SIZE: 4
-NUM_WORKERS: 8
+BATCH_SIZE: 1
+NUM_WORKERS: 16
 
 TRAIN:
   NUM_EPOCHS: 250
@@ -34,10 +34,10 @@ DATA:
   FRACTURE_LABEL_THRESHOLD: 0.025
 
 MODEL:
+  USE_DOUBLE_ATTN: true
   PC_CLS_METHOD: multi
 
 # STATS is for eval only
-STATS: "./results/jigsaw_finetune_everyday_two_piece/stats/eval"
+STATS: "./results/jigsaw_finetune_everyday_double_attn_correct_ds/stats/eval"
 
-# WEIGHT_FILE: results/jigsaw_finetune_everyday_two_piece/model_save/last.ckpt
-WEIGHT_FILE: results/jigsaw_finetune_everyday_two_piece_correct_ds/model_save/modelepoch=079.ckpt
+WEIGHT_FILE: results/jigsaw_finetune_everyday_double_attn_correct_ds/model_save/last.ckpt
