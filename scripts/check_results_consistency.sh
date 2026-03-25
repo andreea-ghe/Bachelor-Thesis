@@ -3,7 +3,7 @@
 cd /home/ndreeaheorghe/bachelor-thesis
 
 echo "=== Baseline Everyday (3 runs) ==="
-for i in {1..3}; do
+for i in {1..1}; do
   echo "--- Run $i/3 ---"
   python -m experiments.eval_model --cfg experiments/two_piece_scripts/everyday_eval.yaml
 done
@@ -15,7 +15,7 @@ done
 # done
 
 echo "=== Pair Attn Everyday (3 runs) ==="
-for i in {1..3}; do
+for i in {1..1}; do
   echo "--- Run $i/3 ---"
   python -m experiments.eval_model --cfg experiments/pair_attn_scripts/everyday_eval.yaml
 done
@@ -27,7 +27,7 @@ done
 # done
 
 echo "=== Double Attn Layers Everyday (3 runs) ==="
-for i in {1..3}; do
+for i in {1..1}; do
   echo "--- Run $i/3 ---"
   python -m experiments.eval_model --cfg experiments/double_attn_scripts/everyday_eval.yaml
 done
