@@ -1,4 +1,4 @@
-MODEL_NAME: jigsaw_multi_4x4_128_512_250e_cosine_everyday
+MODEL_NAME: jigsaw_finetune_multi_everyday_double_attn_correct_ds
 MODULE: experiments
 
 PROJECT: jigsaw
@@ -6,8 +6,8 @@ PROJECT: jigsaw
 DATASET: breaking_bad.all_piece_matching
 
 GPUS: [0]
-BATCH_SIZE: 4
-NUM_WORKERS: 8
+BATCH_SIZE: 1
+NUM_WORKERS: 16
 
 TRAIN:
   NUM_EPOCHS: 200
@@ -26,7 +26,7 @@ DATA:
   DATA_DIR: /workspace/everyday
   SUBSET: everyday
   DATA_FN: 'everyday.{}.txt'
-  MAX_NUM_PART: 2
+  MAX_NUM_PART: 4
   NUM_PC_POINTS: 5000
   SAMPLE_BY: area
   MIN_PART_POINT: 30
@@ -34,10 +34,10 @@ DATA:
   FRACTURE_LABEL_THRESHOLD: 0.025
 
 MODEL:
+  USE_DOUBLE_ATTN: true
   PC_CLS_METHOD: multi
 
 # STATS is for eval only
-STATS: "./results/jigsaw_finetune_everyday_two_piece_correct_ds/stats/eval_multi_piece"
+STATS: "./results/jigsaw_finetune_multi_everyday_double_attn_correct_ds/stats/eval"
 
-# WEIGHT_FILE: results/jigsaw_finetune_everyday_two_piece/model_save/last.ckpt
-WEIGHT_FILE: results/jigsaw_finetune_everyday_two_piece_correct_ds/model_save/modelepoch=079.ckpt
+WEIGHT_FILE: results/jigsaw_finetune_multi_everyday_double_attn_correct_ds/model_save/last.ckpt
