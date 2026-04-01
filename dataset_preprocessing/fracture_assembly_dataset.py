@@ -55,7 +55,8 @@ class FractureAssemblyDataset(Dataset):
             if self.shuffle_parts:
                 print("Shuffling dataset indices.")
                 pos = list(range(len(self.data_list)))
-                random.shuffle(pos)
+                rng = random.Random(42)
+                rng.shuffle(pos)
                 self.data_list = [self.data_list[i] for i in pos]
         else:
             self.length = len(self.data_list)
@@ -475,6 +476,7 @@ def build_data_loaders(config):
 
 def build_test_loader(config):
     """Build test dataloader for FractureAssemblyDataset (nested Breaking Bad format)."""
+    shuffle_before_truncate = (config.DATA.TEST_LENGTH > 0)
     data_dict = {
         'dataset_dir': config.DATA.DATA_DIR,
         'split': config.DATA.DATA_FN.format('val'),
@@ -484,7 +486,7 @@ def build_test_loader(config):
         'min_parts': config.DATA.MIN_NUM_PART,
         'max_parts': config.DATA.MAX_NUM_PART,
         'rot_range': config.DATA.ROT_RANGE,
-        'shuffle_parts': False,
+        'shuffle_parts': shuffle_before_truncate,
         'overfit': -1,
         'length': config.DATA.TEST_LENGTH,
         'fracture_label_threshold': config.DATA.FRACTURE_LABEL_THRESHOLD,
