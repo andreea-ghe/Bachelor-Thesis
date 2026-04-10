@@ -168,10 +168,14 @@ class MatchingBaseModel(pytorch_lightning.LightningModule):
             for k in outputs[0] if k != 'batch_size'
         }
         
-        # compute weighted averages
-        avg_loss = {
-            k: (v * batch_sizes).sum() / batch_sizes.sum() for k, v in losses.items()
-        }
+        # compute weighted averages, ignoring NaN values from failed alignments
+        avg_loss = {}
+        for k, v in losses.items():
+            valid = ~torch.isnan(v)
+            if valid.any():
+                avg_loss[k] = (v[valid] * batch_sizes[valid]).sum() / batch_sizes[valid].sum()
+            else:
+                avg_loss[k] = torch.tensor(float('nan'))
 
         # print final metrics (PA, RE, TE, CD)
         print('; '.join([f'{k}: {v.item():.6f}' for k, v in avg_loss.items()]))

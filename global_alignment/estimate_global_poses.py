@@ -173,7 +173,10 @@ def global_transform(pred_match_matrix, part_pcs, n_valid, n_pcs, critical_point
                 edges.append(np.array([idx2, idx1]))
                 rigid_transform = np.eye(4)
                 matchin1, matching2 = np.nonzero(match_submatrix)
-                rigid_transform[:3, 3] = np.mean(critical_target_points[matching2], axis=0) - np.mean(critical_source_points[matchin1], axis=0)
+                if len(matchin1) > 0:
+                    rigid_transform[:3, 3] = np.mean(critical_target_points[matching2], axis=0) - np.mean(critical_source_points[matchin1], axis=0)
+                else:
+                    rigid_transform[:3, 3] = np.mean(critical_target_points, axis=0) - np.mean(critical_source_points, axis=0)
                 
                 source_pcd = o3d.geometry.PointCloud()
                 source_pcd.points = o3d.utility.Vector3dVector(critical_source_points)
