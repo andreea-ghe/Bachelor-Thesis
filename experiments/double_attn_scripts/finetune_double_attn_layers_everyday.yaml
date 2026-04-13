@@ -1,4 +1,4 @@
-MODEL_NAME: jigsaw_finetune_everyday_double_attn_correct_ds
+MODEL_NAME: jigsaw_finetune_everyday_double_attn_correct_ds_correct_params
 MODULE: experiments
 
 PROJECT: jigsaw
@@ -47,8 +47,8 @@ MODEL:
     w_rig_loss: 1.0
     rig_epoch: 30
 
-STATS: "./results/jigsaw_finetune_everyday_double_attn_correct_ds/stats/eval"
+STATS: "./results/jigsaw_finetune_everyday_double_attn_correct_ds_correct_params/stats/eval"
 
 # WEIGHT_FILE not set → train_model.py auto-resumes from latest checkpoint in model_save/
 # To start fresh from pretrained: uncomment below
-# WEIGHT_FILE: checkpoint/jigsaw_multi_4x4_128_512_250e_cosine_everyday_weights.pt
+WEIGHT_FILE: checkpoint/jigsaw_multi_4x4_128_512_250e_cosine_everyday_weights.pt
