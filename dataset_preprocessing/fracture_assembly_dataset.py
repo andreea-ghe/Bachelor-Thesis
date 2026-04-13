@@ -366,7 +366,7 @@ class FractureAssemblyDataset(Dataset):
         # Handle corrupted mesh files by skipping to next valid sample
         try:
             point_clouds, piece_ids, nr_points_per_piece, areas = self._load_point_clouds(self.data_list[index])
-        except ValueError as e:
+        except (ValueError, FileNotFoundError) as e:
             print(f"Skipping corrupted sample {index}: {e}")
             return self.__getitem__((index + 1) % len(self.data_list))
         num_parts = len(point_clouds)
