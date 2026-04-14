@@ -1,0 +1,593 @@
+MODEL_NAME: jigsaw_finetune_everyday_double_attn_correct_ds_correct_params
+MODULE: experiments
+BATCH_SIZE: 4
+NUM_WORKERS: 8
+LOG_FILE_NAME: 
+MODEL_SAVE_PATH: results/jigsaw_finetune_everyday_double_attn_correct_ds_correct_params/model_save
+DATASET: breaking_bad.all_piece_matching
+PROJECT: jigsaw
+TRAIN:
+  NUM_EPOCHS: 100
+  OPTIMIZER: SGD
+  LR: 0.0001
+  PAIR_LR_MULT: 10.0
+  LR_SCHEDULER: cosine
+  LR_DECAY: 100.0
+  LR_STEP: [10, 20]
+  WARMUP_RATIO: 0.0
+  CLIP_GRAD: None
+  beta1: 0
+  beta2: 0.9
+  WEIGHT_DECAY: 0.0
+  MOMENTUM: 0.9
+  VAL_EVERY: 5
+  VIS: True
+  VAL_SAMPLE_VIS: 5
+  LOSS: 
+CALLBACK:
+  MATCHING_TASK: ['trans']
+  CHECKPOINT_MONITOR: val/mat_f1
+  CHECKPOINT_MODE: max
+LOSS:
+EVAL:
+GPUS: [0]
+PARALLEL_STRATEGY: ddp
+FP16: False
+CUDNN: False
+WEIGHT_FILE: checkpoint/jigsaw_multi_4x4_128_512_250e_cosine_everyday_weights.pt
+OUTPUT_PATH: results/jigsaw_finetune_everyday_double_attn_correct_ds_correct_params
+STATISTIC_STEP: 100
+RANDOM_SEED: 42
+STATS: ./results/jigsaw_finetune_everyday_double_attn_correct_ds_correct_params/stats/eval
+MODEL:
+  ROT_TYPE: rmat
+  PC_FEAT_DIM: 128
+  AFF_FEAT_DIM: 512
+  AFFINITY: aff_dual
+  ENCODER: pointnet2_pt.msg.dynamic
+  TEST_S_MASK: True
+  PC_CLS_METHOD: multi
+  PC_NUM_CLS: 2
+  SINKHORN_MAXITER: 20
+  SINKHORN_TAU: 0.05
+  TF_NUM_HEADS: 8
+  TF_NUM_SAMPLE: 16
+  USE_PAIR_BIAS: False
+  USE_DOUBLE_ATTN: True
+  LOSS:
+    w_cls_loss: 1.0
+    w_mat_loss: 1.0
+    mat_epoch: 0
+    w_rig_loss: 1.0
+    rig_epoch: 30
+DATA:
+  DATA_DIR: /workspace
+  DATA_FN: everyday.{}.txt
+  DATA_KEYS: ('part_ids',)
+  SUBSET: everyday
+  CATEGORY: 
+  ALL_CATEGORY: ['BeerBottle', 'Bowl', 'Cup', 'DrinkingUtensil', 'Mug', 'Plate', 'Spoon', 'Teacup', 'ToyFigure', 'WineBottle', 'Bottle', 'Cookie', 'DrinkBottle', 'Mirror', 'PillBottle', 'Ring', 'Statue', 'Teapot', 'Vase', 'WineGlass']
+  ROT_RANGE: -1.0
+  NUM_PC_POINTS: 5000
+  MIN_PART_POINT: 30
+  MIN_NUM_PART: 2
+  MAX_NUM_PART: 2
+  SHUFFLE_PARTS: False
+  SAMPLE_BY: area
+  LENGTH: -1
+  TEST_LENGTH: -1
+  OVERFIT: -1
+  FRACTURE_LABEL_THRESHOLD: 0.025
+  COLORS: [[0, 204, 0], [204, 0, 0], [0, 0, 204], [127, 127, 0], [127, 0, 127], [0, 127, 127], [76, 153, 0], [153, 0, 76], [76, 0, 153], [153, 76, 0], [76, 0, 153], [153, 0, 76], [204, 51, 127], [204, 51, 127], [51, 204, 127], [51, 127, 204], [127, 51, 204], [127, 204, 51], [76, 76, 178], [76, 178, 76], [178, 76, 76]]
+Dataset length: 634
+WARNING: 40 missing keys when loading weights
+Finish Setting -----
+Skipping corrupted sample 0: [Errno 2] No such file or directory: '/workspace/everyday/BeerBottle/e8b48d395d3d8744e53e6e0633163da8/mode_1'
+Skipping corrupted sample 8: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/6642f712146b65d959aed18156aac466/fractured_68'
+Skipping corrupted sample 24: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/74221bae887b0e801ab89e10ca4a3aec/fractured_77'
+Skipping corrupted sample 9: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/6642f712146b65d959aed18156aac466/fractured_78'
+Testing: |          | 0/? [00:00<?, ?it/s]Skipping corrupted sample 9: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/6642f712146b65d959aed18156aac466/fractured_78'
+Skipping corrupted sample 22: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/74221bae887b0e801ab89e10ca4a3aec/fractured_62'
+Skipping corrupted sample 31: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/81bbf3134d1ca27a58449bd132e3a3fe/fractured_57'
+Skipping corrupted sample 23: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/74221bae887b0e801ab89e10ca4a3aec/fractured_72'
+Skipping corrupted sample 32: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/81bbf3134d1ca27a58449bd132e3a3fe/fractured_58'
+Skipping corrupted sample 24: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/74221bae887b0e801ab89e10ca4a3aec/fractured_77'
+Skipping corrupted sample 33: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/81bbf3134d1ca27a58449bd132e3a3fe/fractured_63'
+Skipping corrupted sample 34: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/81bbf3134d1ca27a58449bd132e3a3fe/fractured_64'
+Skipping corrupted sample 35: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/81bbf3134d1ca27a58449bd132e3a3fe/fractured_65'
+Skipping corrupted sample 36: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/81bbf3134d1ca27a58449bd132e3a3fe/fractured_68'
+Skipping corrupted sample 37: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/81bbf3134d1ca27a58449bd132e3a3fe/fractured_75'
+Skipping corrupted sample 38: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/81bbf3134d1ca27a58449bd132e3a3fe/fractured_77'
+Skipping corrupted sample 23: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/74221bae887b0e801ab89e10ca4a3aec/fractured_72'
+Skipping corrupted sample 24: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/74221bae887b0e801ab89e10ca4a3aec/fractured_77'
+Skipping corrupted sample 52: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/ec42773c595dc08e4d678187b8261d95/mode_2'
+Skipping corrupted sample 53: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/f6de2a85da0e89b53f222a37719e9945/mode_1'
+Skipping corrupted sample 54: [Errno 2] No such file or directory: '/workspace/everyday/Bowl/4/mode_1'
+Skipping corrupted sample 32: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/81bbf3134d1ca27a58449bd132e3a3fe/fractured_58'
+Skipping corrupted sample 33: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/81bbf3134d1ca27a58449bd132e3a3fe/fractured_63'
+Skipping corrupted sample 36: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/81bbf3134d1ca27a58449bd132e3a3fe/fractured_68'
+Skipping corrupted sample 34: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/81bbf3134d1ca27a58449bd132e3a3fe/fractured_64'
+Skipping corrupted sample 35: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/81bbf3134d1ca27a58449bd132e3a3fe/fractured_65'
+Skipping corrupted sample 36: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/81bbf3134d1ca27a58449bd132e3a3fe/fractured_68'
+Skipping corrupted sample 37: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/81bbf3134d1ca27a58449bd132e3a3fe/fractured_75'
+Skipping corrupted sample 38: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/81bbf3134d1ca27a58449bd132e3a3fe/fractured_77'
+Testing:   0%|          | 0/159 [00:00<?, ?it/s]Testing DataLoader 0:   0%|          | 0/159 [00:00<?, ?it/s]Skipping corrupted sample 53: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/f6de2a85da0e89b53f222a37719e9945/mode_1'
+Skipping corrupted sample 54: [Errno 2] No such file or directory: '/workspace/everyday/Bowl/4/mode_1'
+Skipping corrupted sample 37: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/81bbf3134d1ca27a58449bd132e3a3fe/fractured_75'
+Skipping corrupted sample 38: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/81bbf3134d1ca27a58449bd132e3a3fe/fractured_77'
+Skipping corrupted sample 44: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/8309e710832c07f91082f2ea630bf69e/fractured_9'
+Skipping corrupted sample 33: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/81bbf3134d1ca27a58449bd132e3a3fe/fractured_63'
+Skipping corrupted sample 34: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/81bbf3134d1ca27a58449bd132e3a3fe/fractured_64'
+Skipping corrupted sample 35: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/81bbf3134d1ca27a58449bd132e3a3fe/fractured_65'
+Skipping corrupted sample 36: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/81bbf3134d1ca27a58449bd132e3a3fe/fractured_68'
+Skipping corrupted sample 37: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/81bbf3134d1ca27a58449bd132e3a3fe/fractured_75'
+Skipping corrupted sample 38: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/81bbf3134d1ca27a58449bd132e3a3fe/fractured_77'
+Skipping corrupted sample 54: [Errno 2] No such file or directory: '/workspace/everyday/Bowl/4/mode_1'
+Skipping corrupted sample 37: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/81bbf3134d1ca27a58449bd132e3a3fe/fractured_75'
+Skipping corrupted sample 38: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/81bbf3134d1ca27a58449bd132e3a3fe/fractured_77'
+Skipping corrupted sample 34: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/81bbf3134d1ca27a58449bd132e3a3fe/fractured_64'
+Skipping corrupted sample 35: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/81bbf3134d1ca27a58449bd132e3a3fe/fractured_65'
+Skipping corrupted sample 36: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/81bbf3134d1ca27a58449bd132e3a3fe/fractured_68'
+Skipping corrupted sample 37: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/81bbf3134d1ca27a58449bd132e3a3fe/fractured_75'
+Skipping corrupted sample 38: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/81bbf3134d1ca27a58449bd132e3a3fe/fractured_77'
+Skipping corrupted sample 38: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/81bbf3134d1ca27a58449bd132e3a3fe/fractured_77'
+Skipping corrupted sample 42: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/8309e710832c07f91082f2ea630bf69e/fractured_57'
+Skipping corrupted sample 43: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/8309e710832c07f91082f2ea630bf69e/fractured_62'
+Skipping corrupted sample 44: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/8309e710832c07f91082f2ea630bf69e/fractured_9'
+Skipping corrupted sample 35: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/81bbf3134d1ca27a58449bd132e3a3fe/fractured_65'
+Skipping corrupted sample 36: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/81bbf3134d1ca27a58449bd132e3a3fe/fractured_68'
+Skipping corrupted sample 37: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/81bbf3134d1ca27a58449bd132e3a3fe/fractured_75'
+Skipping corrupted sample 38: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/81bbf3134d1ca27a58449bd132e3a3fe/fractured_77'
+Skipping corrupted sample 49: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/8efea19de0ce5bf51ca3ed9192f044dd/fractured_53'
+Skipping corrupted sample 50: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/8efea19de0ce5bf51ca3ed9192f044dd/fractured_72'
+Skipping corrupted sample 51: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/c5eb3234b73037562825656dc457df78/mode_1'
+Skipping corrupted sample 52: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/ec42773c595dc08e4d678187b8261d95/mode_2'
+Skipping corrupted sample 53: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/f6de2a85da0e89b53f222a37719e9945/mode_1'
+Skipping corrupted sample 54: [Errno 2] No such file or directory: '/workspace/everyday/Bowl/4/mode_1'
+Skipping corrupted sample 50: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/8efea19de0ce5bf51ca3ed9192f044dd/fractured_72'
+Skipping corrupted sample 51: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/c5eb3234b73037562825656dc457df78/mode_1'
+Skipping corrupted sample 52: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/ec42773c595dc08e4d678187b8261d95/mode_2'
+Skipping corrupted sample 53: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/f6de2a85da0e89b53f222a37719e9945/mode_1'
+Skipping corrupted sample 54: [Errno 2] No such file or directory: '/workspace/everyday/Bowl/4/mode_1'
+Skipping corrupted sample 43: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/8309e710832c07f91082f2ea630bf69e/fractured_62'
+Skipping corrupted sample 44: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/8309e710832c07f91082f2ea630bf69e/fractured_9'
+Skipping corrupted sample 51: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/c5eb3234b73037562825656dc457df78/mode_1'
+Skipping corrupted sample 52: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/ec42773c595dc08e4d678187b8261d95/mode_2'
+Skipping corrupted sample 53: [Errno 2] No such file or directory: '/workspace/everyday/Bottle/f6de2a85da0e89b53f222a37719e9945/mode_1'
+Skipping corrupted sample 54: [Errno 2] No such file or directory: '/workspace/everyday/Bowl/4/mode_1'
+Testing DataLoader 0:   1%|          | 1/159 [00:01<03:58,  0.66it/s]Testing DataLoader 0:   1%|1         | 2/159 [00:02<02:45,  0.95it/s]Skipping corrupted sample 72: [Errno 2] No such file or directory: '/workspace/everyday/Bowl/4417f06a1a1d213f4b6cec3185574478/fractured_9'
+Skipping corrupted sample 73: [Errno 2] No such file or directory: '/workspace/everyday/Bowl/5/mode_1'
+Skipping corrupted sample 73: [Errno 2] No such file or directory: '/workspace/everyday/Bowl/5/mode_1'
+Testing DataLoader 0:   2%|1         | 3/159 [00:02<02:32,  1.02it/s]Testing DataLoader 0:   3%|2         | 4/159 [00:03<02:28,  1.04it/s]Skipping corrupted sample 82: [Errno 2] No such file or directory: '/workspace/everyday/Bowl/6a772d12b98ab61dc26651d9d35b77ca/fractured_73'
+Testing DataLoader 0:   3%|3         | 5/159 [00:04<02:25,  1.06it/s]WARNING: Skipping metric computation for 1 objects (no fracture points).
+Testing DataLoader 0:   4%|3         | 6/159 [00:05<02:20,  1.09it/s]Testing DataLoader 0:   4%|4         | 7/159 [00:06<02:13,  1.14it/s]Skipping corrupted sample 92: [Errno 2] No such file or directory: '/workspace/everyday/Bowl/7ebbe5e7d05da436f926435cc723d8ad/fractured_65'
+Skipping corrupted sample 93: [Errno 2] No such file or directory: '/workspace/everyday/Bowl/7ebbe5e7d05da436f926435cc723d8ad/fractured_77'
+Skipping corrupted sample 94: [Errno 2] No such file or directory: '/workspace/everyday/Bowl/8eab5598b81afd7bab5b523beb03efcd/mode_3'
+Skipping corrupted sample 95: [Errno 2] No such file or directory: '/workspace/everyday/Cup/5d034d08b3afb0054212ff51b27f0221/mode_2'
+Skipping corrupted sample 93: [Errno 2] No such file or directory: '/workspace/everyday/Bowl/7ebbe5e7d05da436f926435cc723d8ad/fractured_77'
+Skipping corrupted sample 94: [Errno 2] No such file or directory: '/workspace/everyday/Bowl/8eab5598b81afd7bab5b523beb03efcd/mode_3'
+Skipping corrupted sample 95: [Errno 2] No such file or directory: '/workspace/everyday/Cup/5d034d08b3afb0054212ff51b27f0221/mode_2'
+Skipping corrupted sample 94: [Errno 2] No such file or directory: '/workspace/everyday/Bowl/8eab5598b81afd7bab5b523beb03efcd/mode_3'
+Skipping corrupted sample 95: [Errno 2] No such file or directory: '/workspace/everyday/Cup/5d034d08b3afb0054212ff51b27f0221/mode_2'
+Skipping corrupted sample 95: [Errno 2] No such file or directory: '/workspace/everyday/Cup/5d034d08b3afb0054212ff51b27f0221/mode_2'
+Testing DataLoader 0:   5%|5         | 8/159 [00:06<02:07,  1.19it/s]Testing DataLoader 0:   6%|5         | 9/159 [00:07<02:05,  1.19it/s]Testing DataLoader 0:   6%|6         | 10/159 [00:08<02:02,  1.21it/s]Testing DataLoader 0:   7%|6         | 11/159 [00:09<02:06,  1.17it/s]Testing DataLoader 0:   8%|7         | 12/159 [00:10<02:11,  1.12it/s]Testing DataLoader 0:   8%|8         | 13/159 [00:11<02:11,  1.11it/s]Testing DataLoader 0:   9%|8         | 14/159 [00:12<02:11,  1.11it/s]Testing DataLoader 0:   9%|9         | 15/159 [00:13<02:10,  1.10it/s]Testing DataLoader 0:  10%|#         | 16/159 [00:14<02:09,  1.10it/s]Testing DataLoader 0:  11%|#         | 17/159 [00:15<02:09,  1.10it/s]Skipping corrupted sample 132: [Errno 2] No such file or directory: '/workspace/everyday/Cup/97aa1929318460e69dfbd41352e3517a/fractured_8'
+Skipping corrupted sample 133: [Errno 2] No such file or directory: '/workspace/everyday/Cup/d8ea3aa39bcb162798910e50f05b8001/mode_1'
+Skipping corrupted sample 133: [Errno 2] No such file or directory: '/workspace/everyday/Cup/d8ea3aa39bcb162798910e50f05b8001/mode_1'
+Testing DataLoader 0:  11%|#1        | 18/159 [00:16<02:08,  1.10it/s]Testing DataLoader 0:  12%|#1        | 19/159 [00:17<02:09,  1.08it/s]Testing DataLoader 0:  13%|#2        | 20/159 [00:18<02:09,  1.07it/s]Testing DataLoader 0:  13%|#3        | 21/159 [00:19<02:09,  1.06it/s]Testing DataLoader 0:  14%|#3        | 22/159 [00:20<02:10,  1.05it/s]Testing DataLoader 0:  14%|#4        | 23/159 [00:21<02:09,  1.05it/s]Testing DataLoader 0:  15%|#5        | 24/159 [00:22<02:06,  1.06it/s]Testing DataLoader 0:  16%|#5        | 25/159 [00:23<02:05,  1.07it/s]Testing DataLoader 0:  16%|#6        | 26/159 [00:24<02:03,  1.07it/s]Skipping corrupted sample 171: [Errno 2] No such file or directory: '/workspace/everyday/DrinkingUtensil/f2a6dba44fcb7ca030612f5c0ef21eb8/mode_1'
+Skipping corrupted sample 172: [Errno 2] No such file or directory: '/workspace/everyday/DrinkingUtensil/fad118b32085f3f2c2c72e575af174cd/mode_1'
+Testing DataLoader 0:  17%|#6        | 27/159 [00:25<02:03,  1.07it/s]Skipping corrupted sample 172: [Errno 2] No such file or directory: '/workspace/everyday/DrinkingUtensil/fad118b32085f3f2c2c72e575af174cd/mode_1'
+Testing DataLoader 0:  18%|#7        | 28/159 [00:26<02:02,  1.07it/s]Testing DataLoader 0:  18%|#8        | 29/159 [00:27<02:01,  1.07it/s]Testing DataLoader 0:  19%|#8        | 30/159 [00:28<02:00,  1.07it/s]Testing DataLoader 0:  19%|#9        | 31/159 [00:29<02:00,  1.06it/s]Skipping corrupted sample 191: [Errno 2] No such file or directory: '/workspace/everyday/Mirror/1c0332c81b3edba835836c728d324152/mode_1'
+Testing DataLoader 0:  20%|##        | 32/159 [00:30<02:01,  1.05it/s]Testing DataLoader 0:  21%|##        | 33/159 [00:31<02:00,  1.05it/s]Testing DataLoader 0:  21%|##1       | 34/159 [00:32<01:58,  1.06it/s]Skipping corrupted sample 202: [Errno 2] No such file or directory: '/workspace/everyday/Mirror/b5787ebfe1c5b31f68661782af60b711/fractured_61'
+Skipping corrupted sample 203: [Errno 2] No such file or directory: '/workspace/everyday/Mirror/b5787ebfe1c5b31f68661782af60b711/fractured_78'
+Skipping corrupted sample 203: [Errno 2] No such file or directory: '/workspace/everyday/Mirror/b5787ebfe1c5b31f68661782af60b711/fractured_78'
+Testing DataLoader 0:  22%|##2       | 35/159 [00:32<01:56,  1.07it/s]Testing DataLoader 0:  23%|##2       | 36/159 [00:33<01:54,  1.07it/s]Skipping corrupted sample 210: [Errno 2] No such file or directory: '/workspace/everyday/Mirror/be043d6628d885891fc56912e22744f/fractured_5'
+Testing DataLoader 0:  23%|##3       | 37/159 [00:34<01:53,  1.08it/s]Skipping corrupted sample 213: [Errno 2] No such file or directory: '/workspace/everyday/Mirror/be043d6628d885891fc56912e22744f/fractured_65'
+Skipping corrupted sample 214: [Errno 2] No such file or directory: '/workspace/everyday/Mirror/be043d6628d885891fc56912e22744f/fractured_75'
+Skipping corrupted sample 215: [Errno 2] No such file or directory: '/workspace/everyday/Mirror/be043d6628d885891fc56912e22744f/fractured_76'
+Skipping corrupted sample 216: [Errno 2] No such file or directory: '/workspace/everyday/Mirror/be043d6628d885891fc56912e22744f/fractured_79'
+Skipping corrupted sample 214: [Errno 2] No such file or directory: '/workspace/everyday/Mirror/be043d6628d885891fc56912e22744f/fractured_75'
+Skipping corrupted sample 215: [Errno 2] No such file or directory: '/workspace/everyday/Mirror/be043d6628d885891fc56912e22744f/fractured_76'
+Skipping corrupted sample 216: [Errno 2] No such file or directory: '/workspace/everyday/Mirror/be043d6628d885891fc56912e22744f/fractured_79'
+Skipping corrupted sample 215: [Errno 2] No such file or directory: '/workspace/everyday/Mirror/be043d6628d885891fc56912e22744f/fractured_76'
+Skipping corrupted sample 216: [Errno 2] No such file or directory: '/workspace/everyday/Mirror/be043d6628d885891fc56912e22744f/fractured_79'
+Testing DataLoader 0:  24%|##3       | 38/159 [00:35<01:53,  1.07it/s]Skipping corrupted sample 216: [Errno 2] No such file or directory: '/workspace/everyday/Mirror/be043d6628d885891fc56912e22744f/fractured_79'
+Testing DataLoader 0:  25%|##4       | 39/159 [00:36<01:52,  1.07it/s]Testing DataLoader 0:  25%|##5       | 40/159 [00:37<01:50,  1.08it/s]Testing DataLoader 0:  26%|##5       | 41/159 [00:38<01:50,  1.07it/s]Testing DataLoader 0:  26%|##6       | 42/159 [00:39<01:48,  1.08it/s]Testing DataLoader 0:  27%|##7       | 43/159 [00:39<01:47,  1.08it/s]Skipping corrupted sample 237: [Errno 2] No such file or directory: '/workspace/everyday/Mug/48e260a614c0fd4434a8988fdcee4fde/fractured_77'
+Skipping corrupted sample 238: [Errno 2] No such file or directory: '/workspace/everyday/Mug/48e260a614c0fd4434a8988fdcee4fde/fractured_8'
+Skipping corrupted sample 239: [Errno 2] No such file or directory: '/workspace/everyday/Mug/6aec84952a5ffcf33f60d03e1cb068dc/mode_1'
+Skipping corrupted sample 238: [Errno 2] No such file or directory: '/workspace/everyday/Mug/48e260a614c0fd4434a8988fdcee4fde/fractured_8'
+Skipping corrupted sample 239: [Errno 2] No such file or directory: '/workspace/everyday/Mug/6aec84952a5ffcf33f60d03e1cb068dc/mode_1'
+Skipping corrupted sample 239: [Errno 2] No such file or directory: '/workspace/everyday/Mug/6aec84952a5ffcf33f60d03e1cb068dc/mode_1'
+Testing DataLoader 0:  28%|##7       | 44/159 [00:40<01:46,  1.08it/s]Testing DataLoader 0:  28%|##8       | 45/159 [00:41<01:45,  1.08it/s]Testing DataLoader 0:  29%|##8       | 46/159 [00:42<01:44,  1.08it/s]Skipping corrupted sample 249: [Errno 2] No such file or directory: '/workspace/everyday/Mug/b88bcf33f25c6cb15b4f129f868dedb/fractured_68'
+Testing DataLoader 0:  30%|##9       | 47/159 [00:43<01:43,  1.09it/s]Testing DataLoader 0:  30%|###       | 48/159 [00:44<01:42,  1.09it/s]Testing DataLoader 0:  31%|###       | 49/159 [00:45<01:41,  1.08it/s]Skipping corrupted sample 260: [Errno 2] No such file or directory: '/workspace/everyday/Mug/ba10400c108e5c3f54e1b6f41fdd78a/fractured_63'
+Skipping corrupted sample 261: [Errno 2] No such file or directory: '/workspace/everyday/Mug/ba10400c108e5c3f54e1b6f41fdd78a/fractured_64'
+Skipping corrupted sample 262: [Errno 2] No such file or directory: '/workspace/everyday/Mug/ba10400c108e5c3f54e1b6f41fdd78a/fractured_71'
+Skipping corrupted sample 263: [Errno 2] No such file or directory: '/workspace/everyday/Mug/ba10400c108e5c3f54e1b6f41fdd78a/fractured_74'
+Skipping corrupted sample 264: [Errno 2] No such file or directory: '/workspace/everyday/Mug/ba10400c108e5c3f54e1b6f41fdd78a/fractured_8'
+Skipping corrupted sample 261: [Errno 2] No such file or directory: '/workspace/everyday/Mug/ba10400c108e5c3f54e1b6f41fdd78a/fractured_64'
+Skipping corrupted sample 262: [Errno 2] No such file or directory: '/workspace/everyday/Mug/ba10400c108e5c3f54e1b6f41fdd78a/fractured_71'
+Skipping corrupted sample 263: [Errno 2] No such file or directory: '/workspace/everyday/Mug/ba10400c108e5c3f54e1b6f41fdd78a/fractured_74'
+Skipping corrupted sample 264: [Errno 2] No such file or directory: '/workspace/everyday/Mug/ba10400c108e5c3f54e1b6f41fdd78a/fractured_8'
+Skipping corrupted sample 262: [Errno 2] No such file or directory: '/workspace/everyday/Mug/ba10400c108e5c3f54e1b6f41fdd78a/fractured_71'
+Skipping corrupted sample 263: [Errno 2] No such file or directory: '/workspace/everyday/Mug/ba10400c108e5c3f54e1b6f41fdd78a/fractured_74'
+Skipping corrupted sample 264: [Errno 2] No such file or directory: '/workspace/everyday/Mug/ba10400c108e5c3f54e1b6f41fdd78a/fractured_8'
+Skipping corrupted sample 263: [Errno 2] No such file or directory: '/workspace/everyday/Mug/ba10400c108e5c3f54e1b6f41fdd78a/fractured_74'
+Skipping corrupted sample 264: [Errno 2] No such file or directory: '/workspace/everyday/Mug/ba10400c108e5c3f54e1b6f41fdd78a/fractured_8'
+Testing DataLoader 0:  31%|###1      | 50/159 [00:46<01:41,  1.07it/s]Skipping corrupted sample 264: [Errno 2] No such file or directory: '/workspace/everyday/Mug/ba10400c108e5c3f54e1b6f41fdd78a/fractured_8'
+Testing DataLoader 0:  32%|###2      | 51/159 [00:47<01:41,  1.07it/s]Testing DataLoader 0:  33%|###2      | 52/159 [00:48<01:40,  1.07it/s]Skipping corrupted sample 274: [Errno 2] No such file or directory: '/workspace/everyday/Mug/d0a3fdd33c7e1eb040bc4e38b9ba163e/fractured_59'
+Skipping corrupted sample 275: [Errno 2] No such file or directory: '/workspace/everyday/Mug/d0a3fdd33c7e1eb040bc4e38b9ba163e/fractured_62'
+Skipping corrupted sample 276: [Errno 2] No such file or directory: '/workspace/everyday/Mug/d0a3fdd33c7e1eb040bc4e38b9ba163e/fractured_7'
+Skipping corrupted sample 275: [Errno 2] No such file or directory: '/workspace/everyday/Mug/d0a3fdd33c7e1eb040bc4e38b9ba163e/fractured_62'
+Skipping corrupted sample 276: [Errno 2] No such file or directory: '/workspace/everyday/Mug/d0a3fdd33c7e1eb040bc4e38b9ba163e/fractured_7'
+Testing DataLoader 0:  33%|###3      | 53/159 [00:49<01:39,  1.07it/s]Skipping corrupted sample 276: [Errno 2] No such file or directory: '/workspace/everyday/Mug/d0a3fdd33c7e1eb040bc4e38b9ba163e/fractured_7'
+Testing DataLoader 0:  34%|###3      | 54/159 [00:50<01:38,  1.07it/s]Skipping corrupted sample 282: [Errno 2] No such file or directory: '/workspace/everyday/Mug/ea33ad442b032208d778b73d04298f62/fractured_53'
+Skipping corrupted sample 283: [Errno 2] No such file or directory: '/workspace/everyday/Mug/ea33ad442b032208d778b73d04298f62/fractured_54'
+Skipping corrupted sample 284: [Errno 2] No such file or directory: '/workspace/everyday/Mug/ea33ad442b032208d778b73d04298f62/fractured_61'
+Skipping corrupted sample 285: [Errno 2] No such file or directory: '/workspace/everyday/Mug/ea33ad442b032208d778b73d04298f62/fractured_75'
+Skipping corrupted sample 286: [Errno 2] No such file or directory: '/workspace/everyday/Mug/ea33ad442b032208d778b73d04298f62/fractured_8'
+Skipping corrupted sample 283: [Errno 2] No such file or directory: '/workspace/everyday/Mug/ea33ad442b032208d778b73d04298f62/fractured_54'
+Skipping corrupted sample 284: [Errno 2] No such file or directory: '/workspace/everyday/Mug/ea33ad442b032208d778b73d04298f62/fractured_61'
+Skipping corrupted sample 285: [Errno 2] No such file or directory: '/workspace/everyday/Mug/ea33ad442b032208d778b73d04298f62/fractured_75'
+Skipping corrupted sample 286: [Errno 2] No such file or directory: '/workspace/everyday/Mug/ea33ad442b032208d778b73d04298f62/fractured_8'
+Testing DataLoader 0:  35%|###4      | 55/159 [00:51<01:38,  1.06it/s]Skipping corrupted sample 284: [Errno 2] No such file or directory: '/workspace/everyday/Mug/ea33ad442b032208d778b73d04298f62/fractured_61'
+Skipping corrupted sample 285: [Errno 2] No such file or directory: '/workspace/everyday/Mug/ea33ad442b032208d778b73d04298f62/fractured_75'
+Skipping corrupted sample 286: [Errno 2] No such file or directory: '/workspace/everyday/Mug/ea33ad442b032208d778b73d04298f62/fractured_8'
+Skipping corrupted sample 285: [Errno 2] No such file or directory: '/workspace/everyday/Mug/ea33ad442b032208d778b73d04298f62/fractured_75'
+Skipping corrupted sample 286: [Errno 2] No such file or directory: '/workspace/everyday/Mug/ea33ad442b032208d778b73d04298f62/fractured_8'
+Skipping corrupted sample 286: [Errno 2] No such file or directory: '/workspace/everyday/Mug/ea33ad442b032208d778b73d04298f62/fractured_8'
+Testing DataLoader 0:  35%|###5      | 56/159 [00:52<01:37,  1.06it/s]Testing DataLoader 0:  36%|###5      | 57/159 [00:53<01:36,  1.06it/s]Testing DataLoader 0:  36%|###6      | 58/159 [00:54<01:35,  1.06it/s]Testing DataLoader 0:  37%|###7      | 59/159 [00:55<01:33,  1.06it/s]Testing DataLoader 0:  38%|###7      | 60/159 [00:56<01:32,  1.06it/s]Testing DataLoader 0:  38%|###8      | 61/159 [00:57<01:31,  1.07it/s]Skipping corrupted sample 310: [Errno 2] No such file or directory: '/workspace/everyday/Plate/1/mode_1'
+Testing DataLoader 0:  39%|###8      | 62/159 [00:58<01:31,  1.06it/s]Testing DataLoader 0:  40%|###9      | 63/159 [00:58<01:29,  1.07it/s]Testing DataLoader 0:  40%|####      | 64/159 [00:59<01:28,  1.07it/s]Testing DataLoader 0:  41%|####      | 65/159 [01:00<01:27,  1.07it/s]Testing DataLoader 0:  42%|####1     | 66/159 [01:01<01:26,  1.08it/s]Skipping corrupted sample 330: [Errno 2] No such file or directory: '/workspace/everyday/Plate/f151b5b32400054bebe0518a81e2c5c8/fractured_72'
+Skipping corrupted sample 331: [Errno 2] No such file or directory: '/workspace/everyday/Plate/f151b5b32400054bebe0518a81e2c5c8/fractured_75'
+Skipping corrupted sample 332: [Errno 2] No such file or directory: '/workspace/everyday/Plate/f151b5b32400054bebe0518a81e2c5c8/fractured_78'
+Skipping corrupted sample 331: [Errno 2] No such file or directory: '/workspace/everyday/Plate/f151b5b32400054bebe0518a81e2c5c8/fractured_75'
+Skipping corrupted sample 332: [Errno 2] No such file or directory: '/workspace/everyday/Plate/f151b5b32400054bebe0518a81e2c5c8/fractured_78'
+Testing DataLoader 0:  42%|####2     | 67/159 [01:02<01:25,  1.07it/s]Skipping corrupted sample 332: [Errno 2] No such file or directory: '/workspace/everyday/Plate/f151b5b32400054bebe0518a81e2c5c8/fractured_78'
+Testing DataLoader 0:  43%|####2     | 68/159 [01:03<01:24,  1.07it/s]Skipping corrupted sample 338: [Errno 2] No such file or directory: '/workspace/everyday/Ring/5d54885f9b7f64b1b59cdd71b032af64/mode_1'
+Skipping corrupted sample 339: [Errno 2] No such file or directory: '/workspace/everyday/Teacup/6d1b5b270329e5c4ffbefac2b6ae3d95/mode_1'
+Skipping corrupted sample 340: [Errno 2] No such file or directory: '/workspace/everyday/Teapot/139af10e719186bddaa266217a65f9d7/mode_1'
+Skipping corrupted sample 339: [Errno 2] No such file or directory: '/workspace/everyday/Teacup/6d1b5b270329e5c4ffbefac2b6ae3d95/mode_1'
+Skipping corrupted sample 340: [Errno 2] No such file or directory: '/workspace/everyday/Teapot/139af10e719186bddaa266217a65f9d7/mode_1'
+Testing DataLoader 0:  43%|####3     | 69/159 [01:04<01:24,  1.07it/s]Skipping corrupted sample 340: [Errno 2] No such file or directory: '/workspace/everyday/Teapot/139af10e719186bddaa266217a65f9d7/mode_1'
+Testing DataLoader 0:  44%|####4     | 70/159 [01:05<01:23,  1.07it/s]Testing DataLoader 0:  45%|####4     | 71/159 [01:06<01:21,  1.08it/s]WARNING: Skipping metric computation for 1 objects (no fracture points).
+Testing DataLoader 0:  45%|####5     | 72/159 [01:06<01:20,  1.08it/s]Testing DataLoader 0:  46%|####5     | 73/159 [01:07<01:19,  1.09it/s]Testing DataLoader 0:  47%|####6     | 74/159 [01:07<01:17,  1.09it/s]Testing DataLoader 0:  47%|####7     | 75/159 [01:08<01:16,  1.09it/s]Skipping corrupted sample 367: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/312b9ddf2e3d343277e21aa92afd81b0/fractured_9'
+Skipping corrupted sample 368: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/32661bba4a8063095093b263e7c69565/mode_1'
+Skipping corrupted sample 369: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/3ba8803f914ac8d767ff608a5fbe6aa8/mode_1'
+Testing DataLoader 0:  48%|####7     | 76/159 [01:09<01:15,  1.10it/s]Skipping corrupted sample 368: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/32661bba4a8063095093b263e7c69565/mode_1'
+Skipping corrupted sample 369: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/3ba8803f914ac8d767ff608a5fbe6aa8/mode_1'
+Skipping corrupted sample 369: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/3ba8803f914ac8d767ff608a5fbe6aa8/mode_1'
+Testing DataLoader 0:  48%|####8     | 77/159 [01:09<01:14,  1.10it/s]Testing DataLoader 0:  49%|####9     | 78/159 [01:11<01:13,  1.10it/s]Testing DataLoader 0:  50%|####9     | 79/159 [01:12<01:13,  1.09it/s]Skipping corrupted sample 383: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/60c574a293b9f2014f60944ced2b5887/fractured_7'
+Skipping corrupted sample 384: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/60c574a293b9f2014f60944ced2b5887/fractured_78'
+Testing DataLoader 0:  50%|#####     | 80/159 [01:13<01:12,  1.09it/s]Skipping corrupted sample 384: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/60c574a293b9f2014f60944ced2b5887/fractured_78'
+Testing DataLoader 0:  51%|#####     | 81/159 [01:14<01:12,  1.08it/s]Testing DataLoader 0:  52%|#####1    | 82/159 [01:15<01:11,  1.08it/s]Testing DataLoader 0:  52%|#####2    | 83/159 [01:17<01:10,  1.08it/s]Skipping corrupted sample 397: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/6897b6e1470cdd4af8e8ff67ecd10c0b/fractured_6'
+Skipping corrupted sample 398: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/9228911f4728e71e311588cd2f5b5b60/mode_2'
+Skipping corrupted sample 398: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/9228911f4728e71e311588cd2f5b5b60/mode_2'
+Testing DataLoader 0:  53%|#####2    | 84/159 [01:18<01:09,  1.08it/s]Skipping corrupted sample 401: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_5'
+Skipping corrupted sample 402: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_50'
+Skipping corrupted sample 403: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_52'
+Skipping corrupted sample 404: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_56'
+Skipping corrupted sample 405: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_62'
+Skipping corrupted sample 406: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_63'
+Skipping corrupted sample 407: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_67'
+Skipping corrupted sample 408: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_74'
+Skipping corrupted sample 409: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_76'
+Skipping corrupted sample 410: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/mode_1'
+Skipping corrupted sample 402: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_50'
+Skipping corrupted sample 403: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_52'
+Skipping corrupted sample 404: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_56'
+Skipping corrupted sample 405: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_62'
+Skipping corrupted sample 406: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_63'
+Skipping corrupted sample 407: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_67'
+Skipping corrupted sample 408: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_74'
+Skipping corrupted sample 409: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_76'
+Skipping corrupted sample 410: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/mode_1'
+Skipping corrupted sample 403: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_52'
+Skipping corrupted sample 404: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_56'
+Skipping corrupted sample 405: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_62'
+Skipping corrupted sample 406: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_63'
+Skipping corrupted sample 407: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_67'
+Skipping corrupted sample 408: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_74'
+Skipping corrupted sample 409: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_76'
+Skipping corrupted sample 410: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/mode_1'
+Testing DataLoader 0:  53%|#####3    | 85/159 [01:19<01:08,  1.08it/s]Skipping corrupted sample 404: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_56'
+Skipping corrupted sample 405: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_62'
+Skipping corrupted sample 406: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_63'
+Skipping corrupted sample 407: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_67'
+Skipping corrupted sample 408: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_74'
+Skipping corrupted sample 409: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_76'
+Skipping corrupted sample 410: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/mode_1'
+Skipping corrupted sample 405: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_62'
+Skipping corrupted sample 406: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_63'
+Skipping corrupted sample 407: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_67'
+Skipping corrupted sample 408: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_74'
+Skipping corrupted sample 409: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_76'
+Skipping corrupted sample 410: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/mode_1'
+Skipping corrupted sample 406: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_63'
+Skipping corrupted sample 407: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_67'
+Skipping corrupted sample 408: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_74'
+Skipping corrupted sample 409: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_76'
+Skipping corrupted sample 410: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/mode_1'
+Skipping corrupted sample 407: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_67'
+Skipping corrupted sample 408: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_74'
+Skipping corrupted sample 409: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_76'
+Skipping corrupted sample 410: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/mode_1'
+Testing DataLoader 0:  54%|#####4    | 86/159 [01:19<01:07,  1.08it/s]Skipping corrupted sample 408: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_74'
+Skipping corrupted sample 409: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_76'
+Skipping corrupted sample 410: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/mode_1'
+Skipping corrupted sample 409: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/fractured_76'
+Skipping corrupted sample 410: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/mode_1'
+Skipping corrupted sample 410: [Errno 2] No such file or directory: '/workspace/everyday/ToyFigure/ed09908f11125fb6b1610c1351add50e/mode_1'
+Testing DataLoader 0:  55%|#####4    | 87/159 [01:19<01:06,  1.09it/s]Testing DataLoader 0:  55%|#####5    | 88/159 [01:20<01:04,  1.10it/s]Testing DataLoader 0:  56%|#####5    | 89/159 [01:21<01:03,  1.10it/s]Testing DataLoader 0:  57%|#####6    | 90/159 [01:21<01:02,  1.10it/s]Testing DataLoader 0:  57%|#####7    | 91/159 [01:22<01:01,  1.11it/s]Skipping corrupted sample 430: [Errno 2] No such file or directory: '/workspace/everyday/Vase/324c9045843b9470d29670d38a4c9e7e/fractured_79'
+Testing DataLoader 0:  58%|#####7    | 92/159 [01:22<01:00,  1.11it/s]Testing DataLoader 0:  58%|#####8    | 93/159 [01:23<00:59,  1.11it/s]Testing DataLoader 0:  59%|#####9    | 94/159 [01:24<00:58,  1.11it/s]Skipping corrupted sample 442: [Errno 2] No such file or directory: '/workspace/everyday/Vase/4835bb37072cb5dafc23d64476f7d890/fractured_68'
+Skipping corrupted sample 443: [Errno 2] No such file or directory: '/workspace/everyday/Vase/4835bb37072cb5dafc23d64476f7d890/fractured_77'
+Skipping corrupted sample 444: [Errno 2] No such file or directory: '/workspace/everyday/Vase/4995132abfa4d6f235836c728d324152/mode_1'
+Skipping corrupted sample 445: [Errno 2] No such file or directory: '/workspace/everyday/Vase/661f1f07ee3cf13a77d7528e1646c585/mode_1'
+Skipping corrupted sample 443: [Errno 2] No such file or directory: '/workspace/everyday/Vase/4835bb37072cb5dafc23d64476f7d890/fractured_77'
+Skipping corrupted sample 444: [Errno 2] No such file or directory: '/workspace/everyday/Vase/4995132abfa4d6f235836c728d324152/mode_1'
+Skipping corrupted sample 445: [Errno 2] No such file or directory: '/workspace/everyday/Vase/661f1f07ee3cf13a77d7528e1646c585/mode_1'
+Testing DataLoader 0:  60%|#####9    | 95/159 [01:25<00:57,  1.12it/s]Skipping corrupted sample 444: [Errno 2] No such file or directory: '/workspace/everyday/Vase/4995132abfa4d6f235836c728d324152/mode_1'
+Skipping corrupted sample 445: [Errno 2] No such file or directory: '/workspace/everyday/Vase/661f1f07ee3cf13a77d7528e1646c585/mode_1'
+Skipping corrupted sample 445: [Errno 2] No such file or directory: '/workspace/everyday/Vase/661f1f07ee3cf13a77d7528e1646c585/mode_1'
+Testing DataLoader 0:  60%|######    | 96/159 [01:25<00:56,  1.12it/s]Skipping corrupted sample 450: [Errno 2] No such file or directory: '/workspace/everyday/Vase/6f2c815565cfdb97a1c637e821f12a67/fractured_5'
+Skipping corrupted sample 451: [Errno 2] No such file or directory: '/workspace/everyday/Vase/6f2c815565cfdb97a1c637e821f12a67/fractured_54'
+Skipping corrupted sample 452: [Errno 2] No such file or directory: '/workspace/everyday/Vase/6f2c815565cfdb97a1c637e821f12a67/fractured_58'
+Skipping corrupted sample 453: [Errno 2] No such file or directory: '/workspace/everyday/Vase/6f2c815565cfdb97a1c637e821f12a67/fractured_63'
+Skipping corrupted sample 454: [Errno 2] No such file or directory: '/workspace/everyday/Vase/6f2c815565cfdb97a1c637e821f12a67/fractured_78'
+Skipping corrupted sample 455: [Errno 2] No such file or directory: '/workspace/everyday/Vase/6f2c815565cfdb97a1c637e821f12a67/fractured_8'
+Skipping corrupted sample 451: [Errno 2] No such file or directory: '/workspace/everyday/Vase/6f2c815565cfdb97a1c637e821f12a67/fractured_54'
+Skipping corrupted sample 452: [Errno 2] No such file or directory: '/workspace/everyday/Vase/6f2c815565cfdb97a1c637e821f12a67/fractured_58'
+Skipping corrupted sample 453: [Errno 2] No such file or directory: '/workspace/everyday/Vase/6f2c815565cfdb97a1c637e821f12a67/fractured_63'
+Skipping corrupted sample 454: [Errno 2] No such file or directory: '/workspace/everyday/Vase/6f2c815565cfdb97a1c637e821f12a67/fractured_78'
+Skipping corrupted sample 455: [Errno 2] No such file or directory: '/workspace/everyday/Vase/6f2c815565cfdb97a1c637e821f12a67/fractured_8'
+Testing DataLoader 0:  61%|######1   | 97/159 [01:26<00:55,  1.12it/s]Skipping corrupted sample 452: [Errno 2] No such file or directory: '/workspace/everyday/Vase/6f2c815565cfdb97a1c637e821f12a67/fractured_58'
+Skipping corrupted sample 453: [Errno 2] No such file or directory: '/workspace/everyday/Vase/6f2c815565cfdb97a1c637e821f12a67/fractured_63'
+Skipping corrupted sample 454: [Errno 2] No such file or directory: '/workspace/everyday/Vase/6f2c815565cfdb97a1c637e821f12a67/fractured_78'
+Skipping corrupted sample 455: [Errno 2] No such file or directory: '/workspace/everyday/Vase/6f2c815565cfdb97a1c637e821f12a67/fractured_8'
+Skipping corrupted sample 453: [Errno 2] No such file or directory: '/workspace/everyday/Vase/6f2c815565cfdb97a1c637e821f12a67/fractured_63'
+Skipping corrupted sample 454: [Errno 2] No such file or directory: '/workspace/everyday/Vase/6f2c815565cfdb97a1c637e821f12a67/fractured_78'
+Skipping corrupted sample 455: [Errno 2] No such file or directory: '/workspace/everyday/Vase/6f2c815565cfdb97a1c637e821f12a67/fractured_8'
+Skipping corrupted sample 454: [Errno 2] No such file or directory: '/workspace/everyday/Vase/6f2c815565cfdb97a1c637e821f12a67/fractured_78'
+Skipping corrupted sample 455: [Errno 2] No such file or directory: '/workspace/everyday/Vase/6f2c815565cfdb97a1c637e821f12a67/fractured_8'
+Skipping corrupted sample 455: [Errno 2] No such file or directory: '/workspace/everyday/Vase/6f2c815565cfdb97a1c637e821f12a67/fractured_8'
+Testing DataLoader 0:  62%|######1   | 98/159 [01:27<00:54,  1.13it/s]Testing DataLoader 0:  62%|######2   | 99/159 [01:27<00:53,  1.13it/s]Skipping corrupted sample 461: [Errno 2] No such file or directory: '/workspace/everyday/Vase/7545c5b7700887a635836c728d324152/fractured_78'
+Testing DataLoader 0:  63%|######2   | 100/159 [01:28<00:51,  1.14it/s]Testing DataLoader 0:  64%|######3   | 101/159 [01:29<00:51,  1.13it/s]Skipping corrupted sample 468: [Errno 2] No such file or directory: '/workspace/everyday/Vase/8029c2527230111aad1d789f3b2120d0/fractured_4'
+Skipping corrupted sample 471: [Errno 2] No such file or directory: '/workspace/everyday/Vase/8029c2527230111aad1d789f3b2120d0/fractured_48'
+Skipping corrupted sample 472: [Errno 2] No such file or directory: '/workspace/everyday/Vase/8029c2527230111aad1d789f3b2120d0/fractured_52'
+Skipping corrupted sample 473: [Errno 2] No such file or directory: '/workspace/everyday/Vase/8029c2527230111aad1d789f3b2120d0/fractured_55'
+Skipping corrupted sample 474: [Errno 2] No such file or directory: '/workspace/everyday/Vase/8029c2527230111aad1d789f3b2120d0/fractured_6'
+Skipping corrupted sample 475: [Errno 2] No such file or directory: '/workspace/everyday/Vase/8029c2527230111aad1d789f3b2120d0/fractured_66'
+Testing DataLoader 0:  64%|######4   | 102/159 [01:30<00:50,  1.13it/s]Skipping corrupted sample 472: [Errno 2] No such file or directory: '/workspace/everyday/Vase/8029c2527230111aad1d789f3b2120d0/fractured_52'
+Skipping corrupted sample 473: [Errno 2] No such file or directory: '/workspace/everyday/Vase/8029c2527230111aad1d789f3b2120d0/fractured_55'
+Skipping corrupted sample 474: [Errno 2] No such file or directory: '/workspace/everyday/Vase/8029c2527230111aad1d789f3b2120d0/fractured_6'
+Skipping corrupted sample 475: [Errno 2] No such file or directory: '/workspace/everyday/Vase/8029c2527230111aad1d789f3b2120d0/fractured_66'
+Skipping corrupted sample 473: [Errno 2] No such file or directory: '/workspace/everyday/Vase/8029c2527230111aad1d789f3b2120d0/fractured_55'
+Skipping corrupted sample 474: [Errno 2] No such file or directory: '/workspace/everyday/Vase/8029c2527230111aad1d789f3b2120d0/fractured_6'
+Skipping corrupted sample 475: [Errno 2] No such file or directory: '/workspace/everyday/Vase/8029c2527230111aad1d789f3b2120d0/fractured_66'
+Skipping corrupted sample 474: [Errno 2] No such file or directory: '/workspace/everyday/Vase/8029c2527230111aad1d789f3b2120d0/fractured_6'
+Skipping corrupted sample 475: [Errno 2] No such file or directory: '/workspace/everyday/Vase/8029c2527230111aad1d789f3b2120d0/fractured_66'
+Skipping corrupted sample 475: [Errno 2] No such file or directory: '/workspace/everyday/Vase/8029c2527230111aad1d789f3b2120d0/fractured_66'
+Testing DataLoader 0:  65%|######4   | 103/159 [01:31<00:49,  1.13it/s]Testing DataLoader 0:  65%|######5   | 104/159 [01:32<00:48,  1.13it/s]Skipping corrupted sample 482: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/fractured_35'
+Skipping corrupted sample 483: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/fractured_41'
+Skipping corrupted sample 484: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/fractured_42'
+Skipping corrupted sample 485: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/fractured_62'
+Skipping corrupted sample 486: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/fractured_67'
+Skipping corrupted sample 487: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/fractured_7'
+Skipping corrupted sample 488: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/fractured_77'
+Skipping corrupted sample 489: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/fractured_8'
+Skipping corrupted sample 490: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/mode_1'
+Skipping corrupted sample 483: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/fractured_41'
+Skipping corrupted sample 484: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/fractured_42'
+Skipping corrupted sample 485: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/fractured_62'
+Skipping corrupted sample 486: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/fractured_67'
+Skipping corrupted sample 487: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/fractured_7'
+Skipping corrupted sample 488: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/fractured_77'
+Skipping corrupted sample 489: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/fractured_8'
+Skipping corrupted sample 490: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/mode_1'
+Testing DataLoader 0:  66%|######6   | 105/159 [01:33<00:48,  1.12it/s]Skipping corrupted sample 484: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/fractured_42'
+Skipping corrupted sample 485: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/fractured_62'
+Skipping corrupted sample 486: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/fractured_67'
+Skipping corrupted sample 487: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/fractured_7'
+Skipping corrupted sample 488: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/fractured_77'
+Skipping corrupted sample 489: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/fractured_8'
+Skipping corrupted sample 490: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/mode_1'
+Skipping corrupted sample 485: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/fractured_62'
+Skipping corrupted sample 486: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/fractured_67'
+Skipping corrupted sample 487: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/fractured_7'
+Skipping corrupted sample 488: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/fractured_77'
+Skipping corrupted sample 489: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/fractured_8'
+Skipping corrupted sample 490: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/mode_1'
+Skipping corrupted sample 486: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/fractured_67'
+Skipping corrupted sample 487: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/fractured_7'
+Skipping corrupted sample 488: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/fractured_77'
+Skipping corrupted sample 489: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/fractured_8'
+Skipping corrupted sample 490: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/mode_1'
+Skipping corrupted sample 487: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/fractured_7'
+Skipping corrupted sample 488: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/fractured_77'
+Skipping corrupted sample 489: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/fractured_8'
+Skipping corrupted sample 490: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/mode_1'
+Testing DataLoader 0:  67%|######6   | 106/159 [01:34<00:47,  1.12it/s]Skipping corrupted sample 488: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/fractured_77'
+Skipping corrupted sample 489: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/fractured_8'
+Skipping corrupted sample 490: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/mode_1'
+Skipping corrupted sample 489: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/fractured_8'
+Skipping corrupted sample 490: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/mode_1'
+Skipping corrupted sample 490: [Errno 2] No such file or directory: '/workspace/everyday/Vase/9cabda39008f86316d075d8d4fe1141/mode_1'
+Testing DataLoader 0:  67%|######7   | 107/159 [01:35<00:46,  1.12it/s]Skipping corrupted sample 493: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_32'
+Skipping corrupted sample 494: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_37'
+Skipping corrupted sample 495: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_38'
+Skipping corrupted sample 496: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_50'
+Skipping corrupted sample 497: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_51'
+Skipping corrupted sample 498: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_52'
+Skipping corrupted sample 499: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_57'
+Skipping corrupted sample 500: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_63'
+Skipping corrupted sample 501: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_66'
+Skipping corrupted sample 502: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_67'
+Skipping corrupted sample 503: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_70'
+Skipping corrupted sample 504: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_74'
+Skipping corrupted sample 505: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_8'
+Skipping corrupted sample 506: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/mode_1'
+Skipping corrupted sample 494: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_37'
+Skipping corrupted sample 495: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_38'
+Skipping corrupted sample 496: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_50'
+Skipping corrupted sample 497: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_51'
+Skipping corrupted sample 498: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_52'
+Skipping corrupted sample 499: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_57'
+Skipping corrupted sample 500: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_63'
+Skipping corrupted sample 501: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_66'
+Skipping corrupted sample 502: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_67'
+Skipping corrupted sample 503: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_70'
+Skipping corrupted sample 504: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_74'
+Skipping corrupted sample 505: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_8'
+Skipping corrupted sample 506: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/mode_1'
+Skipping corrupted sample 495: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_38'
+Skipping corrupted sample 496: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_50'
+Skipping corrupted sample 497: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_51'
+Skipping corrupted sample 498: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_52'
+Skipping corrupted sample 499: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_57'
+Skipping corrupted sample 500: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_63'
+Skipping corrupted sample 501: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_66'
+Skipping corrupted sample 502: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_67'
+Skipping corrupted sample 503: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_70'
+Skipping corrupted sample 504: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_74'
+Skipping corrupted sample 505: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_8'
+Skipping corrupted sample 506: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/mode_1'
+Testing DataLoader 0:  68%|######7   | 108/159 [01:36<00:45,  1.12it/s]Skipping corrupted sample 496: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_50'
+Skipping corrupted sample 497: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_51'
+Skipping corrupted sample 498: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_52'
+Skipping corrupted sample 499: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_57'
+Skipping corrupted sample 500: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_63'
+Skipping corrupted sample 501: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_66'
+Skipping corrupted sample 502: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_67'
+Skipping corrupted sample 503: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_70'
+Skipping corrupted sample 504: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_74'
+Skipping corrupted sample 505: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_8'
+Skipping corrupted sample 506: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/mode_1'
+Skipping corrupted sample 497: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_51'
+Skipping corrupted sample 498: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_52'
+Skipping corrupted sample 499: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_57'
+Skipping corrupted sample 500: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_63'
+Skipping corrupted sample 501: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_66'
+Skipping corrupted sample 502: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_67'
+Skipping corrupted sample 503: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_70'
+Skipping corrupted sample 504: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_74'
+Skipping corrupted sample 505: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_8'
+Skipping corrupted sample 506: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/mode_1'
+Skipping corrupted sample 498: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_52'
+Skipping corrupted sample 499: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_57'
+Skipping corrupted sample 500: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_63'
+Skipping corrupted sample 501: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_66'
+Skipping corrupted sample 502: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_67'
+Skipping corrupted sample 503: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_70'
+Skipping corrupted sample 504: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_74'
+Skipping corrupted sample 505: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_8'
+Skipping corrupted sample 506: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/mode_1'
+Skipping corrupted sample 499: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_57'
+Skipping corrupted sample 500: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_63'
+Skipping corrupted sample 501: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_66'
+Skipping corrupted sample 502: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_67'
+Skipping corrupted sample 503: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_70'
+Skipping corrupted sample 504: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_74'
+Skipping corrupted sample 505: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_8'
+Skipping corrupted sample 506: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/mode_1'
+Testing DataLoader 0:  69%|######8   | 109/159 [01:37<00:44,  1.12it/s]Skipping corrupted sample 500: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_63'
+Skipping corrupted sample 501: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_66'
+Skipping corrupted sample 502: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_67'
+Skipping corrupted sample 503: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_70'
+Skipping corrupted sample 504: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_74'
+Skipping corrupted sample 505: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_8'
+Skipping corrupted sample 506: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/mode_1'
+Skipping corrupted sample 501: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_66'
+Skipping corrupted sample 502: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_67'
+Skipping corrupted sample 503: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_70'
+Skipping corrupted sample 504: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_74'
+Skipping corrupted sample 505: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_8'
+Skipping corrupted sample 506: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/mode_1'
+Skipping corrupted sample 502: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_67'
+Skipping corrupted sample 503: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_70'
+Skipping corrupted sample 504: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_74'
+Skipping corrupted sample 505: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_8'
+Skipping corrupted sample 506: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/mode_1'
+Skipping corrupted sample 503: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_70'
+Skipping corrupted sample 504: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_74'
+Skipping corrupted sample 505: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_8'
+Skipping corrupted sample 506: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/mode_1'
+Testing DataLoader 0:  69%|######9   | 110/159 [01:38<00:43,  1.12it/s]Skipping corrupted sample 504: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_74'
+Skipping corrupted sample 505: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_8'
+Skipping corrupted sample 506: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/mode_1'
+Skipping corrupted sample 505: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/fractured_8'
+Skipping corrupted sample 506: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/mode_1'
+Skipping corrupted sample 506: [Errno 2] No such file or directory: '/workspace/everyday/Vase/aeb38b405aedf355be73768c654c5bcd/mode_1'
+Testing DataLoader 0:  70%|######9   | 111/159 [01:39<00:42,  1.12it/s]Skipping corrupted sample 508: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_21'
+Skipping corrupted sample 509: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_29'
+Skipping corrupted sample 510: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_30'
+Skipping corrupted sample 511: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_31'
+Skipping corrupted sample 512: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_35'
+Skipping corrupted sample 513: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_40'
+Skipping corrupted sample 514: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_51'
+Skipping corrupted sample 515: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_6'
+Skipping corrupted sample 516: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_60'
+Skipping corrupted sample 509: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_29'
+Skipping corrupted sample 510: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_30'
+Skipping corrupted sample 511: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_31'
+Skipping corrupted sample 512: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_35'
+Skipping corrupted sample 513: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_40'
+Skipping corrupted sample 514: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_51'
+Skipping corrupted sample 515: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_6'
+Skipping corrupted sample 516: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_60'
+Skipping corrupted sample 510: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_30'
+Skipping corrupted sample 511: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_31'
+Skipping corrupted sample 512: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_35'
+Skipping corrupted sample 513: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_40'
+Skipping corrupted sample 514: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_51'
+Skipping corrupted sample 515: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_6'
+Skipping corrupted sample 516: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_60'
+Skipping corrupted sample 511: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_31'
+Skipping corrupted sample 512: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_35'
+Skipping corrupted sample 513: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_40'
+Skipping corrupted sample 514: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_51'
+Skipping corrupted sample 515: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_6'
+Skipping corrupted sample 516: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_60'
+Testing DataLoader 0:  70%|#######   | 112/159 [01:40<00:41,  1.12it/s]Skipping corrupted sample 512: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_35'
+Skipping corrupted sample 513: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_40'
+Skipping corrupted sample 514: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_51'
+Skipping corrupted sample 515: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_6'
+Skipping corrupted sample 516: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_60'
+Skipping corrupted sample 513: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_40'
+Skipping corrupted sample 514: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_51'
+Skipping corrupted sample 515: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_6'
+Skipping corrupted sample 516: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_60'
+Skipping corrupted sample 514: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_51'
+Skipping corrupted sample 515: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_6'
+Skipping corrupted sample 516: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_60'
+Skipping corrupted sample 515: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_6'
+Skipping corrupted sample 516: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_60'
+Testing DataLoader 0:  71%|#######1  | 113/159 [01:40<00:41,  1.12it/s]Skipping corrupted sample 516: [Errno 2] No such file or directory: '/workspace/everyday/Vase/bd0274fe8ca44aa035836c728d324152/fractured_60'
+Testing DataLoader 0:  72%|#######1  | 114/159 [01:41<00:40,  1.12it/s]Testing DataLoader 0:  72%|#######2  | 115/159 [01:42<00:39,  1.12it/s]Testing DataLoader 0:  73%|#######2  | 116/159 [01:43<00:38,  1.12it/s]Testing DataLoader 0:  74%|#######3  | 117/159 [01:44<00:37,  1.12it/s]Testing DataLoader 0:  74%|#######4  | 118/159 [01:45<00:36,  1.12it/s]Testing DataLoader 0:  75%|#######4  | 119/159 [01:47<00:36,  1.11it/s]Testing DataLoader 0:  75%|#######5  | 120/159 [01:48<00:35,  1.10it/s]Testing DataLoader 0:  76%|#######6  | 121/159 [01:49<00:34,  1.10it/s]Testing DataLoader 0:  77%|#######6  | 122/159 [01:50<00:33,  1.10it/s]Testing DataLoader 0:  77%|#######7  | 123/159 [01:51<00:32,  1.10it/s]Testing DataLoader 0:  78%|#######7  | 124/159 [01:53<00:32,  1.09it/s]Testing DataLoader 0:  79%|#######8  | 125/159 [01:55<00:31,  1.09it/s]Testing DataLoader 0:  79%|#######9  | 126/159 [01:56<00:30,  1.08it/s]Testing DataLoader 0:  80%|#######9  | 127/159 [01:58<00:29,  1.07it/s]Testing DataLoader 0:  81%|########  | 128/159 [01:59<00:28,  1.07it/s]Testing DataLoader 0:  81%|########1 | 129/159 [02:00<00:28,  1.07it/s]Testing DataLoader 0:  82%|########1 | 130/159 [02:01<00:27,  1.07it/s]Testing DataLoader 0:  82%|########2 | 131/159 [02:01<00:26,  1.08it/s]Skipping corrupted sample 588: [Errno 2] No such file or directory: '/workspace/everyday/WineBottle/908e85e13c6fbde0a1ca08763d503f0e/mode_1'
+Testing DataLoader 0:  83%|########3 | 132/159 [02:02<00:25,  1.08it/s]Testing DataLoader 0:  84%|########3 | 133/159 [02:03<00:24,  1.08it/s]Testing DataLoader 0:  84%|########4 | 134/159 [02:04<00:23,  1.08it/s]Testing DataLoader 0:  85%|########4 | 135/159 [02:05<00:22,  1.08it/s]Testing DataLoader 0:  86%|########5 | 136/159 [02:06<00:21,  1.08it/s]Testing DataLoader 0:  86%|########6 | 137/159 [02:07<00:20,  1.08it/s]Testing DataLoader 0:  87%|########6 | 138/159 [02:08<00:19,  1.08it/s]Testing DataLoader 0:  87%|########7 | 139/159 [02:08<00:18,  1.08it/s]Testing DataLoader 0:  88%|########8 | 140/159 [02:09<00:17,  1.08it/s]Testing DataLoader 0:  89%|########8 | 141/159 [02:10<00:16,  1.08it/s]Testing DataLoader 0:  89%|########9 | 142/159 [02:11<00:15,  1.08it/s]Testing DataLoader 0:  90%|########9 | 143/159 [02:12<00:14,  1.08it/s]Testing DataLoader 0:  91%|######### | 144/159 [02:13<00:13,  1.08it/s]Testing DataLoader 0:  91%|#########1| 145/159 [02:14<00:13,  1.08it/s]Testing DataLoader 0:  92%|#########1| 146/159 [02:15<00:12,  1.08it/s]Testing DataLoader 0:  92%|#########2| 147/159 [02:16<00:11,  1.08it/s]Testing DataLoader 0:  93%|#########3| 148/159 [02:17<00:10,  1.08it/s]Testing DataLoader 0:  94%|#########3| 149/159 [02:18<00:09,  1.07it/s]Testing DataLoader 0:  94%|#########4| 150/159 [02:19<00:08,  1.07it/s]Testing DataLoader 0:  95%|#########4| 151/159 [02:20<00:07,  1.08it/s]Testing DataLoader 0:  96%|#########5| 152/159 [02:21<00:06,  1.08it/s]Testing DataLoader 0:  96%|#########6| 153/159 [02:22<00:05,  1.08it/s]Testing DataLoader 0:  97%|#########6| 154/159 [02:22<00:04,  1.08it/s]Testing DataLoader 0:  97%|#########7| 155/159 [02:23<00:03,  1.08it/s]WARNING: Skipping metric computation for 2 objects (no fracture points).
+Testing DataLoader 0:  98%|#########8| 156/159 [02:23<00:02,  1.08it/s]WARNING: Skipping metric computation for 1 objects (no fracture points).
+Testing DataLoader 0:  99%|#########8| 157/159 [02:24<00:01,  1.09it/s]Testing DataLoader 0:  99%|#########9| 158/159 [02:24<00:00,  1.09it/s]Testing DataLoader 0: 100%|##########| 159/159 [02:25<00:00,  1.10it/s]
+[Checkpoint] Saved final 159 results to results/jigsaw_finetune_everyday_double_attn_correct_ds_correct_params/test_checkpoint_final.pt
+test/cls_loss: 0.015068; test/cls_acc: 1.000000; test/cls_precision: 1.000000; test/cls_recall: 1.000000; test/cls_f1: 1.000000; test/mat_loss: 5.709690; test/n_critical_max: 174.440384; test/rig_loss: 21.164724; test/loss: 5.724759; test/mat_precision: 0.097392; test/mat_recall: 0.103349; test/mat_f1: 0.099148; test/part_acc: 0.825914; test/chamfer_distance: 0.039398; test/trans_mse: 0.011558; test/rot_mse: 2138.428955; test/trans_rmse: 0.045593; test/rot_rmse: 22.931419; test/trans_mae: 0.035285; test/rot_mae: 19.616327
+Testing DataLoader 0: 100%|##########| 159/159 [02:25<00:00,  1.09it/s]
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+       Test metric             DataLoader 0
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  test/chamfer_distance     0.03939763456583023
+      test/cls_acc                  1.0
+       test/cls_f1                  1.0
+      test/cls_loss        0.015068218111991882
+   test/cls_precision               1.0
+     test/cls_recall                1.0
+        test/loss            5.724758625030518
+       test/mat_f1          0.09914802014827728
+      test/mat_loss          5.709689617156982
+   test/mat_precision       0.09739244729280472
+     test/mat_recall        0.10334901511669159
+   test/n_critical_max       174.4403839111328
+      test/part_acc         0.8259141445159912
+      test/rig_loss         21.164724349975586
+      test/rot_mae           19.6163272857666
+      test/rot_mse           2138.428955078125
+      test/rot_rmse         22.931419372558594
+     test/trans_mae         0.03528527915477753
+     test/trans_mse        0.011558105237782001
+     test/trans_rmse        0.0455932579934597
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Done evaluation
