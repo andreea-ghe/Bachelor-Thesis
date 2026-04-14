@@ -1,4 +1,4 @@
-MODEL_NAME: jigsaw_multi_4x4_128_512_250e_cosine_everyday
+MODEL_NAME: jigsaw_finetune_everyday_double_attn_correct_ds_correct_params
 MODULE: experiments
 
 PROJECT: jigsaw
@@ -38,6 +38,6 @@ MODEL:
   PC_CLS_METHOD: multi
 
 # STATS is for eval only
-STATS: "./results/jigsaw_finetune_everyday_double_attn_correct_ds/stats/eval_multi_piece"
+STATS: "./results/jigsaw_finetune_everyday_double_attn_correct_ds_correct_params/stats/eval_multi_piece"
 
-WEIGHT_FILE: results/jigsaw_finetune_everyday_double_attn_correct_ds/model_save/last.ckpt
+WEIGHT_FILE: results/jigsaw_finetune_everyday_double_attn_correct_ds_correct_params/model_save/last.ckpt
