@@ -29,13 +29,13 @@ cd /home/ndreea/bachelor-thesis
 echo "=== Double Attn Layers Everyday (3 runs) ==="
 for i in {1..3}; do
   echo "--- Run $i/3 ---"
-  python -m experiments.eval_model --cfg experiments/multi_double_attn_scripts/everyday_eval.yaml
+  python -m experiments.eval_model --cfg experiments/double_attn_scripts/everyday_eval.yaml
 done
 
 echo "=== Double Attn Layers Artifact (3 runs) ==="
 for i in {1..3}; do
   echo "--- Run $i/3 ---"
-  python -m experiments.eval_model --cfg experiments/multi_double_attn_scripts/artifact_eval.yaml
+  python -m experiments.eval_model --cfg experiments/double_attn_scripts/artifact_eval.yaml
 done
 
 # echo "=== Double Layers and Pair Attn Everyday (3 runs) ==="
