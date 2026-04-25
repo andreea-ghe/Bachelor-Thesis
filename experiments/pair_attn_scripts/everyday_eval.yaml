@@ -1,4 +1,4 @@
-MODEL_NAME: jigsaw_multi_4x4_128_512_250e_cosine_everyday
+MODEL_NAME: jigsaw_finetune_everyday_pair_attn_correct_ds
 MODULE: experiments
 
 PROJECT: jigsaw
@@ -38,7 +38,7 @@ MODEL:
   USE_PAIR_BIAS: true
 
 # STATS is for eval only
-STATS: "./results/jigsaw_finetune_everyday_pair_attn_correct_ds/stats/eval_multi_piece"
+STATS: "./results/jigsaw_finetune_everyday_pair_attn_correct_ds/stats/eval"
 
 # WEIGHT_FILE: results/jigsaw_finetune_everyday_pair_attn/model_save/modelepoch=084-v2.ckpt
-WEIGHT_FILE: results/jigsaw_finetune_everyday_pair_attn_correct_ds/model_save/last.ckpt
+WEIGHT_FILE: results/jigsaw_finetune_everyday_pair_attn_correct_ds/model_save/modelepoch=084.ckpt

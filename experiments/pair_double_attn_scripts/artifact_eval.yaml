@@ -1,4 +1,4 @@
-MODEL_NAME: jigsaw_multi_4x4_128_512_250e_cosine_artifact
+MODEL_NAME: jigsaw_finetune_everyday_pair_double_attn_correct_ds
 MODULE: experiments
 
 PROJECT: jigsaw
@@ -31,6 +31,7 @@ DATA:
   NUM_PC_POINTS: 5000
   SAMPLE_BY: area
   MIN_PART_POINT: 30
+  TEST_LENGTH: 1000
   FRACTURE_LABEL_THRESHOLD: 0.025
 
 MODEL:
@@ -41,4 +42,4 @@ MODEL:
 # STATS is for eval only — update WEIGHT_FILE after training completes
 STATS: "./results/jigsaw_finetune_everyday_pair_double_attn_correct_ds/stats/eval"
 
-WEIGHT_FILE: results/jigsaw_finetune_everyday_pair_double_attn_correct_ds/model_save/last.ckpt
+WEIGHT_FILE: results/jigsaw_finetune_everyday_pair_double_attn_correct_ds/model_save/modelepoch=084.ckpt
