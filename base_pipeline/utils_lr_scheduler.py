@@ -42,7 +42,7 @@ class CosineAnnealingWarmupRestarts(_LRScheduler):
         self.cycle = 0 # cycle count
         self.step_in_cycle = last_epoch # step count in the current cycle
 
-        # pre-initialize per-group ratios (super().__init__ calls step() → get_lr())
+        # pre-initialize per-group ratios (super().__init__ calls step() -> get_lr())
         self.lr_ratios = [1.0] * len(optimizer.param_groups)
         self.base_lrs = [self.min_lr] * len(optimizer.param_groups)
 

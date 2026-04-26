@@ -25,7 +25,7 @@ Found 10 checkpoints in results/jigsaw_finetune_everyday_pair_attn/model_save_v2
 
   Output bias (dummy input):
     mean=-0.141152  std=0.143190  range=[-0.327658, +0.032224]  abs_mean=0.165643
-    ✅  Good variance — bias differentiates between pairs
+      Good variance — bias differentiates between pairs
 
 ================================================================================
 [modelepoch=064-v2.ckpt]  (epoch=64)
@@ -58,7 +58,7 @@ Found 10 checkpoints in results/jigsaw_finetune_everyday_pair_attn/model_save_v2
 
   Output bias (dummy input):
     mean=-0.117749  std=0.132401  range=[-0.254634, +0.048795]  abs_mean=0.154833
-    ✅  Good variance — bias differentiates between pairs
+      Good variance — bias differentiates between pairs
 
 ================================================================================
 [modelepoch=069-v2.ckpt]  (epoch=69)
@@ -91,7 +91,7 @@ Found 10 checkpoints in results/jigsaw_finetune_everyday_pair_attn/model_save_v2
 
   Output bias (dummy input):
     mean=-0.083475  std=0.139343  range=[-0.274052, +0.081903]  abs_mean=0.145722
-    ✅  Good variance — bias differentiates between pairs
+      Good variance — bias differentiates between pairs
 
 ================================================================================
 [modelepoch=074-v2.ckpt]  (epoch=74)
@@ -124,7 +124,7 @@ Found 10 checkpoints in results/jigsaw_finetune_everyday_pair_attn/model_save_v2
 
   Output bias (dummy input):
     mean=-0.113375  std=0.140628  range=[-0.252785, +0.064501]  abs_mean=0.162395
-    ✅  Good variance — bias differentiates between pairs
+      Good variance — bias differentiates between pairs
 
 ================================================================================
 [modelepoch=079-v2.ckpt]  (epoch=79)
@@ -157,7 +157,7 @@ Found 10 checkpoints in results/jigsaw_finetune_everyday_pair_attn/model_save_v2
 
   Output bias (dummy input):
     mean=+0.086504  std=0.178475  range=[-0.123806, +0.332644]  abs_mean=0.176700
-    ✅  Good variance — bias differentiates between pairs
+      Good variance — bias differentiates between pairs
 
 ================================================================================
 [modelepoch=084-v2.ckpt]  (epoch=84)
@@ -190,7 +190,7 @@ Found 10 checkpoints in results/jigsaw_finetune_everyday_pair_attn/model_save_v2
 
   Output bias (dummy input):
     mean=-0.041516  std=0.163266  range=[-0.315599, +0.122158]  abs_mean=0.134943
-    ✅  Good variance — bias differentiates between pairs
+      Good variance — bias differentiates between pairs
 
 ================================================================================
 [modelepoch=089-v2.ckpt]  (epoch=89)
@@ -223,7 +223,7 @@ Found 10 checkpoints in results/jigsaw_finetune_everyday_pair_attn/model_save_v2
 
   Output bias (dummy input):
     mean=-0.107004  std=0.195610  range=[-0.344112, +0.127146]  abs_mean=0.203635
-    ✅  Good variance — bias differentiates between pairs
+      Good variance — bias differentiates between pairs
 
 ================================================================================
 [modelepoch=094-v2.ckpt]  (epoch=94)
@@ -256,7 +256,7 @@ Found 10 checkpoints in results/jigsaw_finetune_everyday_pair_attn/model_save_v2
 
   Output bias (dummy input):
     mean=-0.010395  std=0.110798  range=[-0.133683, +0.122862]  abs_mean=0.103770
-    ✅  Good variance — bias differentiates between pairs
+      Good variance — bias differentiates between pairs
 
 ================================================================================
 [modelepoch=099-v2.ckpt]  (epoch=99)
@@ -289,7 +289,7 @@ Found 10 checkpoints in results/jigsaw_finetune_everyday_pair_attn/model_save_v2
 
   Output bias (dummy input):
     mean=+0.056573  std=0.302453  range=[-0.332207, +0.541653]  abs_mean=0.262423
-    ✅  Good variance — bias differentiates between pairs
+      Good variance — bias differentiates between pairs
 
 ================================================================================
 [last-v2.ckpt]  (last)
@@ -322,17 +322,17 @@ Found 10 checkpoints in results/jigsaw_finetune_everyday_pair_attn/model_save_v2
 
   Output bias (dummy input):
     mean=+0.023080  std=0.193478  range=[-0.199345, +0.344241]  abs_mean=0.178594
-    ✅  Good variance — bias differentiates between pairs
+      Good variance — bias differentiates between pairs
 
 
 ================================================================================
 SUMMARY
 ================================================================================
 
-Weight changes (first → last checkpoint):
-  angle_rbf.centers: mean_abs_diff=0.00000000  → ❌ FROZEN — not learning at all
-  bias_proj.0.bias: mean_abs_diff=0.00512638  → 🟡 LEARNING SLOWLY — some movement
-  bias_proj.0.weight: mean_abs_diff=0.00318321  → 🟡 LEARNING SLOWLY — some movement
-  bias_proj.2.bias: mean_abs_diff=0.00156733  → 🟡 LEARNING SLOWLY — some movement
-  bias_proj.2.weight: mean_abs_diff=0.00954572  → 🟡 LEARNING SLOWLY — some movement
-  distance_rbf.centers: mean_abs_diff=0.00000000  → ❌ FROZEN — not learning at all
+Weight changes (first -> last checkpoint):
+  angle_rbf.centers: mean_abs_diff=0.00000000  ->  FROZEN — not learning at all
+  bias_proj.0.bias: mean_abs_diff=0.00512638  ->  LEARNING SLOWLY — some movement
+  bias_proj.0.weight: mean_abs_diff=0.00318321  ->  LEARNING SLOWLY — some movement
+  bias_proj.2.bias: mean_abs_diff=0.00156733  ->  LEARNING SLOWLY — some movement
+  bias_proj.2.weight: mean_abs_diff=0.00954572  ->  LEARNING SLOWLY — some movement
+  distance_rbf.centers: mean_abs_diff=0.00000000  ->  FROZEN — not learning at all

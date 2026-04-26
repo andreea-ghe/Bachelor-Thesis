@@ -64,7 +64,7 @@ def pairwise_alignment(critical_pcs_source, critical_pcs_target, match_submatrix
     v, u = np.linalg.eigh(N)
     id = v.argmax()
 
-    # convert quaternion → rotation matrix
+    # convert quaternion -> rotation matrix
     q = u[:, id]
     R = np.array(
         [

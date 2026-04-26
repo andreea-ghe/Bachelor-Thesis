@@ -1,14 +1,5 @@
 #!/usr/bin/env python3
-"""
-Extract test metrics from eval log files and format them as a Python list
-ready to paste into avg_results.py.
 
-Usage:
-    python scripts/extract_eval_results.py <folder_path>
-
-Example:
-    python scripts/extract_eval_results.py results/jigsaw_multi_4x4_128_512_250e_cosine_everyday/double_layers_new_arch/simple_attn
-"""
 import sys
 import os
 import glob
@@ -33,28 +24,8 @@ def extract_metrics_from_log(log_path):
 
 
 def main():
-    if len(sys.argv) < 2:
-        print("Usage: python scripts/extract_eval_results.py <folder_path>")
-        print("\nAvailable folders:")
-        base_dirs = [
-            "results/jigsaw_multi_4x4_128_512_250e_cosine_everyday/double_layers_new_arch/simple_attn",
-            "results/jigsaw_multi_4x4_128_512_250e_cosine_everyday/double_layers_new_arch/pair_attn",
-            "results/jigsaw_multi_4x4_128_512_250e_cosine_artifact/double_layers_new_arch/simple_attn",
-            "results/jigsaw_multi_4x4_128_512_250e_cosine_artifact/double_layers_new_arch/pair_attn",
-        ]
-        for d in base_dirs:
-            if os.path.isdir(d):
-                n = len(glob.glob(os.path.join(d, "eval_log_*.log")))
-                print(f"  {d}  ({n} logs)")
-        sys.exit(1)
-
     folder = sys.argv[1]
     log_files = sorted(glob.glob(os.path.join(folder, "eval_log_*.log")))
-
-    if not log_files:
-        print(f"No eval_log_*.log files found in {folder}")
-        sys.exit(1)
-
     print(f"Found {len(log_files)} eval logs in {folder}\n")
 
     results = []

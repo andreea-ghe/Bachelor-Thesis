@@ -25,7 +25,7 @@ Found 11 checkpoints in results/jigsaw_finetune_multi_everyday_pair_attn_correct
 
   Output bias (dummy input):
     mean=+0.735128  std=0.149995  range=[+0.485716, +0.865849]  abs_mean=0.735128
-    ✅  Good variance — bias differentiates between pairs
+      Good variance — bias differentiates between pairs
 
 ================================================================================
 [modelepoch=059.ckpt]  (epoch=59)
@@ -58,7 +58,7 @@ Found 11 checkpoints in results/jigsaw_finetune_multi_everyday_pair_attn_correct
 
   Output bias (dummy input):
     mean=+0.708412  std=0.053819  range=[+0.595287, +0.746647]  abs_mean=0.708412
-    ⚠️  LOW VARIANCE — bias is nearly constant, minimal effect on attention
+      LOW VARIANCE — bias is nearly constant, minimal effect on attention
 
 ================================================================================
 [modelepoch=064.ckpt]  (epoch=64)
@@ -91,7 +91,7 @@ Found 11 checkpoints in results/jigsaw_finetune_multi_everyday_pair_attn_correct
 
   Output bias (dummy input):
     mean=+1.189268  std=0.887253  range=[+0.717671, +3.226670]  abs_mean=1.189268
-    ✅  Good variance — bias differentiates between pairs
+      Good variance — bias differentiates between pairs
 
 ================================================================================
 [modelepoch=069.ckpt]  (epoch=69)
@@ -124,7 +124,7 @@ Found 11 checkpoints in results/jigsaw_finetune_multi_everyday_pair_attn_correct
 
   Output bias (dummy input):
     mean=+0.546442  std=0.276188  range=[+0.183103, +0.767643]  abs_mean=0.546442
-    ✅  Good variance — bias differentiates between pairs
+      Good variance — bias differentiates between pairs
 
 ================================================================================
 [modelepoch=074.ckpt]  (epoch=74)
@@ -157,7 +157,7 @@ Found 11 checkpoints in results/jigsaw_finetune_multi_everyday_pair_attn_correct
 
   Output bias (dummy input):
     mean=+0.766902  std=0.059508  range=[+0.713225, +0.866793]  abs_mean=0.766902
-    ⚠️  LOW VARIANCE — bias is nearly constant, minimal effect on attention
+      LOW VARIANCE — bias is nearly constant, minimal effect on attention
 
 ================================================================================
 [modelepoch=079.ckpt]  (epoch=79)
@@ -190,7 +190,7 @@ Found 11 checkpoints in results/jigsaw_finetune_multi_everyday_pair_attn_correct
 
   Output bias (dummy input):
     mean=+1.181071  std=0.812595  range=[+0.759026, +2.757330]  abs_mean=1.181071
-    ✅  Good variance — bias differentiates between pairs
+      Good variance — bias differentiates between pairs
 
 ================================================================================
 [modelepoch=084.ckpt]  (epoch=84)
@@ -223,7 +223,7 @@ Found 11 checkpoints in results/jigsaw_finetune_multi_everyday_pair_attn_correct
 
   Output bias (dummy input):
     mean=+0.660943  std=0.120615  range=[+0.511013, +0.771469]  abs_mean=0.660943
-    ✅  Good variance — bias differentiates between pairs
+      Good variance — bias differentiates between pairs
 
 ================================================================================
 [modelepoch=089.ckpt]  (epoch=89)
@@ -256,7 +256,7 @@ Found 11 checkpoints in results/jigsaw_finetune_multi_everyday_pair_attn_correct
 
   Output bias (dummy input):
     mean=+0.729416  std=0.116922  range=[+0.513297, +0.869775]  abs_mean=0.729416
-    ✅  Good variance — bias differentiates between pairs
+      Good variance — bias differentiates between pairs
 
 ================================================================================
 [modelepoch=094.ckpt]  (epoch=94)
@@ -289,7 +289,7 @@ Found 11 checkpoints in results/jigsaw_finetune_multi_everyday_pair_attn_correct
 
   Output bias (dummy input):
     mean=+0.884830  std=0.261888  range=[+0.660910, +1.333817]  abs_mean=0.884830
-    ✅  Good variance — bias differentiates between pairs
+      Good variance — bias differentiates between pairs
 
 ================================================================================
 [modelepoch=099.ckpt]  (epoch=99)
@@ -322,7 +322,7 @@ Found 11 checkpoints in results/jigsaw_finetune_multi_everyday_pair_attn_correct
 
   Output bias (dummy input):
     mean=+0.719256  std=0.041198  range=[+0.667609, +0.757439]  abs_mean=0.719256
-    ⚠️  LOW VARIANCE — bias is nearly constant, minimal effect on attention
+      LOW VARIANCE — bias is nearly constant, minimal effect on attention
 
 ================================================================================
 [last.ckpt]  (last)
@@ -355,17 +355,17 @@ Found 11 checkpoints in results/jigsaw_finetune_multi_everyday_pair_attn_correct
 
   Output bias (dummy input):
     mean=+0.760403  std=0.008229  range=[+0.750195, +0.772969]  abs_mean=0.760403
-    ⚠️  LOW VARIANCE — bias is nearly constant, minimal effect on attention
+      LOW VARIANCE — bias is nearly constant, minimal effect on attention
 
 
 ================================================================================
 SUMMARY
 ================================================================================
 
-Weight changes (first → last checkpoint):
-  angle_rbf.centers: mean_abs_diff=0.00000000  → ❌ FROZEN — not learning at all
-  bias_proj.0.bias: mean_abs_diff=0.00356677  → 🟡 LEARNING SLOWLY — some movement
-  bias_proj.0.weight: mean_abs_diff=0.00271543  → 🟡 LEARNING SLOWLY — some movement
-  bias_proj.2.bias: mean_abs_diff=0.01571312  → ✅ LEARNING — significant weight changes
-  bias_proj.2.weight: mean_abs_diff=0.00934874  → 🟡 LEARNING SLOWLY — some movement
-  distance_rbf.centers: mean_abs_diff=0.00000000  → ❌ FROZEN — not learning at al
+Weight changes (first -> last checkpoint):
+  angle_rbf.centers: mean_abs_diff=0.00000000  ->  FROZEN — not learning at all
+  bias_proj.0.bias: mean_abs_diff=0.00356677  ->  LEARNING SLOWLY — some movement
+  bias_proj.0.weight: mean_abs_diff=0.00271543  ->  LEARNING SLOWLY — some movement
+  bias_proj.2.bias: mean_abs_diff=0.01571312  ->  LEARNING — significant weight changes
+  bias_proj.2.weight: mean_abs_diff=0.00934874  ->  LEARNING SLOWLY — some movement
+  distance_rbf.centers: mean_abs_diff=0.00000000  ->  FROZEN — not learning at al

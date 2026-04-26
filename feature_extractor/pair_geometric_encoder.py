@@ -6,14 +6,14 @@ from feature_extractor.utils_gaussian_rbf import GaussianRBF
 
 class PairGeometricEncoder(nn.Module):
     """
-    Computes geometric pair attention bias between parts (Pair Attention).
+    Computes geometric pair attention bias between parts, pair attention.
 
     For each pair of parts (i, j), encodes:
-        1. Center of mass:    p_i = (1/N_i) Σ x_j
+        1. Center of mass: p_i = (1/N_i) Σ x_j
         2. Pairwise distance: d_ij = RBF(||p_i - p_j||)
-        3. Triplet angles:    r_ij = Σ_k RBF(cos ∠_ijk)
+        3. Triplet angles: r_ij = Σ_k RBF(cos ijk)
 
-    Projects [d_ij; r_ij] → scalar bias per pair via a 2-layer MLP, then
+    Projects [d_ij; r_ij] -> scalar bias per pair via a 2-layer MLP, then
     expands from part-level [B, P, P] to point-level [B, 1, N_SUM, N_SUM]
     so it can be added to attention scores before softmax (broadcast across heads).
     """
@@ -30,8 +30,8 @@ class PairGeometricEncoder(nn.Module):
         self.distance_rbf = GaussianRBF(num_bases=num_bases, distance_range=distance_range)
         self.angle_rbf = GaussianRBF(num_bases=num_bases, distance_range=angle_range)
 
-        # 2-layer MLP: [d_ij; r_ij] → hidden → scalar bias
-        # deeper than a single linear layer → can learn non-linear geometric patterns
+        # 2-layer MLP: [d_ij; r_ij] -> hidden -> scalar bias
+        # deeper than a single linear layer,  can learn non-linear geometric patterns
         hidden_dim = num_bases * 2  # same as input dim
         self.bias_proj = nn.Sequential(
             nn.Linear(num_bases * 2, hidden_dim),
@@ -79,9 +79,8 @@ class PairGeometricEncoder(nn.Module):
 
     def _compute_triplet_angles(self, centroids: Tensor, n_pcs: Tensor) -> Tensor:
         """
-        Compute triplet-wise angle features: r_ij = Σ_k RBF(cos ∠_ijk)
-
-        ∠_ijk is the angle at vertex j, formed by edges j→i and j→k.
+        Compute triplet-wise angle features: r_ij = Σ_k RBF(cos ijk)
+        _ijk is the angle at vertex j, formed by edges j->i and j->k.
 
         Input:
             centroids: [B, P, 3]
@@ -94,15 +93,14 @@ class PairGeometricEncoder(nn.Module):
         v_norm = torch.norm(v, dim=-1, keepdim=True).clamp(min=1e-8)
         v_hat = v / v_norm  # [B, P, P, 3]
 
-        # cos(∠_ijk) with angle at vertex j:
-        #   = dot(v_hat[b, j, i], v_hat[b, j, k])
+        # cos(ijk) = dot(v_hat[b, j, i], v_hat[b, j, k])
         # Batched dot product via matmul:
-        #   v_hat @ v_hat^T → [B, P, P, P]
+        #   v_hat @ v_hat^T -> [B, P, P, P]
         #   result[b, j, i, k] = v_hat[b,j,i,:] · v_hat[b,j,k,:]
         cos_angles = torch.matmul(v_hat, v_hat.transpose(2, 3))  # [B, j, i, k]
         cos_angles = cos_angles.clamp(-1.0, 1.0)
 
-        # Reindex so pair (i, j) is in the first two dims: [B, j, i, k] → [B, i, j, k]
+        # Reindex so pair (i, j) is in the first two dims: [B, j, i, k] -> [B, i, j, k]
         cos_angles = cos_angles.permute(0, 2, 1, 3)  # [B, P_i, P_j, P_k]
 
         # RBF encode all cosines
@@ -113,7 +111,7 @@ class PairGeometricEncoder(nn.Module):
         k_mask = valid_mask[:, None, None, :, None]  # [B, 1, 1, P, 1]
         rbf_encoded = rbf_encoded * k_mask
 
-        # Sum over k: r_ij = Σ_k RBF(cos ∠_ijk)
+        # Sum over k: r_ij = Σ_k RBF(cos ijk)
         angle_features = rbf_encoded.sum(dim=3)  # [B, P, P, num_bases]
 
         return angle_features
@@ -136,7 +134,7 @@ class PairGeometricEncoder(nn.Module):
         point_bias = torch.zeros(B, N_SUM, N_SUM, device=device, dtype=pair_bias.dtype)
 
         for b in range(B):
-            # Build part assignment: point i → part index
+            # Build part assignment: point i -> part index
             part_idx = torch.repeat_interleave(
                 torch.arange(P, device=device),
                 n_pcs[b].long()
@@ -168,21 +166,21 @@ class PairGeometricEncoder(nn.Module):
         """
         N_SUM = part_pcs.shape[1]
 
-        # Step 1: p_i = (1/N_i) Σ x_j — center of mass per part
+        # Step 1: p_i = (1/N_i) Σ x_j - center of mass per part
         centroids = self._compute_centroids(part_pcs, n_pcs)  # [B, P, 3]
 
-        # Step 2: d_ij = RBF(||p_i - p_j||) — pairwise distance features
+        # Step 2: d_ij = RBF(||p_i - p_j||) - pairwise distance features
         distances = self._compute_pairwise_distances(centroids)  # [B, P, P]
         dist_features = self.distance_rbf(distances)  # [B, P, P, num_bases]
 
-        # Step 3: r_ij = Σ_k RBF(cos ∠_ijk) — triplet angle features
+        # Step 3: r_ij = Σ_k RBF(cos ijk) - triplet angle features
         angle_features = self._compute_triplet_angles(centroids, n_pcs)  # [B, P, P, num_bases]
 
-        # Step 4: project [d_ij; r_ij] → scalar bias via MLP
+        # Step 4: project [d_ij; r_ij] -> scalar bias via MLP
         pair_features = torch.cat([dist_features, angle_features], dim=-1)  # [B, P, P, 2*num_bases]
         pair_bias = self.bias_proj(pair_features).squeeze(-1)  # [B, P, P]
 
-        # Step 5: expand part-level → point-level
+        # Step 5: expand part-level -> point-level
         pair_bias = self._expand_to_point_level(pair_bias, n_pcs, N_SUM)  # [B, 1, N_SUM, N_SUM]
 
         return pair_bias

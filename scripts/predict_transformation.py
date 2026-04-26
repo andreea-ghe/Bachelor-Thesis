@@ -127,7 +127,7 @@ def save_transformed_meshes(piece_paths, pred_transforms, data_dict, save_dir):
         pred_R = pred_transforms['rot'][0, i]
         pred_t = pred_transforms['trans'][0, i]
 
-        # original mesh → scrambled space → predicted assembled space
+        # original mesh -> scrambled space -> predicted assembled space
         verts = np.array(mesh.vertices)
         scrambled = (np.linalg.inv(gt_R) @ (verts - gt_t).T).T
         assembled = (pred_R @ scrambled.T).T + pred_t

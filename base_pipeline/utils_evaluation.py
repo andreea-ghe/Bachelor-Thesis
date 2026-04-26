@@ -15,7 +15,7 @@ def part_acc_and_cd(point_cloud, predicted_trans, gt_trans, predicted_rot, gt_ro
     
     2. Chamfer Distance (CD): Average point cloud distance
     Chamfer Distance measures the average distance between point clouds:
-    CD(A, B) = mean(min_dist(a→B)) + mean(min_dist(b→A))
+    CD(A, B) = mean(min_dist(a->B)) + mean(min_dist(b->A))
     """
     B, P = point_cloud.shape[:2]
 

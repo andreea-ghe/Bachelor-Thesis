@@ -56,7 +56,7 @@ class PointNetEncoder(nn.Module):
         # xyz shape should be just [num_points, num_features]
         # we only consider in a batch the points from the same piece
         # this ensures every fragment gets its own centroids
-        # .unsqueeze(0) → [1, S]
+        # .unsqueeze(0) -> [1, S]
         centroids = fps(xyz[0, :, :], batch=piece_id.reshape(B * N), ratio=self.ratio).unsqueeze(0) # [B, S, C]
         S = centroids.shape[1] # number of sampled points
 

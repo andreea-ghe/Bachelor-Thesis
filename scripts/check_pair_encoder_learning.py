@@ -1,15 +1,11 @@
 """
-Quick diagnostic: check if the pair geometric encoder is actually learning.
+Check if the pair geometric encoder is actually learning.
+python scripts/check_pair_encoder_evolution.py results/jigsaw_finetune_everyday_pair_attn/model_save/
 
-Run on the remote after a few epochs of training to verify the LR fix works.
-Usage:
-    python scripts/check_pair_encoder_evolution.py results/jigsaw_finetune_everyday_pair_attn/model_save/
-
-It will:
-  1. Load all checkpoints in the directory
-  2. Print pair_geometric_encoder weight stats per checkpoint
-  3. Show how much the weights changed from the first checkpoint
-  4. Show the output bias magnitude on a dummy input
+1. Loads all checkpoints in the directory
+2. Prints pair_geometric_encoder weight stats per checkpoint
+3. Shows how much the weights changed from the first checkpoint
+4. Shows the output bias magnitude on a dummy input
 """
 
 import sys
@@ -165,9 +161,9 @@ def main():
             print(f"    mean={output['mean']:+.6f}  std={output['std']:.6f}  "
                   f"range=[{output['min']:+.6f}, {output['max']:+.6f}]  abs_mean={output['abs_mean']:.6f}")
             if output['std'] < 0.1:
-                print(f"    ⚠️  LOW VARIANCE — bias is nearly constant, minimal effect on attention")
+                print(f"    LOW VARIANCE — bias is nearly constant, minimal effect on attention")
             else:
-                print(f"    ✅  Good variance — bias differentiates between pairs")
+                print(f"    Good variance — bias differentiates between pairs")
 
         print()
 
@@ -178,18 +174,18 @@ def main():
     if reference_sd and len(ckpt_files) > 1:
         last_results = analyze_checkpoint(ckpt_files[-1], reference_sd)
         if last_results:
-            print(f"\nWeight changes (first → last checkpoint):")
+            print(f"\nWeight changes (first -> last checkpoint):")
             for name, stats in last_results['weights'].items():
                 if 'diff_mean' in stats:
                     if stats['diff_mean'] < 1e-6:
-                        verdict = "❌ FROZEN — not learning at all"
+                        verdict = "FROZEN — not learning at all"
                     elif stats['diff_mean'] < 1e-4:
-                        verdict = "⚠️  BARELY MOVING — LR may still be too low"
+                        verdict = "BARELY MOVING — LR may still be too low"
                     elif stats['diff_mean'] < 1e-2:
-                        verdict = "🟡 LEARNING SLOWLY — some movement"
+                        verdict = "LEARNING SLOWLY — some movement"
                     else:
-                        verdict = "✅ LEARNING — significant weight changes"
-                    print(f"  {name}: mean_abs_diff={stats['diff_mean']:.8f}  → {verdict}")
+                        verdict = "LEARNING — significant weight changes"
+                    print(f"  {name}: mean_abs_diff={stats['diff_mean']:.8f} -> {verdict}")
 
 if __name__ == '__main__':
     main()
