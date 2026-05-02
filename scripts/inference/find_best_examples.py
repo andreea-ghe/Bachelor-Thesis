@@ -156,7 +156,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Find best demo examples by batch inference on a metadata file")
     parser.add_argument("--cfg", required=True, help="Path to eval YAML config")
     parser.add_argument("--metafile", required=True, help="Metadata pickle (.txt) with data_list of folder paths")
-    parser.add_argument("--data_dir", required=True, help="Actual dataset root on this machine (replaces /workspace/everyday)")
+    # parser.add_argument("--data_dir", required=True, help="Actual dataset root on this machine (replaces /workspace/everyday)")
     parser.add_argument("--sample_n", type=int, default=50, help="How many objects to randomly sample (default: 50)")
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
