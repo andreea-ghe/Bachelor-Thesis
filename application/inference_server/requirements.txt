@@ -1,0 +1,7 @@
+# FastAPI + server
+fastapi>=0.115
+uvicorn[standard]>=0.32
+python-multipart>=0.0.12
+
+# These are also needed but are installed by setup_5090_env.sh:
+# torch, pytorch-lightning, trimesh, scipy, numpy, etc.
