@@ -1,0 +1,283 @@
+\chapter{Experiments and Results}
+\label{chap:ch6}
+
+This chapter presents the experimental evaluation of the proposed modifications to the Jigsaw framework. What began as a straightforward ablation study evolved into a deeper investigation, as an unexpected dataset issue and an accidental hyperparameter misconfiguration revealed insights that proved more illuminating than the original improvements themselves.
+
+\section{Experimental Setup}
+
+\subsection{The Breaking Bad Dataset}
+
+All experiments are conducted on the Breaking Bad dataset \cite{sellan2022breaking}, a large-scale benchmark for 3D fracture assembly that simulates how real-world objects break using physically-based fracture algorithms. The dataset provides two official splits: a training set and a validation set. Following the evaluation protocol established by the original Jigsaw framework \cite{lu2023jigsaw} and subsequent works in this domain, we train on the training split and report all results on the validation split.
+
+The \textbf{everyday} subset contains 34,075 fracture patterns from 407 object models for training and 7,679 fracture patterns from 91 objects for evaluation, spanning 20 object categories (bottles, bowls, cups, vases, etc.). The \textbf{artifact} subset contains 3,651 fracture patterns from 40 uncategorized objects, serving as a cross-domain generalization benchmark: models trained on everyday objects are evaluated on artifact objects without any fine-tuning on artifact data.
+
+\subsection{Evaluation Metrics}
+
+We adopt the standard evaluation metrics used across the 3D assembly literature \cite{lu2023jigsaw, sellan2022breaking}:
+
+\begin{itemize}
+    \item \textbf{Part Accuracy (PA $\uparrow$):} The fraction of fragments whose Chamfer distance to their ground-truth position falls below a threshold of 0.01. This is the primary metric for overall assembly quality.
+    \item \textbf{Rotation MAE ($\downarrow$):} Mean absolute error of the predicted rotation matrices, measured in degrees.
+    \item \textbf{Translation MAE ($\downarrow$):} Mean absolute error of the predicted translation vectors ($\times 10^{-2}$).
+    \item \textbf{Chamfer Distance (CD $\downarrow$):} Average bidirectional distance between the predicted and ground-truth point clouds ($\times 10^{-3}$), measuring overall alignment quality.
+    \item \textbf{Matching F1 (Mat F1 $\uparrow$):} The harmonic mean of precision and recall for the predicted point-to-point correspondences.
+\end{itemize}
+
+All results are reported as the mean $\pm$ standard deviation over three independent evaluation runs with different random seeds to ensure statistical reliability.
+
+\subsection{Implementation Details}
+\label{sec:impl_details}
+
+All models are fine-tuned from the official pretrained Jigsaw checkpoint, which was originally trained for 250 epochs on the full everyday subset (2--20 pieces) using Adam with a learning rate of $10^{-3}$ and cosine annealing. Table~\ref{tab:hyperparams} summarizes the shared hyperparameters used across all fine-tuning experiments. The only differences between configurations are the architectural modifications (pair attention, double attention) and the loss scheduling, which are noted explicitly in each experiment.
+
+\begin{table}[h]
+\centering
+\caption{Shared hyperparameters for all fine-tuning experiments. The only parameters that vary across experiments are the architectural flags (\texttt{USE\_PAIR\_BIAS}, \texttt{USE\_DOUBLE\_ATTN}) and the loss schedule (\texttt{mat\_epoch}, \texttt{rig\_epoch}).}
+\label{tab:hyperparams}
+\begin{tabular}{ll}
+\toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
+Epochs & 100 \\
+Optimizer & Adam \\
+Base learning rate & $10^{-4}$ (10$\times$ lower than original training) \\
+New layer LR multiplier & $10\times$ (effective LR $10^{-3}$) \\
+LR scheduler & Cosine annealing \\
+Batch size & 4 (two-piece) / 2 (multi-piece) \\
+Points per object & 5,000 (area-weighted sampling) \\
+Min. points per fragment & 30 \\
+Checkpoint selection & Best \texttt{val/mat\_f1} \\
+\midrule
+\multicolumn{2}{l}{\textit{Standard loss schedule (unless noted otherwise):}} \\
+Segmentation loss ($\alpha$) & 1.0 from epoch 0 \\
+Matching loss ($\beta$) & 1.0 from epoch 0 \\
+Rigidity loss ($\gamma$) & 1.0 from epoch 30 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+New modules (pair geometric encoder, second attention layers) receive a $10\times$ higher learning rate than pretrained parameters, since they are initialized from scratch and must learn faster to catch up with the already-converged backbone.
+
+\subsection{Scope and Limitations}
+
+It is important to note that our experiments focus on a restricted setting compared to the full Breaking Bad benchmark. Due to computational constraints, we fine-tune and evaluate on subsets of 2 pieces (pairwise assembly) and 2--4 pieces (limited multi-piece assembly), rather than the full 2--20 piece range used in the original Jigsaw evaluation. As a result, our absolute numbers are not directly comparable to published results that evaluate on the complete piece range. However, all comparisons between our proposed modifications and the baseline are conducted under identical conditions, ensuring internal validity.
+
+\section{Context: Published Results on Breaking Bad}
+
+Before presenting our experiments, we situate the Jigsaw baseline within the broader landscape. Table~\ref{tab:literature} reports published results from recent methods on the full Breaking Bad benchmark (2--20 pieces). These numbers serve as context but are \textit{not} directly comparable to our results, which operate on restricted piece-count subsets.
+
+\begin{table}[h]
+\centering
+\caption{Published results on the full Breaking Bad dataset (2--20 pieces). Results are taken from the respective papers. Note that GARF uses the volume-constrained variant of the dataset, which excludes small chip-like fragments.}
+\label{tab:literature}
+\begin{tabular}{lcccc|cccc}
+\toprule
+& \multicolumn{4}{c|}{\textbf{Everyday}} & \multicolumn{4}{c}{\textbf{Artifact}} \\
+\textbf{Method} & \rotatebox{70}{RMSE(R)$\downarrow$} & \rotatebox{70}{MAE(T)$\downarrow$} & \rotatebox{70}{PA$\uparrow$} & \rotatebox{70}{CD$\downarrow$} & \rotatebox{70}{RMSE(R)$\downarrow$} & \rotatebox{70}{MAE(T)$\downarrow$} & \rotatebox{70}{PA$\uparrow$} & \rotatebox{70}{CD$\downarrow$} \\
+\midrule
+Global \cite{huang2006reassembling} & 80.5 & 12.0 & 28.7 & 13.0 & -- & -- & -- & -- \\
+DGL \cite{Huang2020DGL} & 80.3 & 11.9 & 31.6 & 11.8 & -- & -- & -- & -- \\
+Jigsaw \cite{lu2023jigsaw} & 42.2 & 8.7 & 68.9 & 8.2 & 43.8 & -- & 65.1 & 8.5 \\
+PMTR \cite{lee20243d} & 31.6 & 10.0 & 70.6 & 5.6 & -- & -- & -- & -- \\
+PHFormer \cite{cui2024phformer} & 26.1 & 7.5 & 50.7 & 9.6 & -- & -- & -- & -- \\
+GARF \cite{Li2025GARF} & 6.1 & 1.2 & 95.3 & 0.2 & 5.8 & 1.3 & 95.0 & 0.4 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Act I: Early Promise on an Incomplete Dataset}
+
+Our initial experiments were conducted on what we believed to be the full Breaking Bad dataset. In reality, due to a data transfer issue, approximately 37\% of the fracture patterns were missing from the everyday subset---a fact we only discovered later. This section presents the results obtained on this incomplete dataset, which, as we will see, tells an important story about the role of data quantity versus architectural capacity.
+
+\subsection{Baseline: Fine-Tuning for Two-Piece Assembly}
+
+As a first step, we fine-tuned the pretrained Jigsaw model exclusively on 2-piece fracture patterns using the standard loss schedule. Table~\ref{tab:two_piece_incomplete} shows the results. Even this simple specialization produced a dramatic improvement over the original multi-piece checkpoint: part accuracy jumped from 57.1\% to 75.9\% on everyday and from 45.4\% to 63.8\% on artifact. This confirmed that the pretrained model had substantial room for improvement when focused on a specific piece-count regime.
+
+\subsection{ICP Refinement}
+
+Adding an ICP refinement step between RANSAC and Shonan averaging (Section~\ref{sec:icp_methodology}) yielded a consistent improvement of approximately 1 percentage point on both subsets. Since ICP operates purely on the geometric alignment stage and introduces no learnable parameters, this improvement is entirely orthogonal to the attention-based modifications. We retain ICP in all subsequent experiments.
+
+\subsection{Pair Geometric Attention Bias}
+
+On two pieces, the pair attention bias had minimal effect, as theoretically expected. With only two fragments, the bias matrix reduces to a single scalar applied uniformly to all cross-piece attention scores, and no triplet angles can be computed. The slight improvement on artifact (+3 points) is likely attributable to the additional regularization effect of the pair encoder's parameters rather than meaningful geometric reasoning.
+
+\subsection{Gated Double Attention}
+
+This is where the results became genuinely interesting. The gated double attention layers produced a consistent improvement across both subsets: +2.1 points on everyday (75.9\% $\rightarrow$ 78.0\%) and +4.7 points on artifact (63.8\% $\rightarrow$ 68.5\%). The second attention pass was clearly providing additional representational capacity that the model could exploit.
+
+\begin{table}[H]
+\centering
+\caption{Two-piece assembly results on the \textbf{incomplete} everyday dataset ($\sim$21,500 training patterns). All models include ICP refinement except the first baseline row. Results averaged over 3 runs.}
+\label{tab:two_piece_incomplete}
+\begin{tabular}{l|ccccc|ccccc}
+\toprule
+& \multicolumn{5}{c|}{\textbf{Everyday}} & \multicolumn{5}{c}{\textbf{Artifact}} \\
+\textbf{Model} & PA$\uparrow$ & R-MAE$\downarrow$ & T-MAE$\downarrow$ & CD$\downarrow$ & MF1$\uparrow$
+               & PA$\uparrow$ & R-MAE$\downarrow$ & T-MAE$\downarrow$ & CD$\downarrow$ & MF1$\uparrow$ \\
+\midrule
+Baseline & 75.9 & 23.5 & 4.83 & 7.26 & 8.8 & 63.8 & 32.6 & 7.18 & 9.82 & 3.7 \\
++ ICP & 76.8 & 22.1 & 4.55 & 6.77 & 9.1 & 64.6 & 31.4 & 7.13 & 9.74 & 3.7 \\
++ Pair Attn & 76.2 & 23.4 & 4.62 & 6.83 & 9.1 & 66.8 & 30.8 & 6.38 & 8.44 & 4.1 \\
++ Double Attn & \textbf{78.0} & \textbf{22.6} & \textbf{4.79} & \textbf{7.33} & \textbf{11.4} & \textbf{68.5} & \textbf{28.5} & \textbf{7.56} & \textbf{10.6} & \textbf{3.2} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+At this point, the narrative was clear: the gated double attention was a meaningful architectural contribution, providing deeper feature refinement that translated into better assembly accuracy. We were optimistic.
+
+\section{The Twist: A Discovery About the Data}
+
+While investigating inconsistencies in our evaluation metrics, we discovered that the Breaking Bad dataset we had been using was incomplete. A data transfer issue had silently dropped approximately 37\% of the fracture patterns from the everyday training subset. Table~\ref{tab:data_gap} quantifies the discrepancy.
+
+\begin{table}[h]
+\centering
+\caption{Dataset completeness comparison. The incomplete version was missing fracture patterns non-uniformly across categories, with some categories (Vase, Bottle) losing nearly 50\% of their data.}
+\label{tab:data_gap}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Split} & \textbf{Incomplete} & \textbf{Complete} \\
+\midrule
+Everyday train & 21,494 patterns & 34,075 patterns \\
+Everyday val & 4,805 patterns & 7,679 patterns \\
+Artifact (unchanged) & 3,651 patterns & 3,651 patterns \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The missing patterns were not random: categories with complex geometry (Vase: 49\%, Bottle: 48\%) were disproportionately affected, while simpler objects (Statue: 13\%, Teacup: 13\%) were relatively intact. This non-uniform data loss had been silently biasing our results.
+
+We immediately re-ran all experiments on the complete dataset. What followed overturned our initial conclusions.
+
+\section{Act II: The Complete Dataset Changes Everything}
+
+\subsection{The Data Quantity Effect}
+
+The most striking result was how much the baseline improved from data alone. Simply fine-tuning the same model on the complete dataset, with no architectural changes, produced a massive jump: part accuracy on everyday rose from 75.9\% to \textbf{86.4\%}---an improvement of over 10 percentage points. Translation error was cut in half. The model was not capacity-starved; it was \textit{data-starved}.
+
+\subsection{The Architectural Modifications Lose Their Edge}
+
+With sufficient training data, neither pair attention nor double attention produced meaningful improvements over the baseline (Table~\ref{tab:two_piece_complete}). Pair attention showed no statistically significant change, consistent with its theoretical limitation on two pieces. But critically, double attention---which had been the star of the incomplete-dataset experiments---also showed \textit{no improvement} (86.0\% vs.\ 86.4\%).
+
+\begin{table}[H]
+\centering
+\caption{Two-piece assembly results on the \textbf{complete} everyday dataset ($\sim$34,000 training patterns). All models include ICP refinement. Results averaged over 3 runs.}
+\label{tab:two_piece_complete}
+\begin{tabular}{l|ccccc|ccccc}
+\toprule
+& \multicolumn{5}{c|}{\textbf{Everyday}} & \multicolumn{5}{c}{\textbf{Artifact}} \\
+\textbf{Model} & PA$\uparrow$ & R-MAE$\downarrow$ & T-MAE$\downarrow$ & CD$\downarrow$ & MF1$\uparrow$
+               & PA$\uparrow$ & R-MAE$\downarrow$ & T-MAE$\downarrow$ & CD$\downarrow$ & MF1$\uparrow$ \\
+\midrule
+Baseline & \textbf{86.4} & \textbf{16.8} & 2.48 & \textbf{2.68} & 10.9 & 72.7 & 26.7 & 6.47 & 11.6 & 5.5 \\
++ Pair Attn & 85.8 & 16.7 & 2.58 & 2.96 & 11.0 & \textbf{74.0} & \textbf{25.9} & \textbf{6.33} & \textbf{11.2} & \textbf{5.9} \\
++ Double Attn & 86.0 & 17.8 & \textbf{2.60} & 2.87 & \textbf{11.0} & 72.9 & 26.3 & 6.29 & 10.6 & 6.1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+This was a humbling but instructive result. The double attention layers had not been learning genuinely new geometric reasoning on the incomplete dataset---they had been \textit{compensating for missing data}. With 37\% fewer training patterns, the single-pass attention was unable to fully capture the distribution of fracture geometries. The second attention pass, with its additional parameters and iterative refinement, acted as an implicit regularizer that squeezed more information out of the limited data available. Once sufficient data was provided, the single-pass model captured the same patterns on its own, and the extra capacity became redundant.
+
+\subsection{Multi-Piece Assembly (2--4 Pieces)}
+
+To test whether the proposed modifications would prove more valuable in the multi-piece setting---where the combinatorial complexity of matching grows and pair attention can exploit richer geometric relationships---we extended our experiments to fragments with 2--4 pieces (Table~\ref{tab:multi_piece}).
+
+\begin{table}[H]
+\centering
+\caption{Multi-piece assembly results (2--4 pieces) on the \textbf{complete} dataset. All models include ICP refinement. Results averaged over 3 runs.}
+\label{tab:multi_piece}
+\begin{tabular}{l|ccccc|ccccc}
+\toprule
+& \multicolumn{5}{c|}{\textbf{Everyday}} & \multicolumn{5}{c}{\textbf{Artifact}} \\
+\textbf{Model} & PA$\uparrow$ & R-MAE$\downarrow$ & T-MAE$\downarrow$ & CD$\downarrow$ & MF1$\uparrow$
+               & PA$\uparrow$ & R-MAE$\downarrow$ & T-MAE$\downarrow$ & CD$\downarrow$ & MF1$\uparrow$ \\
+\midrule
+Baseline & \textbf{70.5} & \textbf{27.2} & \textbf{5.17} & \textbf{11.0} & 9.3 & \textbf{61.8} & \textbf{35.1} & \textbf{8.23} & \textbf{17.2} & 4.7 \\
++ Pair Attn & 70.2 & 28.2 & 5.23 & 10.7 & 9.5 & 61.3 & 36.0 & 8.34 & 17.1 & 5.1 \\
++ Double Attn & 70.3 & 27.9 & 5.08 & 10.3 & \textbf{9.6} & 61.3 & 34.7 & 8.05 & 16.5 & \textbf{5.0} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Unfortunately, neither modification improved upon the baseline. Pair attention, despite now having 3--4 fragments to form meaningful geometric relationships, showed no benefit. An analysis of the pair encoder's weight evolution (Table~\ref{tab:weight_evolution}) revealed that the MLP bias projection was learning slowly, with the distance and angle RBF centers remaining completely frozen. With only 100 epochs of fine-tuning and a maximum of 4 pieces, the encoder may simply not have had enough training signal or combinatorial diversity to learn useful geometric biases.
+
+\begin{table}[h]
+\centering
+\caption{Weight evolution of the pair geometric encoder across training, measured as mean absolute difference between first and last checkpoint. The RBF centers are registered buffers (non-learnable), while the MLP projection layers show varying degrees of adaptation.}
+\label{tab:weight_evolution}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Parameter} & \textbf{2-piece (inc.)} & \textbf{2-piece (comp.)} & \textbf{Multi-piece} \\
+\midrule
+\texttt{distance\_rbf.centers} & 0.000 (frozen) & 0.000 (frozen) & 0.000 (frozen) \\
+\texttt{angle\_rbf.centers} & 0.000 (frozen) & 0.000 (frozen) & 0.000 (frozen) \\
+\texttt{bias\_proj} layer 1 & 0.004 (slow) & 0.008 (moderate) & 0.003 (slow) \\
+\texttt{bias\_proj} layer 2 & 0.006 (slow) & 0.061 (active) & 0.013 (moderate) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Act III: The Accidental Discovery}
+
+During the incomplete-dataset phase, one experiment was inadvertently run with a non-standard loss schedule: the matching loss was delayed to epoch 9 (instead of activating immediately), and the rigidity loss was set to activate at epoch 199---effectively disabling it entirely for the 100-epoch fine-tuning run. This ``gentle'' schedule produced the \textit{best results of any experiment}: 80.4\% part accuracy on everyday and 69.4\% on artifact, substantially outperforming the standard-schedule double attention (78.0\% and 68.5\%).
+
+\begin{table}[H]
+\centering
+\caption{Impact of loss scheduling on gated double attention (two-piece, incomplete dataset). The gentle schedule delays the matching loss and disables rigidity loss entirely.}
+\label{tab:loss_schedule}
+\begin{tabular}{lcc|cc}
+\toprule
+& \multicolumn{2}{c|}{\textbf{Everyday}} & \multicolumn{2}{c}{\textbf{Artifact}} \\
+\textbf{Loss Schedule} & PA$\uparrow$ & Rot MAE$\downarrow$ & PA$\uparrow$ & Rot MAE$\downarrow$ \\
+\midrule
+Standard ($\beta$@0, $\gamma$@30) & 78.0 & 22.6 & 68.5 & 28.5 \\
+Gentle ($\beta$@9, $\gamma$@never) & \textbf{80.4} & \textbf{19.6} & \textbf{69.4} & \textbf{28.7} \\
+\midrule
+\textit{Difference} & \textit{+2.4} & \textit{$-$3.0} & \textit{+0.9} & \textit{+0.2} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+This accidental result is revealing. In the standard schedule, the matching loss fires from epoch 0, immediately pressuring the randomly initialized second attention layers to produce useful matching features. Even though the gates start at zero, the gradients from the matching loss flow backward through the gates, creating tension between the pretrained pathway and the new pathway from the very first step. The gentle schedule, by contrast, gives the new layers 9 epochs to adapt purely through the segmentation loss---a much softer learning signal---before the matching loss introduces its stronger gradient. The absence of rigidity loss further reduces the optimization burden, letting the matching module explore the loss landscape more freely.
+
+This sensitivity to loss scheduling exposes a fundamental challenge of fine-tuning with gated residual connections: while the zero-initialized gates protect the pretrained features at initialization, the \textit{gradients} are not gated. An aggressive loss schedule can destabilize the pretrained representations through gradient interference before the new layers have had time to calibrate.
+
+\section{Introspection: How the Gates Learned}
+
+To understand the behavior of the gated double attention layers beyond their downstream metrics, we examined the learned gate values and the weight divergence of the second attention layers across all configurations (Table~\ref{tab:gates}).
+
+\begin{table}[h]
+\centering
+\caption{Gate values and weight divergence of the second attention layers at the end of training. Relative divergence measures how much the second-pass layers ($\text{tf\_self2}$, $\text{tf\_cross2}$) have changed from their initialization (copies of the first-pass layers).}
+\label{tab:gates}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Configuration} & $g_s$ & $g_c$ & \textbf{Self2 div.} & \textbf{Cross2 div.} & \textbf{PA} \\
+\midrule
+2-piece, incomplete (gentle) & $-0.001$ & $-0.012$ & 0.51\% & 48.7\% & 80.4\% \\
+2-piece, complete (standard) & $+0.062$ & $-0.217$ & 0.31\% & 76.2\% & 86.0\% \\
+Multi-piece, complete (standard) & $+0.056$ & $-0.184$ & 0.43\% & 101.6\% & 70.3\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Three patterns emerge:
+
+\paragraph{The self-attention gate barely opens.} Across all configurations, $g_s$ remains close to zero and the second self-attention layer diverges less than 1\% from its initialization. The intra-fragment feature refinement provided by the first self-attention pass appears to be sufficient; the model finds no benefit in a second round of local reasoning.
+
+\paragraph{The cross-attention gate opens significantly.} The gate $g_c$ learns to take negative values (up to $-0.22$), and the second cross-attention layer diverges substantially (up to 101.6\%) from its initialization. This indicates that the model is actively using the second cross-attention layer, but in a \textit{subtractive} manner: the negative gate suppresses certain inter-fragment attention patterns established by the first pass, effectively acting as a learned correction rather than an additive refinement.
+
+\paragraph{Stronger learning does not guarantee better results.} On the complete dataset, the gates open wider and the layers diverge more than on the incomplete dataset---yet the performance improvement is negligible. The gates are learning \textit{something}, but what they learn is not sufficiently useful to improve the already-strong baseline established by the data-rich single-pass model.
+
+\section{Discussion}
+
+The experimental journey presented in this chapter yields several conclusions that, while not always the ones we initially hoped for, provide genuine insight into the interplay between architecture, data, and optimization in 3D fracture assembly.
+
+\paragraph{Data quantity dominates architectural innovation.} The single most impactful variable across all experiments was the amount of training data. The 10-point improvement from restoring the missing 37\% of fracture patterns dwarfed every architectural modification we tested. This is consistent with the broader trend in deep learning: for tasks where the model architecture is already well-matched to the problem structure---as Jigsaw's attention-based pipeline is for geometric matching---performance scales more reliably with data than with architectural complexity.
+
+\paragraph{Architectural modifications act as implicit regularizers in data-scarce regimes.} The double attention layers provided a measurable benefit (+2--5 points) when the model was data-starved, but became redundant with sufficient data. This is not a failure of the architecture---it is a well-documented phenomenon. In data-limited settings, additional model capacity can act as an inductive bias, extracting patterns that the base model cannot recover from sparse examples. When the full dataset is available, the base model learns those same patterns directly, and the extra capacity offers diminishing returns.
+
+\paragraph{ICP refinement is a reliable, orthogonal improvement.} Unlike the attention-based modifications, ICP consistently improved results by approximately 1 percentage point across all configurations. As a post-processing step that exploits dense geometric information without introducing learnable parameters, it carries no risk of overfitting or interference with the training dynamics.
+
+\paragraph{Loss scheduling is a critical but often overlooked hyperparameter.} The accidental discovery that a gentler loss schedule substantially outperformed the standard one highlights the importance of the loss activation schedule during fine-tuning. When integrating new architectural components into a pretrained model, the rate at which different loss terms are activated can determine whether the new components integrate smoothly or disrupt the pretrained representations. Due to limited computational resources, we were unable to conduct a systematic grid search over loss schedules, leaving this as an important direction for future work.
+
+\paragraph{Pair attention requires richer combinatorial diversity.} The pair geometric encoder showed no benefit on 2--4 piece assemblies, despite being theoretically motivated for multi-piece scenarios. We hypothesize that the limited piece-count range (maximum 4 fragments) does not provide sufficient combinatorial diversity for the geometric biases to differentiate themselves from what the cross-attention mechanism can already learn from the data. Testing on the full 2--20 piece range, where the number of candidate pairs grows quadratically and disambiguation becomes critical, remains a necessary step to validate or refute this hypothesis.

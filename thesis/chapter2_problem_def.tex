@@ -1,0 +1,49 @@
+\chapter{Problem definition}
+\label{chap:ch2}
+
+In this chapter, we formally define the 3D fractured object reassembly problem and position it within the broader context of 3D shape assembly. We begin by distinguishing between semantic part assembly and geometric fracture assembly, highlighting the fundamental differences in assumptions and challenges. Next, we introduce the mathematical formulation of the problem as a 6-DoF pose estimation task over point cloud representations. Finally, we outline the scope and objectives of this work by decomposing the problem into pairwise matching and global assembly, motivating our focus on the pairwise setting as a means to better understand and address the core challenges of local geometric alignment.
+
+\section{Taxonomy of 3D Assembly Problems}
+The field of 3D shape assembly is broadly divided into two primary sub-tasks: semantic part assembly, which deals with predefined, meaningful components, and geometric fracture assembly, which puts together irregular broken fragments.
+
+Part assembly refers to the process of assembling components that are decomposed in a semantically meaningful way, such as furniture components (e.g., table legs) or mechanical parts (such as screws). Although closely related to the fracture assembly problem, part assembly introduces several key differences. It generally assumes that each part has an independent semantic function and that each component is complete and functional on its own, unlike broken pieces from fracture assembly which are incomplete and lack semantic meaning (Figure~\ref{fig:representations}).
+
+While fracture assembly relies primarily on local and global geometric cues, part assembly depends more on semantic and functional understanding of individual components and their roles within the final object. Both paradigms implicitly incorporate prior knowledge: semantic priors in part assembly and geometric priors in fracture assembly, including global shape consistency and pairwise fragment compatibility. Many existing approaches leverage semantic segmentation to guide the assembly process; however, this assumption becomes limiting in geometric assembly scenarios, where such labels are unavailable and reconstruction must rely solely on geometric information.
+
+\begin{figure}[h]
+    \centering
+
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/partnet.png}
+        \caption{Semantic Assembly \cite{mo2019partnet}}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/breakingbad.png}
+        \caption{Geometric Assembly \cite{sellan2022breaking}}
+    \end{subfigure}
+
+    \caption{Comparison of 3D assembly paradigms. (a)~Semantic part assembly operates on predefined, functionally meaningful components such as furniture parts \cite{mo2019partnet}. (b)~Geometric fracture assembly deals with irregular, physically broken fragments that lack semantic identity \cite{sellan2022breaking}.}
+    \label{fig:representations}
+\end{figure}
+
+The reassembly of 3D fractured objects is formulated as a 6-DoF (Degree-of-Freedom) pose regression problem. To solve this, the fractured pieces are typically represented as 3D point clouds, \(P=\{P_1, P_2, ..., P_n\}\). The objective of the 3D reassembly problem becomes predicting a set of continuous rigid transformations \(T=\{(R_i, t_i)\}^N_{i=1}\) where \(t_i \in \mathbf{R}^3\) is a 3D translation vector and \(R_i \in SO(3)\) represents a 3D rotation matrix (or quaternion). These transformations map each fragment to its original canonical position. 
+
+The canonical coordinate system is defined relative to the largest fragment, which serves as a fixed reference anchor. By applying these estimated transformations, the fragments are spatially aligned in a shared coordinate system, giving the reconstruction of the complete undeformed object: 
+\begin{equation}
+\label{eq:reconstruction}
+O=T_1(P_1) \cup T_2(P_2) \cup \ldots \cup T_n(P_n)
+\end{equation}
+For simplicity, we assume that all fragments are available and that no extraneous pieces are present. Under these assumptions, reconstruction quality is evaluated using metrics such as mean absolute error (MAE) and root mean square error (RMSE) for both rotation and translation, as well as part accuracy (PA), defined based on a Chamfer distance threshold.
+
+\section{Problem Decomposition}
+
+In the field of 3D fractured object reassembly, this problem is typically modeled in two stages: \textit{pairwise matching} and \textit{global assembly}. 
+
+\textbf{Pairwise Matching (Local Alignment)}: This stage focuses on evaluating the geometric compatibility between two fragments to estimate their relative rigid transformation in \(SE(3)\) space. The objective is to maximize local consistency, ensuring that the micro-geometry of the fracture surfaces locks together precisely. 
+
+\textbf{Global Assembly (Multi-Piece Alignment)}: When dealing with more than two pieces, relying on sequential pairwise matches creates a major vulnerability: small inaccuracies in local alignments progressively transfer to the next pieces, leading to error accumulation (drift). Global assembly addresses this issue by jointly optimizing the poses of all fragments simultaneously. It utilizes global structural constraints, such as cycle-consistency, to distribute alignment errors evenly across all pieces and eliminate incorrect matches.
+
+While global assembly is essential for multi-part objects, its performance depends heavily on the accuracy of the underlying pairwise matches. Therefore, this work focuses on the simplified case of two-piece assembly. By isolating the pipeline from the error-correcting safety net of global optimization, the study isolates and targets the core challenge of accurate pairwise alignment, particularly in learning robust local geometric features and attention mechanisms.
