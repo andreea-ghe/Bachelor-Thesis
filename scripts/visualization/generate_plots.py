@@ -1,3 +1,6 @@
+"""
+Generate plots for the training and evaluation curves.
+"""
 import glob
 from pathlib import Path
 from collections import defaultdict
@@ -49,25 +52,10 @@ plt.rcParams.update({
     "savefig.pad_inches": 0.05,
 })
 
-# COLORS = [
-#     "#0072B2",  # blue
-#     "#D55E00",  # vermillion
-#     "#009E73",  # green
-#     "#CC79A7",  # magenta
-#     "#F0E442",  # yellow
-#     "#56B4E9",  # sky blue
-#     "#E69F00",  # orange
-#     "#000000",  # black
-#     "#999999",  # gray
-#     "#8B0000"   # dark red
-# ]
-
 COLORS = [
-    # First 10 (colorblind-safe core)
     "#0072B2", "#D55E00", "#009E73", "#CC79A7", "#F0E442",
     "#56B4E9", "#E69F00", "#000000", "#999999", "#8B0000",
 
-    # Next 10 (carefully chosen to avoid overlap)
     "#1B9E77",  # teal-green
     "#E7298A",  # strong pink
     "#66A61E",  # lime green

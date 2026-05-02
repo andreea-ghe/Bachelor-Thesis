@@ -1,11 +1,7 @@
-#!/usr/bin/env python3
 """
 Usage:
-    python -m scripts.predict_transformation \
-        --cfg experiments/double_attn_scripts/everyday_eval.yaml \
-        --piece1 /path/to/piece_0.obj \
-        --piece2 /path/to/piece_1.obj \
-        --save_dir results/viz_output
+    python -m scripts.predict_transformation --cfg experiments/double_attn_scripts/everyday_eval.yaml \
+        --piece1 /path/to/piece_0.obj --piece2 /path/to/piece_1.obj --save_dir results/viz_output
 """
 import os
 import torch
@@ -32,9 +28,7 @@ def load_model(config):
     model = build_jigsaw_model(config)
     ckp = torch.load(config.WEIGHT_FILE, map_location='cpu', weights_only=False)
     if 'state_dict' in ckp:
-        model = JointSegmentationAlignmentModel.load_from_checkpoint(
-            checkpoint_path=config.WEIGHT_FILE, strict=False, config=config
-        )
+        model = JointSegmentationAlignmentModel.load_from_checkpoint(checkpoint_path=config.WEIGHT_FILE, strict=False, config=config)
     else:
         model.load_state_dict(ckp, strict=False)
     model.eval()
@@ -64,8 +58,8 @@ def prepare_pair(piece1_path, piece2_path, config):
 
 
 def compute_errors(pred_transforms, data_dict):
-    gt_quats = data_dict['part_quat'][0].cpu().numpy()   # [P, 4] wxyz
-    gt_trans = data_dict['part_trans'][0].cpu().numpy()   # [P, 3]
+    gt_quats = data_dict['part_quat'][0].cpu().numpy() # [P, 4]
+    gt_trans = data_dict['part_trans'][0].cpu().numpy() # [P, 3]
     n_valid = int(data_dict['part_valids'][0].sum().item())
 
     for i in range(n_valid):

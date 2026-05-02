@@ -1,5 +1,6 @@
-#!/usr/bin/env python3
-
+"""
+Extract evaluation results from log files.
+"""
 import sys
 import os
 import glob

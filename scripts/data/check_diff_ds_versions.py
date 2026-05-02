@@ -1,3 +1,6 @@
+"""
+Compare two dataset metadata files.
+"""
 import pickle
 import argparse
 from collections import Counter

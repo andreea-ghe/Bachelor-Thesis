@@ -1,8 +1,10 @@
-import open3d as o3d
-import os
+"""
+Generate demonstrative plots for each type of input representation.
+"""
 import matplotlib.pyplot as plt
 import numpy as np
-
+import open3d as o3d
+import os
 
 def setup_ax(ax):
     ax.view_init(elev=20, azim=45)

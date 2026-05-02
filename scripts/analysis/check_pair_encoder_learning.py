@@ -1,11 +1,5 @@
 """
 Check if the pair geometric encoder is actually learning.
-python scripts/check_pair_encoder_evolution.py results/jigsaw_finetune_everyday_pair_attn/model_save/
-
-1. Loads all checkpoints in the directory
-2. Prints pair_geometric_encoder weight stats per checkpoint
-3. Shows how much the weights changed from the first checkpoint
-4. Shows the output bias magnitude on a dummy input
 """
 
 import sys
@@ -52,7 +46,7 @@ def analyze_checkpoint(filepath, reference_sd=None):
             stats['diff_max'] = diff.max().item()
         results[short_name] = stats
 
-    # Also check LR if available
+    # check LR if available
     lr_info = {}
     if 'lr_schedulers' in ckpt:
         for i, sched in enumerate(ckpt['lr_schedulers']):
@@ -67,41 +61,14 @@ def analyze_checkpoint(filepath, reference_sd=None):
 
     return {'weights': results, 'lr_info': lr_info, 'state_dict': sd}
 
-def test_output_magnitude(sd):
-    """Compute pair bias output on dummy data using checkpoint weights."""
-    try:
-        sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        from feature_extractor.pair_geometric_encoder import PairGeometricEncoder
-
-        model = PairGeometricEncoder(num_bases=16)
-        clean_sd = {k.replace('pair_geometric_encoder.', ''): v
-                    for k, v in sd.items() if 'pair_geometric' in k}
-        model.load_state_dict(clean_sd)
-        model.eval()
-
-        n_pcs = torch.tensor([[500, 300, 200, 0]])
-        pcs = torch.randn(1, 1000, 3) * 0.5
-        with torch.no_grad():
-            bias = model(pcs, n_pcs)
-            return {
-                'mean': bias.mean().item(),
-                'std': bias.std().item(),
-                'min': bias.min().item(),
-                'max': bias.max().item(),
-                'abs_mean': bias.abs().mean().item(),
-            }
-    except Exception as e:
-        return {'error': str(e)}
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python scripts/check_pair_encoder_evolution.py <checkpoint_dir>")
-        print("Example: python scripts/check_pair_encoder_evolution.py results/jigsaw_finetune_everyday_pair_attn/model_save/")
         sys.exit(1)
 
     ckpt_dir = sys.argv[1]
 
-    # Find all checkpoints
+    # find all checkpoints
     patterns = [os.path.join(ckpt_dir, '*.ckpt')]
     ckpt_files = []
     for pattern in patterns:
@@ -111,12 +78,12 @@ def main():
         print(f"No .ckpt files found in {ckpt_dir}")
         sys.exit(1)
 
-    # Sort by epoch
+    # sort by epoch
     ckpt_files.sort(key=extract_epoch)
 
     print(f"Found {len(ckpt_files)} checkpoints in {ckpt_dir}\n")
 
-    # Analyze first checkpoint as reference
+    # analyze first checkpoint as reference
     reference_sd = None
     first_results = None
 
@@ -138,7 +105,7 @@ def main():
             reference_sd = results['state_dict']
             first_results = results
 
-        # Print weight stats
+        # print weight stats
         for name, stats in results['weights'].items():
             print(f"  {name}:")
             print(f"    mean={stats['mean']:+.6f}  std={stats['std']:.6f}  "
@@ -146,28 +113,15 @@ def main():
             if 'diff_mean' in stats:
                 print(f"    Δ from first ckpt:  mean_abs_diff={stats['diff_mean']:.8f}  max_diff={stats['diff_max']:.8f}")
 
-        # Print LR info
+        # print LR info
         if results['lr_info']:
             print(f"\n  LR info:")
             for k, v in results['lr_info'].items():
                 print(f"    {k}: {v}")
 
-        # Test output magnitude
-        output = test_output_magnitude(results['state_dict'])
-        print(f"\n  Output bias (dummy input):")
-        if 'error' in output:
-            print(f"    Error: {output['error']}")
-        else:
-            print(f"    mean={output['mean']:+.6f}  std={output['std']:.6f}  "
-                  f"range=[{output['min']:+.6f}, {output['max']:+.6f}]  abs_mean={output['abs_mean']:.6f}")
-            if output['std'] < 0.1:
-                print(f"    LOW VARIANCE — bias is nearly constant, minimal effect on attention")
-            else:
-                print(f"    Good variance — bias differentiates between pairs")
-
         print()
 
-    # Summary
+    # summary
     print(f"\n{'='*80}")
     print("SUMMARY")
     print(f"{'='*80}")

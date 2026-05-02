@@ -1,9 +1,5 @@
 """
 Check if the double attention layers learned anything meaningful.
-Loads a checkpoint and reports:
-1. Gate values (gate_self2, gate_cross2) - if ~0, the layers are bypassed
-2. Weight divergence between tf_self1/tf_cross1 and tf_self2/tf_cross2
-3. Pair geometric encoder weight norms (if present)
 """
 import sys
 import torch
@@ -19,7 +15,7 @@ def analyze_checkpoint(ckp_path):
     else:
         sd = ckp
 
-    # 1. Gate values
+    # gate values
     print("=" * 60)
     print("GATE VALUES (0 = layer bypassed, >0 = layer active)")
     print("=" * 60)
@@ -30,7 +26,7 @@ def analyze_checkpoint(ckp_path):
         else:
             print(f"  {name}: NOT FOUND in checkpoint")
 
-    # 2. Weight divergence: how much did tf_self2/tf_cross2 change from tf_self1/tf_cross1?
+    # weight divergence: how much did tf_self2/tf_cross2 change from tf_self1/tf_cross1?
     print()
     print("=" * 60)
     print("WEIGHT DIVERGENCE (tf_self2 vs tf_self1, tf_cross2 vs tf_cross1)")
@@ -74,7 +70,7 @@ def analyze_checkpoint(ckp_path):
             else:
                 print(f"    --> Layers significantly diverged from copies")
 
-    # 3. Pair geometric encoder
+    # pair geometric encoder
     print()
     print("=" * 60)
     print("PAIR GEOMETRIC ENCODER")
@@ -88,7 +84,7 @@ def analyze_checkpoint(ckp_path):
     else:
         print("  NOT FOUND (no pair attention in this checkpoint)")
 
-    # 4. Summary
+    # summary
     print()
     print("=" * 60)
     print("QUICK SUMMARY")
@@ -109,11 +105,5 @@ def analyze_checkpoint(ckp_path):
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
-        print("Usage: python -m scripts.check_double_attn_learning <checkpoint_path>")
-        print()
-        print("Examples:")
-        print("  python -m scripts.check_double_attn_learning results/jigsaw_finetune_everyday_double_attn_correct_ds/model_save/last.ckpt")
-        print("  python -m scripts.check_double_attn_learning results/jigsaw_finetune_everyday_pair_double_attn_correct_ds/model_save/last.ckpt")
         sys.exit(1)
-
     analyze_checkpoint(sys.argv[1])
