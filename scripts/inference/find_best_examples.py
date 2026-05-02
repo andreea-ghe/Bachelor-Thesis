@@ -52,6 +52,18 @@ def run_batch_search(args):
     existing = [p for p in all_paths if os.path.isdir(p)]
     print(f"Found {len(existing)} existing directories (skipped {len(all_paths) - len(existing)})")
 
+    # filter by piece count
+    min_pc = args.min_pieces
+    max_pc = args.max_pieces
+    if min_pc > 2 or max_pc is not None:
+        filtered = []
+        for p in existing:
+            n_objs = len([f for f in os.listdir(p) if f.endswith(".obj")])
+            if n_objs >= min_pc and (max_pc is None or n_objs <= max_pc):
+                filtered.append(p)
+        print(f"After piece count filter [{min_pc}-{max_pc or '∞'}]: {len(filtered)} directories")
+        existing = filtered
+
     if len(existing) == 0:
         print("No valid directories found. Are the paths in the metafile correct?")
         return
@@ -147,6 +159,8 @@ if __name__ == "__main__":
     parser.add_argument("--cfg", required=True, help="Path to eval YAML config")
     parser.add_argument("--metafile", required=True, help="Metadata pickle (.txt) with data_list of folder paths")
     parser.add_argument("--sample_n", type=int, default=50, help="How many objects to randomly sample (default: 50)")
+    parser.add_argument("--min_pieces", type=int, default=2, help="Minimum number of pieces to consider (default: 2)")
+    parser.add_argument("--max_pieces", type=int, default=None, help="Maximum number of pieces to consider (default: no limit)")
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
 
