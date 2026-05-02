@@ -6,19 +6,12 @@ Usage:
     python -m scripts.inference.find_best_examples \
         --cfg experiments/two_piece_scripts/everyday_eval.yaml \
         --metafile scripts/data/new-metadata-ds/two_fracture_assembly_metadata_2_2_everyday.val.txt \
-        --data_dir /workspace/everyday \
-        --sample_n 50 \
-        --seed 42
+        --sample_n 50 --seed 42
 
     python -m scripts.inference.find_best_examples \
         --cfg experiments/multi_piece_scripts/everyday_eval.yaml \
         --metafile scripts/data/new-metadata-ds/multi_fracture_assembly_metadata_2_4_everyday.val.txt \
-        --data_dir /workspace/everyday \
-        --sample_n 50 \
-        --seed 42
-
-The --data_dir flag should point to the actual dataset root on this machine.
-Paths in the metafile that start with /workspace/everyday will be remapped.
+        --sample_n 50 --seed 42
 """
 
 import os
@@ -60,7 +53,7 @@ def run_batch_search(args):
     print(f"Found {len(existing)} existing directories (skipped {len(all_paths) - len(existing)})")
 
     if len(existing) == 0:
-        print("No valid directories found. Check --data_dir.")
+        print("No valid directories found. Are the paths in the metafile correct?")
         return
 
     # random sample
@@ -72,8 +65,7 @@ def run_batch_search(args):
     results = []
 
     for idx, pieces_dir in enumerate(sampled):
-        label = os.path.relpath(pieces_dir, args.data_dir)
-        print(f"[{idx + 1}/{sample_n}] {label}")
+        print(f"[{idx + 1}/{sample_n}] {pieces_dir}")
 
         try:
             meshes = load_meshes_from_dir(pieces_dir)
@@ -100,7 +92,6 @@ def run_batch_search(args):
 
         results.append({
             "path": pieces_dir,
-            "label": label,
             "num_pieces": len(meshes),
             "avg_rot_err_deg": round(avg_rot, 4),
             "avg_trans_err": round(avg_trans, 6),
@@ -120,10 +111,9 @@ def run_batch_search(args):
 
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     fieldnames = [
-        "rank", "label", "num_pieces",
+        "rank", "path", "num_pieces",
         "avg_rot_err_deg", "avg_trans_err",
         "max_rot_err_deg", "max_trans_err",
-        "path",
     ]
     with open(out_path, "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -138,8 +128,8 @@ def run_batch_search(args):
     print(f"\nTop 10 best examples:")
     for i, r in enumerate(results[:10], 1):
         print(
-            f"  {i:2d}. {r['label']:<60s} "
-            f"rot={r['avg_rot_err_deg']:7.2f}°  trans={r['avg_trans_err']:.4f}  "
+            f"  {i:2d}. {r['path']}"
+            f"\n      rot={r['avg_rot_err_deg']:7.2f}°  trans={r['avg_trans_err']:.4f}  "
             f"pieces={r['num_pieces']}"
         )
 
@@ -147,8 +137,8 @@ def run_batch_search(args):
         print(f"\nBottom 5 worst examples:")
         for r in results[-5:]:
             print(
-                f"      {r['label']:<60s} "
-                f"rot={r['avg_rot_err_deg']:7.2f}°  trans={r['avg_trans_err']:.4f}"
+                f"      {r['path']}"
+                f"\n      rot={r['avg_rot_err_deg']:7.2f}°  trans={r['avg_trans_err']:.4f}"
             )
 
 
@@ -156,7 +146,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Find best demo examples by batch inference on a metadata file")
     parser.add_argument("--cfg", required=True, help="Path to eval YAML config")
     parser.add_argument("--metafile", required=True, help="Metadata pickle (.txt) with data_list of folder paths")
-    # parser.add_argument("--data_dir", required=True, help="Actual dataset root on this machine (replaces /workspace/everyday)")
     parser.add_argument("--sample_n", type=int, default=50, help="How many objects to randomly sample (default: 50)")
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
