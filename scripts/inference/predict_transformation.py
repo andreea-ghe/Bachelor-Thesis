@@ -198,53 +198,6 @@ def compute_errors(pred_transforms, data_dict):
     return errors
 
 
-def assemble_and_save(meshes, transforms, pred_transforms, save_dir):
-    """Apply predicted R,t to original meshes, save assembled + ground truth."""
-    os.makedirs(save_dir, exist_ok=True)
-
-    pred_rot = pred_transforms["rot"]
-    pred_trans = pred_transforms["trans"]
-
-    assembled_meshes = []
-    gt_meshes = []
-
-    for i, mesh in enumerate(meshes):
-        centroid, rot_mat = transforms[i]
-        verts = np.array(mesh.vertices)
-
-        scrambled = (rot_mat @ (verts - centroid).T).T
-        pred_R = pred_rot[0, i]
-        pred_t = pred_trans[0, i]
-        new_verts = (pred_R @ scrambled.T).T + pred_t
-
-        color = PIECE_COLORS[i % len(PIECE_COLORS)]
-
-        assembled_mesh = mesh.copy()
-        assembled_mesh.vertices = new_verts
-        assembled_mesh.visual.face_colors = color
-        assembled_meshes.append(assembled_mesh)
-        assembled_mesh.export(os.path.join(save_dir, f"piece{i}_assembled.obj"))
-
-        gt_mesh = mesh.copy()
-        gt_mesh.visual.face_colors = color
-        gt_meshes.append(gt_mesh)
-        gt_mesh.export(os.path.join(save_dir, f"piece{i}_ground_truth.obj"))
-
-    combined_assembled = trimesh.util.concatenate(assembled_meshes)
-    combined_assembled.export(os.path.join(save_dir, "assembled.obj"))
-
-    combined_gt = trimesh.util.concatenate(gt_meshes)
-    combined_gt.export(os.path.join(save_dir, "ground_truth.obj"))
-
-    piece_names = ", ".join(f"piece{i}" for i in range(len(meshes)))
-    print(f"\nSaved to {save_dir}/")
-    print(f"  assembled.obj         - all pieces in predicted positions")
-    print(f"  ground_truth.obj      - all pieces in original positions")
-    print(f"  {{{piece_names}}}_assembled.obj")
-    print(f"  {{{piece_names}}}_ground_truth.obj")
-
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run Jigsaw inference on a folder of OBJ pieces")
     parser.add_argument("--cfg", required=True, help="Path to eval YAML config")
@@ -267,5 +220,3 @@ if __name__ == "__main__":
     print("=" * 50)
     errors = compute_errors(pred_transforms, data_dict)
     print("=" * 50)
-
-    assemble_and_save(meshes, transforms, pred_transforms, args.save_dir)
