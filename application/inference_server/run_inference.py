@@ -50,7 +50,8 @@ def _get_model(config_path: str):
     trainer.state = TrainerState(fn=TrainerFn.TESTING, stage=RunningStage.TESTING)
     model.trainer = trainer
 
-    _model_cache[config_path] = (model, CONFIG.clone())
+    import copy
+    _model_cache[config_path] = (model, copy.deepcopy(CONFIG))
     return _model_cache[config_path]
 
 
