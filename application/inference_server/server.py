@@ -6,6 +6,7 @@ from enum import Enum
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if REPO_ROOT not in sys.path:
@@ -148,3 +149,9 @@ async def predict(
         ],
         "combined_assembled_obj": result["combined_assembled_obj"],
     })
+
+
+# Serve dataset files so they can be downloaded via wget/curl
+EVERYDAY_DIR = "/workspace/everyday"
+if os.path.isdir(EVERYDAY_DIR):
+    app.mount("/everyday", StaticFiles(directory=EVERYDAY_DIR), name="everyday")
