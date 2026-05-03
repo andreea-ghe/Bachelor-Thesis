@@ -54,7 +54,7 @@ async def lifespan(app: FastAPI):
     """Pre-load a default model at startup."""
     preload = os.environ.get("PRELOAD_MODEL")
     if preload and preload in ModelVariant.__members__:
-        from run_inference import _get_model
+        from application.inference_server.run_inference import _get_model
 
         cfg = os.path.join(REPO_ROOT, MODEL_CONFIGS[ModelVariant(preload)])
         _get_model(cfg)
@@ -133,7 +133,7 @@ async def predict(
         raise HTTPException(500, f"Config not found: {MODEL_CONFIGS[model]}")
 
     try:
-        from run_inference import run_inference
+        from application.inference_server.run_inference import run_inference
 
         result = run_inference(config_path, obj_strings)
     except Exception as e:

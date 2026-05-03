@@ -82,7 +82,7 @@ def predict(request):
     try:
         with httpx.Client(timeout=120.0) as client:
             response = client.post(
-                f"{gpu_url}/predict",
+                f"{gpu_url.rstrip('/')}/predict",
                 data={"model": model_variant},
                 files=files,
             )

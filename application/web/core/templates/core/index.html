@@ -122,7 +122,7 @@
                 setStatus('');
 
                 // Load input pieces for preview
-                fetch(`/api/fractures/${selectedFractureId}/`)
+                fetch(`/api/fracture/${selectedFractureId}/`)
                     .then(r => r.json())
                     .then(data => {
                         setStatus(`Selected: ${data.display_name}`, 'success');
