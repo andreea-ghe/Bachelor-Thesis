@@ -19,7 +19,7 @@ echo "[OK] Conda environment 'assembly' activated"
 # install inference-server-specific dependencies
 echo ""
 echo "[1/2] Installing inference server dependencies..."
-pip install -r "requirements.txt"
+pip install -r "$SCRIPT_DIR/requirements.txt"
 
 # start the FastAPI server
 HOST="${HOST:-0.0.0.0}"
