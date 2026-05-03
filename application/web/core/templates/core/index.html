@@ -5,110 +5,68 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jigsaw — Fracture Assembly Demo</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: system-ui, -apple-system, sans-serif; background: #0f1117; color: #e0e0e0; }
-
-        .layout { display: flex; height: 100vh; }
-
-        /* Left panel */
-        .panel { width: 360px; padding: 24px; overflow-y: auto; border-right: 1px solid #23262f;
-                 display: flex; flex-direction: column; gap: 20px; background: #161822; }
-        .panel h1 { font-size: 1.3rem; color: #fff; }
-        .panel h2 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;
-                     color: #8b8fa3; margin-bottom: 8px; }
-
-        .fracture-group { display: flex; flex-direction: column; gap: 6px; }
-        .fracture-btn { background: #1e2030; border: 1px solid #2a2d3e; border-radius: 8px;
-                       padding: 10px 14px; color: #c8cad8; cursor: pointer; text-align: left;
-                       font-size: 0.85rem; transition: all 0.15s; }
-        .fracture-btn:hover { background: #262940; border-color: #4a4f6a; }
-        .fracture-btn.active { background: #2d3250; border-color: #6c72e0; color: #fff; }
-
-        select { background: #1e2030; border: 1px solid #2a2d3e; border-radius: 8px;
-                 padding: 10px 14px; color: #c8cad8; font-size: 0.85rem; width: 100%; }
-
-        .run-btn { background: #4c51bf; border: none; border-radius: 8px; padding: 12px;
-                   color: #fff; font-size: 0.9rem; font-weight: 600; cursor: pointer;
-                   transition: background 0.15s; }
-        .run-btn:hover { background: #5a5fc7; }
-        .run-btn:disabled { background: #2a2d3e; color: #555; cursor: not-allowed; }
-
-        .status { font-size: 0.8rem; color: #8b8fa3; min-height: 1.2em; }
-        .status.error { color: #e05555; }
-        .status.success { color: #55c077; }
-
-        /* Right panel — 3D viewer */
-        .viewer { flex: 1; position: relative; background: #12141c; }
-        .viewer canvas { display: block; width: 100%; height: 100%; }
-        .viewer-placeholder { position: absolute; inset: 0; display: flex; align-items: center;
-                              justify-content: center; color: #3a3d50; font-size: 1.1rem;
-                              text-align: center; pointer-events: none; }
-
-        #result-info { position: absolute; bottom: 20px; left: 20px; right: 20px;
-                       background: rgba(22, 24, 34, 0.9); border: 1px solid #2a2d3e;
-                       border-radius: 8px; padding: 14px; font-size: 0.8rem; display: none; z-index: 10; }
-        #result-info .piece-row { display: flex; justify-content: space-between;
-                                  padding: 4px 0; border-bottom: 1px solid #1e2030; }
-    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="{% static 'core/js/tailwind.config.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'core/css/main.css' %}">
 </head>
-<body>
-    <div class="layout">
+<body class="bg-bg-primary text-txt-primary font-sans">
 
-        <!-- Left panel -->
-        <div class="panel">
-            <h1>Jigsaw Assembly</h1>
-
-            <div>
-                <h2>Model</h2>
-                <select id="model-select">
-                    {% for value, label in model_choices %}
-                    <option value="{{ value }}">{{ label }}</option>
-                    {% endfor %}
-                </select>
+    <!-- ═══════════════════════════════════════════════════════
+         HERO SECTION
+         ═══════════════════════════════════════════════════════ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 relative">
+        <div class="max-w-2xl text-center space-y-6">
+            <p class="text-xs tracking-widest uppercase text-txt-muted">Bachelor Thesis</p>
+            <h1 class="text-5xl font-semibold leading-tight">
+                Jigsaw Puzzle Solving for<br>Fracture Assembly
+            </h1>
+            <p class="text-base text-txt-secondary max-w-lg mx-auto">
+                Reassembling broken 3D objects using learned geometric matching
+                with pair attention and iterative refinement.
+            </p>
+            <div class="flex flex-col items-center gap-3 pt-4">
+                <a href="#content" class="hero-cta">Explore the Demo</a>
+                <a href="#" class="hero-cta text-txt-secondary">Read the Thesis</a>
+                <a href="#" class="hero-cta text-txt-secondary">Access the Code</a>
+                <a href="#" class="hero-cta text-txt-secondary">Download Model Weights</a>
             </div>
-
-            <div>
-                <h2>2-Piece Fractures</h2>
-                <div class="fracture-group">
-                    {% for f in two_piece_fractures %}
-                    <button class="fracture-btn" data-id="{{ f.id }}" data-pieces="{{ f.num_pieces }}"
-                            data-type="{{ f.piece_type }}">
-                        {{ f.display_name }}
-                    </button>
-                    {% empty %}
-                    <p style="color:#555; font-size:0.8rem;">No 2-piece fractures found.</p>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <div>
-                <h2>Multi-Piece Fractures</h2>
-                <div class="fracture-group">
-                    {% for f in multi_piece_fractures %}
-                    <button class="fracture-btn" data-id="{{ f.id }}" data-pieces="{{ f.num_pieces }}"
-                            data-type="{{ f.piece_type }}">
-                        {{ f.display_name }}
-                    </button>
-                    {% empty %}
-                    <p style="color:#555; font-size:0.8rem;">No multi-piece fractures found.</p>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <button class="run-btn" id="run-btn" disabled>Run Inference</button>
-            <div class="status" id="status"></div>
         </div>
 
-        <!-- Right panel — 3D viewer -->
-        <div class="viewer" id="viewer">
-            <div class="viewer-placeholder" id="viewer-placeholder">
-                Select an fracture and click <strong>Run Inference</strong>
-            </div>
-            <div id="result-info"></div>
+        <div class="absolute bottom-10 animate-bounce text-txt-muted">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M12 5v14m0 0l-6-6m6 6l6-6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════
+         MAIN CONTENT: LEFT SLIDES + RIGHT STICKY DEMO
+         ═══════════════════════════════════════════════════════ -->
+    <div id="content" class="flex max-w-[1400px] ml-[max(1rem,calc((100vw-1400px)*0.6))] mr-[max(1rem,calc((100vw-1400px)*0.4))]">
+
+        <!-- LEFT: Scrollable slides -->
+        <div class="flex-1 pr-8">
+            {% include "core/introduction_slide.html" %}
+            {% include "core/architecture_slide.html" %}
+            {% include "core/improvement_slide.html" %}
+            {% include "core/future_discussion_slide.html" %}
+        </div>
+
+        <!-- RIGHT: Sticky demo panel -->
+        <div class="w-[480px] shrink-0 h-screen sticky top-0 py-6 pl-4 pr-0 flex flex-col">
+            {% include "core/demo.html" %}
         </div>
 
     </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         SCRIPTS
+         ═══════════════════════════════════════════════════════ -->
+    <script>
+    function scrollToSlide(id) {
+        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+    }
+    </script>
 
     <script type="importmap">
     { "imports": {
@@ -117,25 +75,233 @@
     }}
     </script>
     <script type="module">
-        import * as THREE from 'three';
-        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-        import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 
-        const PIECE_COLORS = [0x00c850, 0xc80000, 0x0000c8, 0xc8c800];
-        const csrfToken = '{{ csrf_token }}';
-        let selectedFractureId = null;
+    const PIECE_COLORS = [0x00c850, 0xc80000, 0x0000c8, 0xc8c800];
+    const csrfToken = '{{ csrf_token }}';
 
-        // ── Three.js setup ──────────────────────────────────────
-        const container = document.getElementById('viewer');
+    // ── Fracture data from Django context ──────────────────
+    const allFractures = [
+        {% for f in two_piece_fractures %}
+        { id: "{{ f.id }}", name: "{{ f.display_name }}", category: "{{ f.category }}", pieces: {{ f.num_pieces }}, type: "{{ f.piece_type }}" },
+        {% endfor %}
+        {% for f in multi_piece_fractures %}
+        { id: "{{ f.id }}", name: "{{ f.display_name }}", category: "{{ f.category }}", pieces: {{ f.num_pieces }}, type: "{{ f.piece_type }}" },
+        {% endfor %}
+    ];
+
+    let filteredFractures = [...allFractures];
+    let currentIndex = -1;
+    let isFullscreen = false;
+    let fsViewer = null;
+
+    // ── Populate category dropdown ─────────────────────────
+    const categories = [...new Set(allFractures.map(f => f.category))].sort();
+    const catSelect = document.getElementById('category-select');
+    categories.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        catSelect.appendChild(opt);
+    });
+
+    catSelect.addEventListener('change', () => {
+        const val = catSelect.value;
+        filteredFractures = val === 'all' ? [...allFractures] : allFractures.filter(f => f.category === val);
+        if (filteredFractures.length > 0) {
+            selectExample(0);
+        } else {
+            currentIndex = -1;
+            updateCounter();
+        }
+    });
+
+    // ── Example navigation ─────────────────────────────────
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const counter = document.getElementById('example-counter');
+
+    function updateCounter() {
+        const counters = [counter, document.getElementById('fs-example-counter')];
+        const prevBtns = [prevBtn, document.getElementById('fs-prev-btn')];
+        const nextBtns = [nextBtn, document.getElementById('fs-next-btn')];
+        const runBtns = [document.getElementById('run-btn'), document.getElementById('fs-run-btn')];
+
+        const empty = currentIndex < 0 || filteredFractures.length === 0;
+
+        counters.forEach(c => { if (c) c.textContent = empty ? '—' : `${currentIndex + 1} / ${filteredFractures.length}`; });
+        prevBtns.forEach(b => { if (b) b.disabled = empty || currentIndex === 0; });
+        nextBtns.forEach(b => { if (b) b.disabled = empty || currentIndex === filteredFractures.length - 1; });
+        runBtns.forEach(b => { if (b) b.disabled = empty; });
+    }
+
+    function selectExample(idx) {
+        currentIndex = idx;
+        updateCounter();
+        const f = filteredFractures[currentIndex];
+        setStatus(`${f.name}`);
+        loadInputPieces(f.id);
+        highlightGridCard(f.id);
+    }
+
+    prevBtn.addEventListener('click', () => { if (currentIndex > 0) selectExample(currentIndex - 1); });
+    nextBtn.addEventListener('click', () => { if (currentIndex < filteredFractures.length - 1) selectExample(currentIndex + 1); });
+
+    // Fullscreen prev/next
+    document.getElementById('fs-prev-btn').addEventListener('click', () => { if (currentIndex > 0) selectExample(currentIndex - 1); });
+    document.getElementById('fs-next-btn').addEventListener('click', () => { if (currentIndex < filteredFractures.length - 1) selectExample(currentIndex + 1); });
+
+    if (allFractures.length > 0) selectExample(0);
+
+    // ── Fullscreen: open / close ───────────────────────────
+    const overlay = document.getElementById('fullscreen-overlay');
+
+    window.openFullscreen = function() {
+        isFullscreen = true;
+        overlay.classList.add('open');
+        document.body.style.overflow = 'hidden';
+
+        // Sync model select
+        document.getElementById('fs-model-select').value = document.getElementById('model-select').value;
+
+        // Lazy-init the fullscreen viewer
+        if (!fsViewer) {
+            fsViewer = createViewer('fs-viewer-canvas');
+        }
+
+        // Reload current example into fullscreen viewer
+        if (currentIndex >= 0) {
+            const f = filteredFractures[currentIndex];
+            loadPiecesIntoViewer(fsViewer, f.id, 'fs-viewer-placeholder');
+            highlightGridCard(f.id);
+        }
+
+        populateGrid();
+    };
+
+    window.closeFullscreen = function() {
+        isFullscreen = false;
+        overlay.classList.remove('open');
+        document.body.style.overflow = '';
+
+        // Sync model back
+        document.getElementById('model-select').value = document.getElementById('fs-model-select').value;
+    };
+
+    // Close on Escape
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && isFullscreen) closeFullscreen();
+    });
+
+    // ── Fullscreen: tab switching ──────────────────────────
+    document.querySelectorAll('[data-tab]').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('[data-tab]').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.fs-tab-content').forEach(c => c.classList.add('hidden'));
+            tab.classList.add('active');
+            document.getElementById(`tab-${tab.dataset.tab}`).classList.remove('hidden');
+        });
+    });
+
+    // ── Fullscreen: example grid ───────────────────────────
+    function populateGrid() {
+        const grid = document.getElementById('fs-examples-grid');
+        if (grid.children.length > 0) return;
+
+        allFractures.forEach((f, i) => {
+            const card = document.createElement('div');
+            card.className = 'example-card';
+            card.dataset.fractureId = f.id;
+            card.innerHTML = `
+                <div class="text-sm font-medium truncate">${f.category}</div>
+                <div class="text-xs text-txt-muted mt-1">${f.pieces} pieces</div>
+                <div class="text-xs text-txt-muted truncate">${f.name}</div>
+            `;
+            card.addEventListener('click', () => {
+                const idx = filteredFractures.findIndex(ff => ff.id === f.id);
+                if (idx >= 0) {
+                    selectExample(idx);
+                } else {
+                    // Reset filter to "all" so this fracture is selectable
+                    catSelect.value = 'all';
+                    filteredFractures = [...allFractures];
+                    const newIdx = filteredFractures.findIndex(ff => ff.id === f.id);
+                    selectExample(newIdx);
+                }
+                loadPiecesIntoViewer(fsViewer, f.id, 'fs-viewer-placeholder');
+            });
+            grid.appendChild(card);
+        });
+    }
+
+    function highlightGridCard(fractureId) {
+        document.querySelectorAll('.example-card').forEach(c => {
+            c.classList.toggle('selected', c.dataset.fractureId === fractureId);
+        });
+    }
+
+    // ── Fullscreen: run inference ──────────────────────────
+    document.getElementById('fs-run-btn').addEventListener('click', async () => {
+        if (currentIndex < 0) return;
+
+        const fracture = filteredFractures[currentIndex];
+        const model = document.getElementById('fs-model-select').value;
+        const btn = document.getElementById('fs-run-btn');
+        const statusEl = document.getElementById('fs-status');
+
+        btn.disabled = true;
+        statusEl.textContent = 'Running inference...';
+        statusEl.className = 'text-xs text-txt-muted flex-1';
+
+        const formData = new FormData();
+        formData.append('fracture_id', fracture.id);
+        formData.append('model', model);
+
+        try {
+            const response = await fetch('/api/predict/', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken },
+                body: formData,
+            });
+            const result = await response.json();
+
+            if (!response.ok) {
+                statusEl.textContent = `Error: ${result.error}`;
+                statusEl.className = 'text-xs text-red-400 flex-1';
+                return;
+            }
+
+            statusEl.textContent = `Assembled ${result.num_pieces} pieces`;
+            statusEl.className = 'text-xs text-emerald-400 flex-1';
+
+            // Show result in the fullscreen viewer
+            clearGroup(fsViewer.group);
+            result.pieces.forEach((p, i) => {
+                const obj = loadObjString(p.assembled_obj, PIECE_COLORS[i % PIECE_COLORS.length]);
+                fsViewer.group.add(obj);
+            });
+            fitCamera(fsViewer);
+        } catch (err) {
+            statusEl.textContent = `Network error: ${err.message}`;
+            statusEl.className = 'text-xs text-red-400 flex-1';
+        } finally {
+            btn.disabled = false;
+        }
+    });
+
+    // ── Three.js viewer factory ────────────────────────────
+    function createViewer(containerId, clearColor = 0x000000) {
+        const container = document.getElementById(containerId);
         const scene = new THREE.Scene();
-
         const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.01, 100);
         camera.position.set(0, 0.3, 1.2);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.setSize(container.clientWidth, container.clientHeight);
-        renderer.setClearColor(0x12141c);
+        renderer.setClearColor(clearColor);
         container.appendChild(renderer.domElement);
 
         const controls = new OrbitControls(camera, renderer.domElement);
@@ -143,12 +309,12 @@
         controls.dampingFactor = 0.08;
 
         scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        dirLight.position.set(2, 3, 4);
-        scene.add(dirLight);
+        const dir = new THREE.DirectionalLight(0xffffff, 0.8);
+        dir.position.set(2, 3, 4);
+        scene.add(dir);
 
-        const assemblyGroup = new THREE.Group();
-        scene.add(assemblyGroup);
+        const group = new THREE.Group();
+        scene.add(group);
 
         function animate() {
             requestAnimationFrame(animate);
@@ -157,125 +323,135 @@
         }
         animate();
 
-        window.addEventListener('resize', () => {
-            camera.aspect = container.clientWidth / container.clientHeight;
+        const ro = new ResizeObserver(() => {
+            const w = container.clientWidth, h = container.clientHeight;
+            if (w === 0 || h === 0) return;
+            camera.aspect = w / h;
             camera.updateProjectionMatrix();
-            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setSize(w, h);
         });
+        ro.observe(container);
 
-        // ── Load OBJ from string ────────────────────────────────
-        function loadObjString(objText, color) {
-            const loader = new OBJLoader();
-            const obj = loader.parse(objText);
-            obj.traverse(child => {
-                if (child.isMesh) {
-                    child.material = new THREE.MeshStandardMaterial({
-                        color: color,
-                        flatShading: true,
-                        roughness: 0.6,
-                        metalness: 0.1,
-                    });
-                }
-            });
-            return obj;
+        return { scene, camera, renderer, controls, group };
+    }
+
+    const inputViewer = createViewer('viewer-canvas');
+    const resultViewer = createViewer('result-canvas');
+
+    function clearGroup(group) {
+        while (group.children.length) {
+            const c = group.children[0];
+            c.traverse(ch => { if (ch.isMesh) { ch.geometry.dispose(); ch.material.dispose(); } });
+            group.remove(c);
         }
+    }
 
-        function clearScene() {
-            while (assemblyGroup.children.length) {
-                const c = assemblyGroup.children[0];
-                c.traverse(child => {
-                    if (child.isMesh) { child.geometry.dispose(); child.material.dispose(); }
+    function fitCamera(viewer) {
+        const box = new THREE.Box3().setFromObject(viewer.group);
+        if (box.isEmpty()) return;
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3()).length();
+        viewer.controls.target.copy(center);
+        viewer.camera.position.copy(center.clone().add(new THREE.Vector3(0, size * 0.3, size * 0.9)));
+        viewer.controls.update();
+    }
+
+    function loadObjString(objText, color) {
+        const loader = new OBJLoader();
+        const obj = loader.parse(objText);
+        obj.traverse(child => {
+            if (child.isMesh) {
+                child.material = new THREE.MeshStandardMaterial({
+                    color, flatShading: true, roughness: 0.6, metalness: 0.1,
                 });
-                assemblyGroup.remove(c);
-            }
-        }
-
-        function fitCamera() {
-            const box = new THREE.Box3().setFromObject(assemblyGroup);
-            const center = box.getCenter(new THREE.Vector3());
-            const size = box.getSize(new THREE.Vector3()).length();
-            controls.target.copy(center);
-            camera.position.copy(center.clone().add(new THREE.Vector3(0, size * 0.3, size * 0.9)));
-            controls.update();
-        }
-
-        function displayPieces(pieces) {
-            clearScene();
-            const placeholder = document.getElementById('viewer-placeholder');
-            placeholder.style.display = 'none';
-
-            pieces.forEach((p, i) => {
-                const obj = loadObjString(p.assembled_obj, PIECE_COLORS[i % PIECE_COLORS.length]);
-                assemblyGroup.add(obj);
-            });
-
-            fitCamera();
-        }
-
-        // ── UI logic ────────────────────────────────────────────
-        document.querySelectorAll('.fracture-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.fracture-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                selectedFractureId = btn.dataset.id;
-                document.getElementById('run-btn').disabled = false;
-                setStatus('');
-
-                fetch(`/api/fracture/${selectedFractureId}/`)
-                    .then(r => r.json())
-                    .then(data => setStatus(`Selected: ${data.display_name}`, 'success'));
-            });
-        });
-
-        document.getElementById('run-btn').addEventListener('click', async () => {
-            if (!selectedFractureId) return;
-
-            const model = document.getElementById('model-select').value;
-            const runBtn = document.getElementById('run-btn');
-
-            runBtn.disabled = true;
-            setStatus('Running inference...');
-
-            const formData = new FormData();
-            formData.append('fracture_id', selectedFractureId);
-            formData.append('model', model);
-
-            try {
-                const response = await fetch('/api/predict/', {
-                    method: 'POST',
-                    headers: { 'X-CSRFToken': csrfToken },
-                    body: formData,
-                });
-
-                const result = await response.json();
-
-                if (!response.ok) {
-                    setStatus(`Error: ${result.error}`, 'error');
-                    return;
-                }
-
-                setStatus(`Inference complete — ${result.num_pieces} pieces assembled`, 'success');
-                displayPieces(result.pieces);
-                showResultInfo(result);
-            } catch (err) {
-                setStatus(`Network error: ${err.message}`, 'error');
-            } finally {
-                runBtn.disabled = false;
             }
         });
+        return obj;
+    }
 
-        function setStatus(msg, type = '') {
-            const el = document.getElementById('status');
-            el.textContent = msg;
-            el.className = 'status' + (type ? ` ${type}` : '');
-        }
+    // ── Load pieces into a specific viewer ─────────────────
+    async function loadPiecesIntoViewer(viewer, fractureId, placeholderId) {
+        const resp = await fetch(`/api/fracture/${fractureId}/`);
+        const data = await resp.json();
 
-        function showResultInfo(result) {
-            const info = document.getElementById('result-info');
-            info.style.display = 'block';
-            info.innerHTML = `<strong>Model:</strong> ${result.model} &nbsp;|&nbsp;
-                              <strong>Pieces:</strong> ${result.num_pieces}`;
+        clearGroup(viewer.group);
+        const ph = document.getElementById(placeholderId);
+        if (ph) ph.style.display = 'none';
+
+        for (let i = 0; i < data.pieces.length; i++) {
+            const objResp = await fetch(data.pieces[i].url);
+            const objText = await objResp.text();
+            const obj = loadObjString(objText, PIECE_COLORS[i % PIECE_COLORS.length]);
+            viewer.group.add(obj);
         }
+        fitCamera(viewer);
+    }
+
+    // ── Load input pieces ─────────────────────────────────
+    async function loadInputPieces(fractureId) {
+        await loadPiecesIntoViewer(inputViewer, fractureId, 'viewer-placeholder');
+        if (isFullscreen && fsViewer) {
+            await loadPiecesIntoViewer(fsViewer, fractureId, 'fs-viewer-placeholder');
+        }
+    }
+
+    // ── Run inference ────────────────────────────
+    document.getElementById('run-btn').addEventListener('click', async () => {
+        if (currentIndex < 0) return;
+
+        const fracture = filteredFractures[currentIndex];
+        const model = document.getElementById('model-select').value;
+        const runBtn = document.getElementById('run-btn');
+
+        runBtn.disabled = true;
+        setStatus('Running inference...');
+
+        const formData = new FormData();
+        formData.append('fracture_id', fracture.id);
+        formData.append('model', model);
+
+        try {
+            const response = await fetch('/api/predict/', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken },
+                body: formData,
+            });
+            const result = await response.json();
+
+            if (!response.ok) {
+                setStatus(`Error: ${result.error}`, 'error');
+                return;
+            }
+
+            setStatus(`Assembled ${result.num_pieces} pieces with ${result.model}`, 'success');
+            displayResult(result.pieces);
+        } catch (err) {
+            setStatus(`Network error: ${err.message}`, 'error');
+        } finally {
+            runBtn.disabled = false;
+        }
+    });
+
+    function displayResult(pieces) {
+        clearGroup(resultViewer.group);
+        document.getElementById('result-placeholder').style.display = 'none';
+
+        pieces.forEach((p, i) => {
+            const obj = loadObjString(p.assembled_obj, PIECE_COLORS[i % PIECE_COLORS.length]);
+            resultViewer.group.add(obj);
+        });
+        fitCamera(resultViewer);
+    }
+
+    // ── Status helper ──────────────────────────────────────
+    function setStatus(msg, type = '') {
+        const el = document.getElementById('status');
+        el.textContent = msg;
+        el.className = 'text-xs mt-2 min-h-[1rem] ' + ({
+            error: 'text-red-400',
+            success: 'text-emerald-400',
+        }[type] || 'text-txt-muted');
+    }
     </script>
 </body>
 </html>

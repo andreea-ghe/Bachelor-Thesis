@@ -1,4 +1,6 @@
+import json
 import logging
+from pathlib import Path
 
 import httpx
 from django.conf import settings
@@ -18,6 +20,33 @@ MODEL_CHOICES = [
     ("multi_piece_pair_attn", "Pair attention (2-4 pieces)"),
     ("multi_piece_double_attn", "Double attention (2-4 pieces)"),
 ]
+
+PRECOMPUTED_PATH = (Path(__file__).resolve().parent / "static" / "core" / "precomputed_results.json")
+
+_precomputed_cache: dict | None = None
+def _get_precomputed() -> dict:
+    global _precomputed_cache
+    if _precomputed_cache is None:
+        if PRECOMPUTED_PATH.exists():
+            _precomputed_cache = json.loads(PRECOMPUTED_PATH.read_text())
+        else:
+            _precomputed_cache = {}
+    return _precomputed_cache
+
+
+def _lookup_precomputed(fracture_id: str, model: str) -> dict | None:
+    cache = _get_precomputed()
+    entry = cache.get(fracture_id)
+    if entry and model in entry.get("models", {}):
+        data = entry["models"][model]
+        return {
+            "model": model,
+            "num_pieces": entry["num_pieces"],
+            "pieces": data["pieces"],
+            "combined_assembled_obj": data["combined_assembled_obj"],
+            "source": "precomputed",
+        }
+    return None
 
 
 @require_GET
@@ -58,15 +87,9 @@ def fracture_pieces(request, fracture_id):
 @require_POST
 def predict(request):
     """
-    Proxy inference request to the FastAPI GPU server.
-
-    Reads the OBJ files for the selected fracture, sends them as multipart
-    to the inference server, and returns the assembled result.
+    Proxy inference to the GPU server; fall back to precomputed results
+    if the server is unreachable or not configured.
     """
-    gpu_url = settings.GPU_POD_URL
-    if not gpu_url:
-        return JsonResponse({"error": "GPU_POD_URL is not configured"}, status=503)
-
     fracture_id = request.POST.get("fracture_id")
     model_variant = request.POST.get("model", "two_piece_baseline")
 
@@ -74,27 +97,33 @@ def predict(request):
     if fracture is None:
         return JsonResponse({"error": "Fracture not found"}, status=404)
 
-    # Read OBJ files from disk
-    files = []
-    for obj_path in fracture.obj_paths:
-        files.append(("pieces", (obj_path.name, obj_path.read_bytes(), "text/plain")))
+    gpu_url = getattr(settings, "GPU_POD_URL", None)
 
-    try:
-        with httpx.Client(timeout=120.0) as client:
-            response = client.post(
-                f"{gpu_url.rstrip('/')}/predict",
-                data={"model": model_variant},
-                files=files,
-            )
-        response.raise_for_status()
-        result = response.json()
-    except httpx.ConnectError:
-        logger.error("Cannot reach inference server at %s", gpu_url)
-        return JsonResponse({"error": "Inference server is not reachable"}, status=503)
-    except httpx.TimeoutException:
-        return JsonResponse({"error": "Inference timed out"}, status=504)
-    except httpx.HTTPStatusError as e:
-        logger.error("Inference server error: %s", e.response.text)
-        return JsonResponse({"error": f"Inference failed: {e.response.text}"}, status=502)
+    # Try live GPU first
+    if gpu_url:
+        files = []
+        for obj_path in fracture.obj_paths:
+            files.append(("pieces", (obj_path.name, obj_path.read_bytes(), "text/plain")))
 
-    return JsonResponse(result)
+        try:
+            with httpx.Client(timeout=120.0) as client:
+                response = client.post(
+                    f"{gpu_url.rstrip('/')}/predict",
+                    data={"model": model_variant},
+                    files=files,
+                )
+            response.raise_for_status()
+            result = response.json()
+            result["source"] = "live"
+            return JsonResponse(result)
+        except (httpx.ConnectError, httpx.TimeoutException):
+            logger.warning("GPU unreachable, falling back to precomputed results")
+        except httpx.HTTPStatusError as e:
+            logger.warning("GPU error (%s), falling back to precomputed", e.response.status_code)
+
+    # fallback to precomputed cache
+    cached = _lookup_precomputed(fracture_id, model_variant)
+    if cached is not None:
+        return JsonResponse(cached)
+
+    return JsonResponse({"error": "GPU is unavailable and no precomputed result exists for this combination"}, status=503,)
