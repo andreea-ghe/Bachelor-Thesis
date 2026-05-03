@@ -1,0 +1,199 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jigsaw — Fracture Assembly Demo</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: #0f1117; color: #e0e0e0; }
+
+        .layout { display: flex; height: 100vh; }
+
+        /* Left panel */
+        .panel { width: 360px; padding: 24px; overflow-y: auto; border-right: 1px solid #23262f;
+                 display: flex; flex-direction: column; gap: 20px; background: #161822; }
+        .panel h1 { font-size: 1.3rem; color: #fff; }
+        .panel h2 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;
+                     color: #8b8fa3; margin-bottom: 8px; }
+
+        .fracture-group { display: flex; flex-direction: column; gap: 6px; }
+        .fracture-btn { background: #1e2030; border: 1px solid #2a2d3e; border-radius: 8px;
+                       padding: 10px 14px; color: #c8cad8; cursor: pointer; text-align: left;
+                       font-size: 0.85rem; transition: all 0.15s; }
+        .fracture-btn:hover { background: #262940; border-color: #4a4f6a; }
+        .fracture-btn.active { background: #2d3250; border-color: #6c72e0; color: #fff; }
+
+        select { background: #1e2030; border: 1px solid #2a2d3e; border-radius: 8px;
+                 padding: 10px 14px; color: #c8cad8; font-size: 0.85rem; width: 100%; }
+
+        .run-btn { background: #4c51bf; border: none; border-radius: 8px; padding: 12px;
+                   color: #fff; font-size: 0.9rem; font-weight: 600; cursor: pointer;
+                   transition: background 0.15s; }
+        .run-btn:hover { background: #5a5fc7; }
+        .run-btn:disabled { background: #2a2d3e; color: #555; cursor: not-allowed; }
+
+        .status { font-size: 0.8rem; color: #8b8fa3; min-height: 1.2em; }
+        .status.error { color: #e05555; }
+        .status.success { color: #55c077; }
+
+        /* Right panel — 3D viewer placeholder */
+        .viewer { flex: 1; display: flex; align-items: center; justify-content: center;
+                  background: #12141c; position: relative; }
+        .viewer-placeholder { color: #3a3d50; font-size: 1.1rem; text-align: center; }
+
+        #result-info { position: absolute; bottom: 20px; left: 20px; right: 20px;
+                       background: rgba(22, 24, 34, 0.9); border: 1px solid #2a2d3e;
+                       border-radius: 8px; padding: 14px; font-size: 0.8rem; display: none; }
+        #result-info .piece-row { display: flex; justify-content: space-between;
+                                  padding: 4px 0; border-bottom: 1px solid #1e2030; }
+    </style>
+</head>
+<body>
+    <div class="layout">
+
+        <!-- Left panel -->
+        <div class="panel">
+            <h1>Jigsaw Assembly</h1>
+
+            <div>
+                <h2>Model</h2>
+                <select id="model-select">
+                    {% for value, label in model_choices %}
+                    <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <h2>2-Piece Fractures</h2>
+                <div class="fracture-group">
+                    {% for f in two_piece_fractures %}
+                    <button class="fracture-btn" data-id="{{ f.id }}" data-pieces="{{ f.num_pieces }}"
+                            data-type="{{ f.piece_type }}">
+                        {{ f.display_name }}
+                    </button>
+                    {% empty %}
+                    <p style="color:#555; font-size:0.8rem;">No 2-piece fractures found.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div>
+                <h2>Multi-Piece Fractures</h2>
+                <div class="fracture-group">
+                    {% for f in multi_piece_fractures %}
+                    <button class="fracture-btn" data-id="{{ f.id }}" data-pieces="{{ f.num_pieces }}"
+                            data-type="{{ f.piece_type }}">
+                        {{ f.display_name }}
+                    </button>
+                    {% empty %}
+                    <p style="color:#555; font-size:0.8rem;">No multi-piece fractures found.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <button class="run-btn" id="run-btn" disabled>Run Inference</button>
+            <div class="status" id="status"></div>
+        </div>
+
+        <!-- Right panel — 3D viewer -->
+        <div class="viewer" id="viewer">
+            <div class="viewer-placeholder" id="viewer-placeholder">
+                Select an fracture and click <strong>Run Inference</strong>
+            </div>
+            <div id="result-info"></div>
+        </div>
+
+    </div>
+
+    <script>
+        const csrfToken = '{{ csrf_token }}';
+        let selectedFractureId = null;
+
+        // fracture selection
+        document.querySelectorAll('.fracture-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.fracture-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                selectedFractureId = btn.dataset.id;
+                document.getElementById('run-btn').disabled = false;
+                setStatus('');
+
+                // Load input pieces for preview
+                fetch(`/api/fractures/${selectedFractureId}/`)
+                    .then(r => r.json())
+                    .then(data => {
+                        setStatus(`Selected: ${data.display_name}`, 'success');
+                    });
+            });
+        });
+
+        // Run inference
+        document.getElementById('run-btn').addEventListener('click', async () => {
+            if (!selectedFractureId) return;
+
+            const model = document.getElementById('model-select').value;
+            const runBtn = document.getElementById('run-btn');
+
+            runBtn.disabled = true;
+            setStatus('Running inference...');
+
+            const formData = new FormData();
+            formData.append('fracture_id', selectedFractureId);
+            formData.append('model', model);
+
+            try {
+                const response = await fetch('/api/predict/', {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrfToken },
+                    body: formData,
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    setStatus(`Error: ${result.error}`, 'error');
+                    return;
+                }
+
+                setStatus(`Inference complete — ${result.num_pieces} pieces assembled`, 'success');
+                showResult(result);
+            } catch (err) {
+                setStatus(`Network error: ${err.message}`, 'error');
+            } finally {
+                runBtn.disabled = false;
+            }
+        });
+
+        function setStatus(msg, type = '') {
+            const el = document.getElementById('status');
+            el.textContent = msg;
+            el.className = 'status' + (type ? ` ${type}` : '');
+        }
+
+        function showResult(result) {
+            const info = document.getElementById('result-info');
+            info.style.display = 'block';
+
+            let html = `<strong>Model:</strong> ${result.model} &nbsp; | &nbsp;
+                         <strong>Pieces:</strong> ${result.num_pieces}<br><br>`;
+
+            result.pieces.forEach(p => {
+                html += `<div class="piece-row">
+                    <span>${p.name}</span>
+                    <span>assembled OBJ: ${(p.assembled_obj.length / 1024).toFixed(1)} KB</span>
+                </div>`;
+            });
+
+            html += `<br><div class="piece-row">
+                <span>Combined assembled</span>
+                <span>${(result.combined_assembled_obj.length / 1024).toFixed(1)} KB</span>
+            </div>`;
+
+            info.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
