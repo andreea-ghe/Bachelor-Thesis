@@ -1,17 +1,66 @@
 {# Slide 3: Key improvements to the architecture #}
 <section id="slide-improve" class="slide-section flex flex-col justify-center px-10 py-20 space-y-6">
     <div class="flex items-center justify-between">
-        <h2 class="text-3xl font-semibold">Key Improvements</h2>
+        <h2 class="text-3xl font-semibold">Proposed Improvements</h2>
         <div class="flex gap-1">
             <button onclick="scrollToSlide('slide-arch')" class="btn-icon">
                 {% include "components/icons/arrow_narrow_up.html" %}
             </button>
-            <button onclick="scrollToSlide('slide-future')" class="btn-icon">
+            <button onclick="scrollToSlide('slide-results')" class="btn-icon">
                 {% include "components/icons/arrow_narrow_down.html" %}
             </button>
         </div>
     </div>
     <div class="space-y-4">
-        <p class="text-txt-secondary text-base leading-relaxed">Data</p>
+        <div class="border border-brd-soft rounded-xl p-5 space-y-3">
+            <h3 class="text-lg font-medium">Pair Geometric Attention</h3>
+            <p class="text-txt-secondary text-sm leading-relaxed">
+                Standard cross-attention relies on <strong class="text-txt-primary">learned
+                feature similarity alone</strong>. When fragments multiply, matching
+                becomes expensive and ambiguous.
+            </p>
+            <p class="text-txt-secondary text-sm leading-relaxed">
+                We inject a <strong class="text-txt-primary">learnable scalar bias</strong>
+                b<sub>ij</sub> into attention logits, derived from inter-centroid
+                <strong class="text-txt-primary">Gaussian RBF distances</strong> and
+                <strong class="text-txt-primary">triplet angle descriptors</strong>,
+                aggregated through a small MLP.
+            </p>
+            <p class="text-txt-muted text-xs">
+                Designed primarily for &ge;3 pieces. For two fragments, the bias reduces
+                to a single scalar and triplet angles are undefined.
+            </p>
+        </div>
+
+        <div class="border border-brd-soft rounded-xl p-5 space-y-3">
+            <h3 class="text-lg font-medium">Gated Double Attention</h3>
+            <p class="text-txt-secondary text-sm leading-relaxed">
+                The baseline runs <strong class="text-txt-primary">one self-attention
+                + one cross-attention</strong> pass before matching. We add a
+                <strong class="text-txt-primary">second pass</strong> of both, controlled
+                by <strong class="text-txt-primary">zero-initialized gates</strong>
+                (ReZero): output = first-pass features + g &middot; residual.
+            </p>
+            <p class="text-txt-secondary text-sm leading-relaxed">
+                At init, gates are zero &mdash; the model is identical to the pretrained
+                baseline. Capacity activates only when training finds it useful.
+                Empirically, the cross-attention gate goes
+                <strong class="text-txt-primary">negative</strong>, subtracting
+                first-pass inter-fragment patterns rather than purely adding.
+            </p>
+        </div>
+
+        <div class="flex gap-3">
+            <div class="flex-1 border border-brd-soft rounded-xl p-4 text-center">
+                <p class="text-xs text-txt-muted">Pair Attention</p>
+                <p class="text-sm font-medium mt-1">Spatial bias</p>
+                <p class="text-xs text-txt-muted mt-0.5">geometry &rarr; attention logits</p>
+            </div>
+            <div class="flex-1 border border-brd-soft rounded-xl p-4 text-center">
+                <p class="text-xs text-txt-muted">Double Attention</p>
+                <p class="text-sm font-medium mt-1">Iterative refinement</p>
+                <p class="text-xs text-txt-muted mt-0.5">gated second pass</p>
+            </div>
+        </div>
     </div>
 </section>

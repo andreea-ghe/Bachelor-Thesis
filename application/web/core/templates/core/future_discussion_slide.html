@@ -1,9 +1,9 @@
-{# Slide 4: Future research directions #}
+{# Slide 5: Future research directions #}
 <section id="slide-future" class="slide-section flex flex-col justify-center px-10 py-20 space-y-6">
     <div class="flex items-center justify-between">
-        <h2 class="text-3xl font-semibold">Future Research Directions</h2>
+        <h2 class="text-3xl font-semibold">Future Directions</h2>
         <div class="flex gap-1">
-            <button onclick="scrollToSlide('slide-improve')" class="btn-icon">
+            <button onclick="scrollToSlide('slide-results')" class="btn-icon">
                 {% include "components/icons/arrow_narrow_up.html" %}
             </button>
             <button onclick="scrollToSlide('slide-future')"
@@ -13,6 +13,44 @@
         </div>
     </div>
     <div class="space-y-4">
-        <p class="text-txt-secondary text-base leading-relaxed">Data</p>
+        <div class="grid grid-cols-2 gap-3">
+            <div class="border border-brd-soft rounded-xl p-4 space-y-2">
+                <p class="text-sm font-medium">Scale to 2&ndash;20 pieces</p>
+                <p class="text-txt-secondary text-xs leading-relaxed">
+                    The current evaluation covers 2&ndash;4 pieces. Testing pair
+                    geometric bias on richer combinatorial diversity may reveal
+                    benefits invisible in the small-piece regime.
+                </p>
+            </div>
+            <div class="border border-brd-soft rounded-xl p-4 space-y-2">
+                <p class="text-sm font-medium">Loss schedule search</p>
+                <p class="text-txt-secondary text-xs leading-relaxed">
+                    Experiments showed high sensitivity to when matching and
+                    rigidity losses activate. Systematic scheduling or curriculum
+                    learning could unlock further gains.
+                </p>
+            </div>
+            <div class="border border-brd-soft rounded-xl p-4 space-y-2">
+                <p class="text-sm font-medium">Synthetic &rarr; real transfer</p>
+                <p class="text-txt-secondary text-xs leading-relaxed">
+                    Breaking Bad fractures lack erosion, wear, and missing parts
+                    found in real archaeological or medical data. Bridging this
+                    domain gap is an open challenge.
+                </p>
+            </div>
+            <div class="border border-brd-soft rounded-xl p-4 space-y-2">
+                <p class="text-sm font-medium">Missing fragments</p>
+                <p class="text-txt-secondary text-xs leading-relaxed">
+                    Current methods assume all pieces are present. Handling
+                    partial reconstructions where fragments are lost or
+                    unrecoverable remains unsolved.
+                </p>
+            </div>
+        </div>
+        <p class="text-txt-muted text-sm leading-relaxed">
+            The artifact split already serves as a cross-domain benchmark
+            (trained on everyday objects, evaluated on archaeological-style
+            artifacts), pointing toward broader transfer learning paradigms.
+        </p>
     </div>
 </section>

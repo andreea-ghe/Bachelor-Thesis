@@ -12,7 +12,31 @@
             </button>
         </div>
     </div>
-    <div class="space-y-4">
-        <p class="text-txt-secondary text-base leading-relaxed">Data</p>
+    <div class="space-y-5">
+        <p class="text-txt-secondary text-base leading-relaxed">
+            Given a set of broken 3D fragments, the goal is to recover the rigid
+            transformation (rotation + translation) that reassembles each piece into
+            the original object &mdash; a <strong class="text-txt-primary">6-DoF pose
+            regression</strong> problem over point clouds.
+        </p>
+        <p class="text-txt-secondary text-base leading-relaxed">
+            Unlike semantic part assembly, where pieces have known functional roles,
+            fracture assembly relies purely on <strong class="text-txt-primary">local
+            and global geometric cues</strong>: irregular break surfaces, concavity
+            patterns, and surface continuity across fragments.
+        </p>
+        <div class="border border-brd-soft rounded-xl p-4 space-y-2">
+            <p class="text-sm font-medium">Why is it hard?</p>
+            <ul class="text-txt-secondary text-sm leading-relaxed space-y-1 list-disc list-inside">
+                <li>Combinatorial explosion &mdash; each piece can be in any orientation</li>
+                <li>Noisy, ambiguous fracture surfaces</li>
+                <li>Pairwise alignment errors drift when chained globally</li>
+                <li>Real-world fragments suffer erosion and missing parts</li>
+            </ul>
+        </div>
+        <p class="text-txt-muted text-sm">
+            Applications span archaeology (fresco reassembly), medical imaging
+            (skull reconstruction), and quality control in manufacturing.
+        </p>
     </div>
 </section>

@@ -1,7 +1,7 @@
 {# Slide 2: Architecture / Pipeline #}
 <section id="slide-arch" class="slide-section flex flex-col justify-center px-10 py-20 space-y-6">
     <div class="flex items-center justify-between">
-        <h2 class="text-3xl font-semibold">Model Pipeline</h2>
+        <h2 class="text-3xl font-semibold">Jigsaw Pipeline</h2>
         <div class="flex gap-1">
             <button onclick="scrollToSlide('slide-intro')" class="btn-icon">
                 {% include "components/icons/arrow_narrow_up.html" %}
@@ -11,7 +11,71 @@
             </button>
         </div>
     </div>
-    <div class="space-y-4">
-        <p class="text-txt-secondary text-base leading-relaxed">Data</p>
+    <div class="space-y-5">
+        <p class="text-txt-secondary text-base leading-relaxed">
+            The model processes fracture pieces through four stages, from raw point
+            clouds to globally consistent poses.
+        </p>
+
+        {# Pipeline diagram using CSS boxes #}
+        <div class="flex items-center gap-2 overflow-x-auto py-2">
+            <div class="border border-brd-soft rounded-xl px-4 py-3 text-center shrink-0">
+                <p class="text-xs text-txt-muted">Stage 1</p>
+                <p class="text-sm font-medium mt-1">PointNet++</p>
+                <p class="text-xs text-txt-muted mt-0.5">Feature extraction</p>
+            </div>
+            <span class="text-txt-muted shrink-0">&rarr;</span>
+            <div class="border border-brd-soft rounded-xl px-4 py-3 text-center shrink-0">
+                <p class="text-xs text-txt-muted">Stage 2</p>
+                <p class="text-sm font-medium mt-1">Attention</p>
+                <p class="text-xs text-txt-muted mt-0.5">Self + Cross</p>
+            </div>
+            <span class="text-txt-muted shrink-0">&rarr;</span>
+            <div class="border border-brd-soft rounded-xl px-4 py-3 text-center shrink-0">
+                <p class="text-xs text-txt-muted">Stage 3</p>
+                <p class="text-sm font-medium mt-1">Matching</p>
+                <p class="text-xs text-txt-muted mt-0.5">Sinkhorn &rarr; Hungarian</p>
+            </div>
+            <span class="text-txt-muted shrink-0">&rarr;</span>
+            <div class="border border-brd-soft rounded-xl px-4 py-3 text-center shrink-0">
+                <p class="text-xs text-txt-muted">Stage 4</p>
+                <p class="text-sm font-medium mt-1">Alignment</p>
+                <p class="text-xs text-txt-muted mt-0.5">RANSAC &rarr; ICP &rarr; Shonan</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 text-sm">
+            <div class="border border-brd-soft rounded-xl p-4">
+                <p class="font-medium mb-1">Feature Extraction</p>
+                <p class="text-txt-secondary text-xs leading-relaxed">
+                    PointNet++ encodes local geometry at multiple scales.
+                    Self-attention refines per-point features using k-NN neighborhoods
+                    with positional encodings from 3D distances.
+                </p>
+            </div>
+            <div class="border border-brd-soft rounded-xl p-4">
+                <p class="font-medium mb-1">Cross-Attention</p>
+                <p class="text-txt-secondary text-xs leading-relaxed">
+                    Multi-head attention between fragments establishes inter-piece
+                    correspondences, bridging the geometric gap across fracture surfaces.
+                </p>
+            </div>
+            <div class="border border-brd-soft rounded-xl p-4">
+                <p class="font-medium mb-1">Primal-Dual Matching</p>
+                <p class="text-txt-secondary text-xs leading-relaxed">
+                    Features split into primal (convex) and dual (concave) spaces.
+                    Sinkhorn optimal transport produces soft assignments;
+                    Hungarian algorithm extracts discrete one-to-one matches.
+                </p>
+            </div>
+            <div class="border border-brd-soft rounded-xl p-4">
+                <p class="font-medium mb-1">Global Alignment</p>
+                <p class="text-txt-secondary text-xs leading-relaxed">
+                    RANSAC estimates pairwise rigid transforms from correspondences.
+                    ICP refines locally. Shonan averaging jointly optimizes all poses
+                    for global cycle consistency.
+                </p>
+            </div>
+        </div>
     </div>
 </section>

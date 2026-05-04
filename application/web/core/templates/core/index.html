@@ -49,6 +49,7 @@
             {% include "core/introduction_slide.html" %}
             {% include "core/architecture_slide.html" %}
             {% include "core/improvement_slide.html" %}
+            {% include "core/results_slide.html" %}
             {% include "core/future_discussion_slide.html" %}
         </div>
 
@@ -141,7 +142,7 @@
         currentIndex = idx;
         updateCounter();
         const f = filteredFractures[currentIndex];
-        setStatus(`${f.name}`);
+        updateStatus('compact', f.name, 'pending');
         loadInputPieces(f.id);
         highlightGridCard(f.id);
     }
@@ -152,8 +153,6 @@
     // Fullscreen prev/next
     document.getElementById('fs-prev-btn').addEventListener('click', () => { if (currentIndex > 0) selectExample(currentIndex - 1); });
     document.getElementById('fs-next-btn').addEventListener('click', () => { if (currentIndex < filteredFractures.length - 1) selectExample(currentIndex + 1); });
-
-    if (allFractures.length > 0) selectExample(0);
 
     // ── Fullscreen: open / close ───────────────────────────
     const overlay = document.getElementById('fullscreen-overlay');
@@ -174,7 +173,7 @@
         // Reload current example into fullscreen viewer
         if (currentIndex >= 0) {
             const f = filteredFractures[currentIndex];
-            loadPiecesIntoViewer(fsViewer, f.id, 'fs-viewer-placeholder');
+            loadPiecesIntoViewer(fsViewer, f.id, 'fs-viewer-placeholder', true);
             highlightGridCard(f.id);
         }
 
@@ -230,7 +229,7 @@
                     const newIdx = filteredFractures.findIndex(ff => ff.id === f.id);
                     selectExample(newIdx);
                 }
-                loadPiecesIntoViewer(fsViewer, f.id, 'fs-viewer-placeholder');
+                loadPiecesIntoViewer(fsViewer, f.id, 'fs-viewer-placeholder', true);
             });
             grid.appendChild(card);
         });
@@ -243,53 +242,7 @@
     }
 
     // ── Fullscreen: run inference ──────────────────────────
-    document.getElementById('fs-run-btn').addEventListener('click', async () => {
-        if (currentIndex < 0) return;
-
-        const fracture = filteredFractures[currentIndex];
-        const model = document.getElementById('fs-model-select').value;
-        const btn = document.getElementById('fs-run-btn');
-        const statusEl = document.getElementById('fs-status');
-
-        btn.disabled = true;
-        statusEl.textContent = 'Running inference...';
-        statusEl.className = 'text-xs text-txt-muted flex-1';
-
-        const formData = new FormData();
-        formData.append('fracture_id', fracture.id);
-        formData.append('model', model);
-
-        try {
-            const response = await fetch('/api/predict/', {
-                method: 'POST',
-                headers: { 'X-CSRFToken': csrfToken },
-                body: formData,
-            });
-            const result = await response.json();
-
-            if (!response.ok) {
-                statusEl.textContent = `Error: ${result.error}`;
-                statusEl.className = 'text-xs text-red-400 flex-1';
-                return;
-            }
-
-            statusEl.textContent = `Assembled ${result.num_pieces} pieces`;
-            statusEl.className = 'text-xs text-emerald-400 flex-1';
-
-            // Show result in the fullscreen viewer
-            clearGroup(fsViewer.group);
-            result.pieces.forEach((p, i) => {
-                const obj = loadObjString(p.assembled_obj, PIECE_COLORS[i % PIECE_COLORS.length]);
-                fsViewer.group.add(obj);
-            });
-            fitCamera(fsViewer);
-        } catch (err) {
-            statusEl.textContent = `Network error: ${err.message}`;
-            statusEl.className = 'text-xs text-red-400 flex-1';
-        } finally {
-            btn.disabled = false;
-        }
-    });
+    document.getElementById('fs-run-btn').addEventListener('click', () => runInference('fullscreen'));
 
     // ── Three.js viewer factory ────────────────────────────
     function createViewer(containerId, clearColor = 0x000000) {
@@ -338,6 +291,9 @@
     const inputViewer = createViewer('viewer-canvas');
     const resultViewer = createViewer('result-canvas');
 
+    // Select first example now that viewers exist
+    if (allFractures.length > 0) selectExample(0);
+
     function clearGroup(group) {
         while (group.children.length) {
             const c = group.children[0];
@@ -370,7 +326,27 @@
     }
 
     // ── Load pieces into a specific viewer ─────────────────
-    async function loadPiecesIntoViewer(viewer, fractureId, placeholderId) {
+    function scatterPieces(pieces) {
+        const centroids = pieces.map(obj => {
+            const box = new THREE.Box3().setFromObject(obj);
+            return box.getCenter(new THREE.Vector3());
+        });
+        const groupCenter = new THREE.Vector3();
+        centroids.forEach(c => groupCenter.add(c));
+        groupCenter.divideScalar(centroids.length);
+
+        const SPREAD = 0.3;
+        pieces.forEach((obj, i) => {
+            const dir = centroids[i].clone().sub(groupCenter);
+            if (dir.length() < 0.001) {
+                dir.set(i % 2 === 0 ? 1 : -1, 0, 0);
+            }
+            dir.normalize().multiplyScalar(SPREAD);
+            obj.position.add(dir);
+        });
+    }
+
+    async function loadPiecesIntoViewer(viewer, fractureId, placeholderId, scatter = false) {
         const resp = await fetch(`/api/fracture/${fractureId}/`);
         const data = await resp.json();
 
@@ -378,33 +354,40 @@
         const ph = document.getElementById(placeholderId);
         if (ph) ph.style.display = 'none';
 
+        const pieces = [];
         for (let i = 0; i < data.pieces.length; i++) {
             const objResp = await fetch(data.pieces[i].url);
             const objText = await objResp.text();
             const obj = loadObjString(objText, PIECE_COLORS[i % PIECE_COLORS.length]);
             viewer.group.add(obj);
+            pieces.push(obj);
         }
+
+        if (scatter) scatterPieces(pieces);
         fitCamera(viewer);
     }
 
     // ── Load input pieces ─────────────────────────────────
     async function loadInputPieces(fractureId) {
-        await loadPiecesIntoViewer(inputViewer, fractureId, 'viewer-placeholder');
+        await loadPiecesIntoViewer(inputViewer, fractureId, 'viewer-placeholder', true);
         if (isFullscreen && fsViewer) {
-            await loadPiecesIntoViewer(fsViewer, fractureId, 'fs-viewer-placeholder');
+            await loadPiecesIntoViewer(fsViewer, fractureId, 'fs-viewer-placeholder', true);
         }
     }
 
-    // ── Run inference ────────────────────────────
-    document.getElementById('run-btn').addEventListener('click', async () => {
+    // ── Run inference ────
+    document.getElementById('run-btn').addEventListener('click', () => runInference('compact'));
+
+    async function runInference(mode) {
         if (currentIndex < 0) return;
 
         const fracture = filteredFractures[currentIndex];
-        const model = document.getElementById('model-select').value;
-        const runBtn = document.getElementById('run-btn');
+        const isFs = mode === 'fullscreen';
+        const model = document.getElementById(isFs ? 'fs-model-select' : 'model-select').value;
+        const btn = document.getElementById(isFs ? 'fs-run-btn' : 'run-btn');
 
-        runBtn.disabled = true;
-        setStatus('Running inference...');
+        btn.disabled = true;
+        updateStatus(mode, 'Running inference...', 'pending');
 
         const formData = new FormData();
         formData.append('fracture_id', fracture.id);
@@ -419,39 +402,58 @@
             const result = await response.json();
 
             if (!response.ok) {
-                setStatus(`Error: ${result.error}`, 'error');
+                updateStatus(mode, `Error: ${result.error}`, 'error');
                 return;
             }
 
-            setStatus(`Assembled ${result.num_pieces} pieces with ${result.model}`, 'success');
-            displayResult(result.pieces);
+            const src = result.source === 'precomputed' ? ' (cached)' : '';
+            updateStatus(mode, `Assembled ${result.num_pieces} pieces${src}`, 'success');
+            showAssembled(result.pieces, mode);
         } catch (err) {
-            setStatus(`Network error: ${err.message}`, 'error');
+            updateStatus(mode, `Network error: ${err.message}`, 'error');
         } finally {
-            runBtn.disabled = false;
+            btn.disabled = false;
         }
-    });
+    }
 
-    function displayResult(pieces) {
+    function showAssembled(pieces, mode) {
+        // Always show in compact result viewer
         clearGroup(resultViewer.group);
         document.getElementById('result-placeholder').style.display = 'none';
-
         pieces.forEach((p, i) => {
             const obj = loadObjString(p.assembled_obj, PIECE_COLORS[i % PIECE_COLORS.length]);
             resultViewer.group.add(obj);
         });
         fitCamera(resultViewer);
+
+        // Also show in fullscreen viewer if applicable
+        if (fsViewer && (mode === 'fullscreen' || isFullscreen)) {
+            clearGroup(fsViewer.group);
+            pieces.forEach((p, i) => {
+                const obj = loadObjString(p.assembled_obj, PIECE_COLORS[i % PIECE_COLORS.length]);
+                fsViewer.group.add(obj);
+            });
+            fitCamera(fsViewer);
+        }
     }
 
-    // ── Status helper ──────────────────────────────────────
-    function setStatus(msg, type = '') {
+    function updateStatus(mode, msg, type) {
+        const cls = { error: 'text-red-400', success: 'text-emerald-400', pending: 'text-txt-muted' }[type] || 'text-txt-muted';
+
+        // Compact status
         const el = document.getElementById('status');
         el.textContent = msg;
-        el.className = 'text-xs mt-2 min-h-[1rem] ' + ({
-            error: 'text-red-400',
-            success: 'text-emerald-400',
-        }[type] || 'text-txt-muted');
+        el.className = `text-xs mt-2 min-h-[1rem] ${cls}`;
+
+        // Fullscreen status
+        const fsEl = document.getElementById('fs-status');
+        if (fsEl) {
+            fsEl.textContent = msg;
+            fsEl.className = `text-xs flex-1 ${cls}`;
+        }
     }
+
+    
     </script>
 </body>
 </html>
