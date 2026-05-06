@@ -1,7 +1,7 @@
 \chapter{Experiments and Results}
 \label{chap:ch6}
 
-This chapter presents the experimental evaluation of the proposed modifications to the Jigsaw framework. To set expectations upfront: the proposed architectural modifications---pair geometric attention and gated double attention---showed initial promise when evaluated on an incomplete version of the dataset, but did not yield meaningful improvements once the full dataset was restored. The central finding of this chapter is that \textbf{data quantity was the dominant factor}: restoring the missing 37\% of training data improved part accuracy by over 10 percentage points, far exceeding any architectural change. A secondary finding is that loss scheduling during fine-tuning had a surprisingly large effect on the gated double attention layers.
+This chapter presents the experimental evaluation of the proposed modifications to the Jigsaw framework. To set expectations upfront: the proposed architectural modifications---pair geometric attention and gated double attention---showed initial promise when evaluated on an incomplete version of the dataset, but did not yield meaningful improvements once the full dataset was restored. The central finding of this chapter is that \textbf{data quantity was the dominant factor}: restoring the missing 37\% of training data improved part accuracy by over 10 percentage points, far exceeding any architectural change. A secondary finding is that loss scheduling during finetuning had a surprisingly large effect on the gated double attention layers.
 
 We present the experiments chronologically, as the order in which results were obtained is itself informative. Section~\ref{sec:incomplete} reports the initial results on the incomplete dataset, where the modifications appeared beneficial. Section~\ref{sec:data_twist} explains how the data issue was discovered. Section~\ref{sec:complete} shows how the conclusions changed on the complete dataset. Sections~\ref{sec:loss_scheduling} and~\ref{sec:gate_introspection} analyze the loss scheduling effect and the learned gate behavior, respectively.
 
@@ -18,7 +18,7 @@ The base shapes are collected from PartNet (20 daily object categories) and Thin
 The dataset is organized into three subsets:
 \begin{itemize}
     \item \textbf{Everyday:} 20 categories of daily objects (BeerBottle, Bottle, Bowl, Cookie, Cup, DrinkBottle, DrinkingUtensil, Mirror, Mug, PillBottle, Plate, Ring, Spoon, Statue, Teacup, Teapot, ToyFigure, Vase, WineBottle, WineGlass), sourced from PartNet. Contains 34,075 training and 7,679 validation fracture patterns from 407 and 91 objects respectively.
-    \item \textbf{Artifact:} Sculptures and archaeological-style objects from Thingi10K. Contains 3,651 fracture patterns from 40 objects. Serves as a cross-domain generalization benchmark: models are trained exclusively on everyday objects and evaluated on artifacts without any fine-tuning.
+    \item \textbf{Artifact:} Sculptures and archaeological-style objects from Thingi10K. Contains 3,651 fracture patterns from 40 objects. Serves as a cross-domain generalization benchmark: models are trained exclusively on everyday objects and evaluated on artifacts without any finetuning.
     \item \textbf{Other:} Remaining Thingi10K meshes (video game assets, fabrication models, etc.), which we do not use in our experiments.
 \end{itemize}
 
@@ -68,11 +68,11 @@ All results are reported as the mean $\pm$ standard deviation over three indepen
 \subsection{Implementation Details}
 \label{sec:impl_details}
 
-All models are fine-tuned from the official pretrained Jigsaw checkpoint, which was originally trained for 250 epochs on the full everyday subset (2--20 pieces) using Adam with a learning rate of $10^{-3}$ and cosine annealing. Table~\ref{tab:hyperparams} summarizes the shared hyperparameters used across all fine-tuning experiments. The only differences between configurations are the architectural modifications (pair attention, double attention) and the loss scheduling, which are noted explicitly in each experiment.
+All models are fine-tuned from the official pretrained Jigsaw checkpoint, which was originally trained for 250 epochs on the full everyday subset (2--20 pieces) using Adam with a learning rate of $10^{-3}$ and cosine annealing. Table~\ref{tab:hyperparams} summarizes the shared hyperparameters used across all finetuning experiments. The only differences between configurations are the architectural modifications (pair attention, double attention) and the loss scheduling, which are noted explicitly in each experiment.
 
 \begin{table}[h]
 \centering
-\caption{Shared hyperparameters for all fine-tuning experiments. The only parameters that vary across experiments are the architectural flags (\texttt{USE\_PAIR\_BIAS}, \texttt{USE\_DOUBLE\_ATTN}) and the loss schedule (\texttt{mat\_epoch}, \texttt{rig\_epoch}).}
+\caption{Shared hyperparameters for all finetuning experiments. The only parameters that vary across experiments are the architectural flags (\texttt{USE\_PAIR\_BIAS}, \texttt{USE\_DOUBLE\_ATTN}) and the loss schedule (\texttt{mat\_epoch}, \texttt{rig\_epoch}).}
 \label{tab:hyperparams}
 \begin{tabular}{ll}
 \toprule
@@ -105,12 +105,12 @@ New modules (pair geometric encoder, second attention layers) receive a $10\time
     \label{fig:lr_schedule}
 \end{figure}
 
-To verify that fine-tuning did not degrade the pretrained segmentation backbone, we monitored validation segmentation accuracy throughout training (Figure~\ref{fig:seg_stability}). Across all configurations, segmentation accuracy remained stable above 97\%, confirming that the fine-tuning process did not cause catastrophic forgetting of the pretrained features.
+To verify that finetuning did not degrade the pretrained segmentation backbone, we monitored validation segmentation accuracy throughout training (Figure~\ref{fig:seg_stability}). Across all configurations, segmentation accuracy remained stable above 97\%, confirming that the finetuning process did not cause catastrophic forgetting of the pretrained features.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=1\linewidth]{figures/validation_accuracy.png}
-    \caption{Validation segmentation accuracy across all experiments. All configurations maintain accuracy above 97\% throughout training, indicating that fine-tuning does not degrade the pretrained segmentation backbone.}
+    \caption{Validation segmentation accuracy across all experiments. All configurations maintain accuracy above 97\% throughout training, indicating that finetuning does not degrade the pretrained segmentation backbone.}
     \label{fig:seg_stability}
 \end{figure}
 
@@ -146,7 +146,7 @@ GARF \cite{Li2025GARF} & 6.1 & 1.2 & 95.3 & 0.2 & 5.8 & 1.3 & 95.0 & 0.4 \\
 
 Our initial experiments were conducted on what we believed to be the full Breaking Bad dataset. Due to a data transfer issue, approximately 37\% of the fracture patterns were missing from the everyday subset---a fact we only discovered later (Section~\ref{sec:data_twist}). This section presents the results obtained on this incomplete dataset.
 
-\subsection{Baseline: Fine-Tuning for Two-Piece Assembly}
+\subsection{Baseline: Finetuning for Two-Piece Assembly}
 
 As a first step, we fine-tuned the pretrained Jigsaw model exclusively on 2-piece fracture patterns using the standard loss schedule. Table~\ref{tab:two_piece_incomplete} shows the results. This specialization produced a substantial improvement over the original multi-piece checkpoint: part accuracy increased from 57.1\% to 75.9\% on everyday and from 45.4\% to 63.8\% on artifact, indicating that the pretrained model had room for improvement when focused on a specific piece-count regime.
 
@@ -155,8 +155,9 @@ As a first step, we fine-tuned the pretrained Jigsaw model exclusively on 2-piec
 Adding an ICP refinement step between RANSAC and Shonan averaging (Section~\ref{sec:icp_methodology}) yielded a consistent improvement of approximately 1 percentage point on both subsets. Since ICP operates purely on the geometric alignment stage and introduces no learnable parameters, this improvement is entirely orthogonal to the attention-based modifications. We retain ICP in all subsequent experiments.
 
 \subsection{Pair Geometric Attention Bias}
+\label{sec:pair_attn_results}
 
-On two pieces, the pair attention bias had minimal effect, as theoretically expected. With only two fragments, the bias matrix reduces to a single scalar applied uniformly to all cross-piece attention scores, and no triplet angles can be computed. The slight improvement on artifact (+3 points) is likely attributable to the additional regularization effect of the pair encoder's parameters rather than meaningful geometric reasoning.
+On two pieces, the pair attention bias had minimal effect, consistent with its expected behavior in this setting. With only two fragments, the bias reduces to a single scalar applied uniformly to all cross-piece attention scores, and no triplet angles can be computed. As noted in Section~\ref{par:pair_attn_limitations}, a uniform scalar added to all logits has little direct effect after softmax normalization. The slight improvement on artifact (+3 points) suggests that the additional parameters introduced by the pair encoder may provide a mild regularization effect under domain shift.
 
 \subsection{Gated Double Attention}
 
@@ -245,7 +246,7 @@ We re-ran all experiments on the complete dataset. The results significantly cha
 
 \subsection{The Data Quantity Effect}
 
-The most notable finding was the magnitude of improvement from data alone. Fine-tuning the same baseline model on the complete dataset, with no architectural changes, raised part accuracy on everyday from 75.9\% to \textbf{86.4\%}---an improvement of over 10 percentage points---and reduced translation error by nearly half. This suggests that the model had been limited primarily by data quantity rather than representational capacity.
+The most notable finding was the magnitude of improvement from data alone. Finetuning the same baseline model on the complete dataset, with no architectural changes, raised part accuracy on everyday from 75.9\% to \textbf{86.4\%}---an improvement of over 10 percentage points---and reduced translation error by nearly half. This suggests that the model had been limited primarily by data quantity rather than representational capacity.
 
 \subsection{The Architectural Modifications Lose Their Edge}
 
@@ -291,7 +292,7 @@ Baseline & \textbf{70.5} & \textbf{27.2} & \textbf{5.17} & \textbf{11.0} & \text
 \end{tabular}
 \end{table}
 
-Neither modification improved upon the baseline. Pair attention, despite now having 3--4 fragments to form meaningful geometric relationships, showed no benefit. An analysis of the pair encoder's weight evolution (Table~\ref{tab:weight_evolution}) revealed that the MLP bias projection was learning slowly, with the distance and angle RBF centers remaining completely frozen. With only 100 epochs of fine-tuning and a maximum of 4 pieces, the encoder may simply not have had enough training signal or combinatorial diversity to learn useful geometric biases.
+Neither modification improved upon the baseline. Pair attention remained largely neutral even in the 3--4 piece setting, where triplet angles become available and fragment-pair biases can in principle differentiate between target fragments. As discussed in Section~\ref{par:pair_attn_limitations}, the independently normalized coordinate frame limits the spatial signal available to the pair encoder compared to iterative architectures like GPAT. To better understand the encoder's behavior, we analyzed the weight evolution across training (Table~\ref{tab:weight_evolution}). The MLP projection layers showed only modest adaptation, consistent with the reduced geometric signal in the normalized representation. Importantly, the module did not destabilize the baseline, confirming that the gated integration is safe even when the bias carries limited information.
 
 \begin{table}[h]
 \centering
@@ -312,7 +313,7 @@ Neither modification improved upon the baseline. Pair attention, despite now hav
 \section{The Effect of Loss Scheduling}
 \label{sec:loss_scheduling}
 
-During the incomplete-dataset phase, one experiment was run with a non-standard loss schedule: the matching loss was delayed to epoch 9 (instead of activating immediately), and the rigidity loss was set to activate at epoch 199---effectively disabling it entirely for the 100-epoch fine-tuning run. This ``gentle'' schedule produced the best results of any configuration: 80.4\% part accuracy on everyday and 69.4\% on artifact, outperforming the standard-schedule double attention (78.0\% and 68.5\%).
+During the incomplete-dataset phase, one experiment was run with a non-standard loss schedule: the matching loss was delayed to epoch 9 (instead of activating immediately), and the rigidity loss was set to activate at epoch 199---effectively disabling it entirely for the 100-epoch finetuning run. This ``gentle'' schedule produced the best results of any configuration: 80.4\% part accuracy on everyday and 69.4\% on artifact, outperforming the standard-schedule double attention (78.0\% and 68.5\%).
 
 The difference in training dynamics is visible in the loss curves. Under the standard schedule (Figure~\ref{fig:loss_standard}), all three loss terms are active early and the rigidity loss spikes at epoch 30 before decaying. Under the gentle schedule (Figure~\ref{fig:loss_gentle}), the matching loss remains near zero until epoch 9, when it jumps sharply as it activates; the rigidity loss never appears, since its activation epoch exceeds the training duration. This delayed activation allows the segmentation and matching pathways to stabilize independently before interacting.
 
@@ -349,7 +350,7 @@ Gentle ($\beta$@9, $\gamma$@never) & \textbf{80.4} & \textbf{19.6} & \textbf{69.
 
 This result points to an important dynamic. In the standard schedule, the matching loss is active from epoch 0, pressuring the randomly initialized second attention layers to produce useful matching features. Even though the gates start at zero, the gradients from the matching loss flow backward through the gates, creating tension between the pretrained pathway and the new pathway from the very first step. The gentle schedule, by contrast, gives the new layers 9 epochs to adapt purely through the segmentation loss---a much softer learning signal---before the matching loss introduces its stronger gradient. The absence of rigidity loss further reduces the optimization burden, letting the matching module explore the loss landscape more freely.
 
-This sensitivity to loss scheduling highlights a challenge of fine-tuning with gated residual connections: while the zero-initialized gates protect the pretrained features at initialization, the \textit{gradients} are not gated. An aggressive loss schedule can destabilize the pretrained representations through gradient interference before the new layers have had time to calibrate.
+This sensitivity to loss scheduling highlights a challenge of finetuning with gated residual connections: while the zero-initialized gates protect the pretrained features at initialization, the \textit{gradients} are not gated. An aggressive loss schedule can destabilize the pretrained representations through gradient interference before the new layers have had time to calibrate.
 
 \section{Gate Behavior Analysis}
 \label{sec:gate_introspection}
@@ -389,9 +390,12 @@ The experiments presented in this chapter yield several conclusions about the in
 
 \paragraph{ICP refinement is a reliable, orthogonal improvement.} Unlike the attention-based modifications, ICP consistently improved results by approximately 1 percentage point across all configurations. As a post-processing step that exploits dense geometric information without introducing learnable parameters, it carries no risk of overfitting or interference with the training dynamics.
 
-\paragraph{Loss scheduling is an important but often overlooked hyperparameter.} The finding that a gentler loss schedule outperformed the standard one highlights the importance of the loss activation schedule during fine-tuning. When integrating new architectural components into a pretrained model, the rate at which different loss terms are activated can determine whether the new components integrate smoothly or disrupt the pretrained representations. Due to limited computational resources, we were unable to conduct a systematic grid search over loss schedules, leaving this as an important direction for future work.
+\paragraph{Loss scheduling is an important but often overlooked hyperparameter.} The finding that a gentler loss schedule outperformed the standard one highlights the importance of the loss activation schedule during finetuning. When integrating new architectural components into a pretrained model, the rate at which different loss terms are activated can determine whether the new components integrate smoothly or disrupt the pretrained representations. Due to limited computational resources, we were unable to conduct a systematic grid search over loss schedules, leaving this as an important direction for future work.
 
-\paragraph{Pair attention requires richer combinatorial diversity.} The pair geometric encoder showed no benefit on 2--4 piece assemblies, despite being theoretically motivated for multi-piece scenarios. We hypothesize that the limited piece-count range (maximum 4 fragments) does not provide sufficient combinatorial diversity for the geometric biases to differentiate themselves from what the cross-attention mechanism can already learn from the data. Testing on the full 2--20 piece range, where the number of candidate pairs grows quadratically and disambiguation becomes critical, remains a necessary step to validate or refute this hypothesis.
+\paragraph{Geometric pair attention requires a meaningful spatial frame.}
+The pair geometric encoder, adapted from GPAT \cite{Li2023GPAT}, did not produce consistent improvements in Jigsaw's pipeline. This does not invalidate the idea of geometric pair attention itself; rather, it highlights an important architectural dependency. In GPAT, pairwise descriptors are recomputed after pose updates, so centroid distances and angular relationships gradually become more meaningful as the assembly improves. In Jigsaw, the neural network operates before pose recovery, and the independently normalized fragment coordinates provide only a weak spatial signal. Consequently, the pair bias behaves more like a lightweight relation-level regularizer than a true geometric compatibility prior.
+
+This finding clarifies a limitation of directly transferring geometric attention mechanisms between architectures. Pair attention is most promising when the model either preserves meaningful initial spatial relationships or includes an iterative pose-estimation mechanism that can progressively refine them. A natural future direction would be to introduce a coarse pose proposal before the attention layers, allowing the pair encoder to operate on geometrically informative fragment positions.
 
 Figure~\ref{fig:val_losses} provides an overview of validation loss trajectories across all experiments. The most visible pattern is the separation between two-piece configurations (lower losses) and multi-piece configurations (higher losses), reflecting the increased difficulty of assembling more fragments. Within each group, the different architectural variants follow similar trajectories, consistent with the finding that the proposed modifications do not substantially alter the model's learning dynamics when sufficient data is available.
 

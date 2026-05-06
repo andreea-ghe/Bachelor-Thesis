@@ -5,7 +5,7 @@ In the following chapter, we review the evolution of methodologies in the litera
 
 \section{Historical Evolution of 3D Shape Reassembly Methodologies}
 
-Before the advent of deep learning, the field relied on \textbf{Traditional Geometry-Based Fracture Assembly}. These early methods utilized hand-crafted mathematical invariants and surface characteristics to align broken fragments. For example, Huang et al. \cite{huang2006reassembling} proposed reassembling fractured objects via geometric matching using integral invariants to analyze fracture surfaces. In archaeological contexts, Toler et al. \cite{toler2010multi}. utilized multi-feature matching, combining color, normal maps, and geometric features to reassembly fresco fragments, while Funkhouser et al. \cite{funkhouser2011learning} applied machine learning classifiers to evaluate these hand-crafted features and learn how to match the fragments effectively (Figure~\ref{fig:feature_descriptors}).
+Before the advent of deep learning, the field relied on \textbf{Traditional Geometry-Based Fracture Assembly}. These early methods utilized hand-crafted mathematical invariants and surface characteristics to align broken fragments. For example, Huang et al. \cite{huang2006reassembling} proposed reassembling fractured objects via geometric matching using integral invariants to analyze fracture surfaces. In archaeological contexts, Toler et al. \cite{toler2010multi}. utilized multi-feature matching, combining color, normal maps, and geometric features to reassemble fresco fragments, while Funkhouser et al. \cite{funkhouser2011learning} applied machine learning classifiers to evaluate these hand-crafted features and learn how to match the fragments effectively (Figure~\ref{fig:feature_descriptors}).
 
 \begin{figure}[h]
 \captionsetup[subfigure]{labelformat=empty}
@@ -246,7 +246,7 @@ At inference time, GARF introduces a \textit{two-stage} integration scheme (figu
 
 Overall, the key conceptual shift introduced by GARF is the transition from static pose estimation to learning a continuous motion field on \(SE(3)\), enabling smoother optimization, better generalization to unseen shapes, and robustness to missing or extraneous fragments.
 
-\subsection{Summary and Research Gap.}
+\subsection{Summary and Research Gap}
 
 Recent deep learning methods have significantly improved the problem of 3D fractured object reassembly, especially with the introduction of frameworks such as Jigsaw, which combine attention mechanisms with global matching strategies. However, despite these advances, several limitations remain, particularly when dealing with ambiguous or incomplete fragments.
 
