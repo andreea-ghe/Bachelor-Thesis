@@ -1,0 +1,66 @@
+\chapter{Introduction}
+\label{chap:ch1}
+
+The ability to look at a collection of broken fragments and reason about how they once fit together is a form of spatial intelligence that humans have practiced for millennia. In archaeology, researchers reassemble eroded pottery, shattered frescoes, and fragmented statues to preserve the material record of ancient civilizations \cite{huang2006reassembling, toler2010multi, funkhouser2011learning}. In paleontology, fractured bones and lithic artifacts are pieced together to reconstruct tools and skeletal remains. In medicine, surgeons mentally reconstruct comminuted bone fractures before planning an operation. In each case, the task demands the same core capability: recognizing complementary fracture surfaces, estimating how irregularly shaped pieces align in three-dimensional space, and coordinating the placement of all fragments into a coherent whole.
+
+Despite the importance of these tasks, they remain overwhelmingly manual. An experimental study on lithic refitting reported a success rate of only 30\%, with experts performing only marginally better than novices \cite{laughlin2010lithic}. Museum storerooms around the world hold thousands of unassembled fragments, waiting to be pieced together by specialists whose time is limited and whose accuracy, even with expertise, is modest. The sheer scale of the problem---combined with the risk of further damaging fragile artifacts through physical handling---has long motivated the search for computational alternatives.
+
+With the advent of high-resolution 3D scanning, the physical pieces of a broken object can now be digitized into point clouds: unordered sets of 3D coordinates that capture the geometry of each fragment. This transforms a physical puzzle into a computational one. Given a set of point clouds representing the broken pieces, the goal is to predict the rigid transformation---a rotation and a translation---that maps each fragment back to its original position, restoring the complete object. The problem is known as 6-Degree-of-Freedom (6-DoF) pose estimation and sits at the intersection of computer vision, computational geometry, and deep learning. Beyond cultural heritage, the same formulation applies to forensic evidence reconstruction, preoperative surgical planning, and even molecular docking in structural biology, making it a problem of broad scientific relevance.
+
+Automating 3D reassembly is far from trivial. Unlike 2D jigsaw puzzles, where flat edges and printed patterns constrain the solution, 3D fracture fragments feature irregular, continuous surfaces with no discrete boundary markers. The search space grows combinatorially with the number of pieces, and small errors in local pairwise alignments propagate and accumulate when assembling multi-part objects, a phenomenon known as drift.
+
+Early computational approaches relied on hand-crafted geometric descriptors---integral invariants \cite{huang2006reassembling}, curvature profiles, surface normals, and boundary contours \cite{toler2010multi}---to find matches between fracture surfaces. While effective on clean, controlled breaks, these methods are sensitive to surface ambiguity and deteriorate when applied to eroded, incomplete, or noisy real-world fragments. A parallel line of research addressed semantic part assembly---reconstructing objects from predefined, functionally meaningful components such as furniture legs or chair backs \cite{Huang2020DGL, harish2022rgl, wu2020pq}. These methods leverage categorical priors and part labels, but their assumptions break down when applied to arbitrary fracture fragments that carry no semantic identity.
+
+The landscape shifted with two key developments. First, specialized neural architectures for unstructured 3D data---PointNet \cite{qi2017pointnet} and PointNet++ \cite{qi2017pointnetplusplus}---enabled the direct processing of point clouds, replacing hand-crafted features with learned geometric representations. Second, large-scale fracture datasets, most notably Breaking Bad \cite{sellan2022breaking}, provided the training data necessary for data-driven approaches to geometric assembly. Building on these foundations, the Jigsaw framework \cite{lu2023jigsaw} established the first learning-based pipeline for multi-piece fracture assembly. Jigsaw combines hierarchical point cloud features with attention mechanisms \cite{vaswani2017attention}, global bipartite matching via Sinkhorn optimal transport \cite{cuturi2013sinkhorn}, and transformation synchronization through Shonan averaging \cite{dellaert2020shonan}. By jointly learning surface segmentation, point-to-point correspondence, and rigidity-constrained alignment, Jigsaw significantly outperformed classical methods and set the standard baseline for subsequent research on Breaking Bad.
+
+Since Jigsaw, the field has evolved rapidly along several directions. To address the computational cost of dense point matching, PMTR \cite{lee20243d} introduced sub-quadratic proxy tensors, while PHFormer \cite{cui2024phformer} decomposed pose estimation into adjacency prediction and transformation regression using proxy-level attention. To enrich attention with spatial reasoning, the Geometric Point Attention Transformer (GPAT) \cite{Li2023GPAT} demonstrated that encoding pairwise distances and angles between fragments directly into the attention scores can improve assembly quality. To introduce global shape awareness, Jigsaw++ \cite{lu2024jigsawpp} incorporated a shape prior through latent space reconstruction using Rectified Flow. To bridge the gap between synthetic training data and real-world fractures, GARF \cite{Li2025GARF} recast the problem as learning continuous velocity fields on the Lie group $SE(3)$, achieving state-of-the-art performance by moving fragments along geodesic paths.
+
+Despite this rapid progress, several open questions remain within the Jigsaw pipeline, which continues to serve as the foundational baseline for fracture assembly on Breaking Bad. Its cross-attention mechanism relies purely on learned feature similarity without explicit 3D spatial priors---a limitation that architectures like GPAT have begun to address in other assembly settings. The feature extractor uses a single round of attention, while recent work suggests that deeper feature refinement improves geometric representations. And pairwise pose estimates are recovered from sparse RANSAC correspondences without fully exploiting the dense geometry available on fracture surfaces.
+
+\section{Objectives}
+
+The objective of this thesis is to investigate whether targeted, modular modifications to the Jigsaw framework can address the limitations outlined above. Rather than proposing a new architecture, we focus on understanding how specific changes affect reconstruction quality and what they reveal about the relationship between architecture, data, and optimization in 3D fracture assembly. Specifically, we aim to:
+
+\begin{enumerate}
+    \item Study whether geometric spatial priors, adapted from GPAT, can improve cross-attention quality within the Jigsaw pipeline.
+    \item Evaluate whether a second round of self-attention and cross-attention, safely integrated via zero-initialized gating, provides useful additional feature refinement.
+    \item Assess whether an ICP refinement step, inserted between RANSAC and Shonan averaging, improves pairwise alignment by exploiting dense fracture surface geometry.
+    \item Analyze the relative importance of data quantity versus architectural modifications through a controlled experimental study.
+    \item Develop an interactive web application for visual comparison of assembly results across model variants.
+\end{enumerate}
+
+\section{Original Contributions}
+
+The main contributions of this thesis are:
+
+\begin{enumerate}
+    \item \textbf{Geometric pair attention transfer experiment.} We adapt the pair attention mechanism from GPAT and integrate it into Jigsaw's cross-attention layers. The experiment reveals that the effectiveness of geometric pair descriptors depends on the surrounding architectural context, identifying specific conditions under which this type of spatial bias provides a benefit.
+
+    \item \textbf{Gated double attention with training dynamics analysis.} We extend the feature extractor with a second attention pass using zero-initialized ReZero gates. On a reduced dataset the additional capacity acts as an implicit regularizer, but the effect vanishes with sufficient training data. We further analyze the learned gate values and demonstrate the sensitivity of gated finetuning to loss scheduling.
+
+    \item \textbf{ICP refinement for pairwise pose estimation.} Point-to-point ICP inserted between RANSAC and Shonan averaging yields a consistent improvement of approximately 1 percentage point across all configurations. The modification is parameter-free, orthogonal to the attention-based extensions, and carries no risk of overfitting.
+
+    \item \textbf{Data scaling analysis.} Through the discovery and correction of a 37\% data loss in the training set, we provide controlled evidence that restoring the missing data improved part accuracy by over 10 percentage points---far exceeding any architectural change---highlighting the dominance of data quantity when the model is already well-matched to the problem.
+
+    \item \textbf{Interactive web application.} A Django and FastAPI-based demo with Three.js 3D visualization, enabling users to run inference across six model variants and visually compare reconstruction quality.
+\end{enumerate}
+
+\section{Thesis Structure}
+
+The remainder of this thesis is organized as follows:
+
+\begin{itemize}
+    \item \textbf{Chapter~\ref{chap:ch2}} formally defines the 3D fracture assembly problem as a 6-DoF pose estimation task, distinguishes it from semantic part assembly, and decomposes it into pairwise matching and global alignment.
+
+    \item \textbf{Chapter~\ref{chap:ch3}} introduces the theoretical foundations: point cloud representations, the PointNet and PointNet++ architectures, transformer-based attention mechanisms, and the RANSAC algorithm with SVD-based pose estimation.
+
+    \item \textbf{Chapter~\ref{chap:ch4}} reviews related work, tracing the evolution from traditional geometry-based methods through deep learning approaches for semantic and geometric assembly, and identifying the research gaps addressed in this thesis.
+
+    \item \textbf{Chapter~\ref{chap:ch5}} presents the proposed extensions to the Jigsaw pipeline: the pair geometric attention bias, the gated double attention module, and the ICP refinement step, including their integration points and known architectural constraints.
+
+    \item \textbf{Chapter~\ref{chap:ch6}} reports the experimental evaluation, including the dataset scaling analysis, results on both incomplete and complete datasets, loss scheduling effects, and gate behavior analysis.
+
+    \item \textbf{Chapter~\ref{chap:ch7}} describes the design, implementation, and testing of the interactive web application, including system architecture, user interface, and automated test coverage.
+
+    \item \textbf{Chapter~8} concludes the thesis with a summary of findings and directions for future work.
+\end{itemize}
