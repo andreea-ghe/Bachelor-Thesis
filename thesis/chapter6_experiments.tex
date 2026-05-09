@@ -157,7 +157,7 @@ Adding an ICP refinement step between RANSAC and Shonan averaging (Section~\ref{
 \subsection{Pair Geometric Attention Bias}
 \label{sec:pair_attn_results}
 
-On two pieces, the pair attention bias had minimal effect, consistent with its expected behavior in this setting. With only two fragments, the bias reduces to a single scalar applied uniformly to all cross-piece attention scores, and no triplet angles can be computed. As noted in Section~\ref{par:pair_attn_limitations}, a uniform scalar added to all logits has little direct effect after softmax normalization. The slight improvement on artifact (+3 points) suggests that the additional parameters introduced by the pair encoder may provide a mild regularization effect under domain shift.
+As anticipated in Section~\ref{par:pair_attn_limitations}, the pair attention bias had minimal effect on two-piece assembly. The independent centering and rotation applied during preprocessing substantially reduces the geometric variation available to the pair encoder, limiting its ability to produce discriminative biases across fragment pairs. In the two-piece setting, with only one target fragment, the bias further reduces to a single scalar shared across all attention logits. The slight improvement on artifact (+3 points) may reflect a mild regularization effect from the additional parameters rather than a meaningful geometric signal.
 
 \subsection{Gated Double Attention}
 
@@ -203,11 +203,11 @@ Artifact (unchanged) & 3,651 patterns & 3,651 patterns \\
 \end{tabular}
 \end{table}
 
-Critically, the missing patterns were not uniformly distributed across categories. Table~\ref{tab:missing_per_category} shows the per-category breakdown for the training split. Categories with complex, thin-walled geometry---Vase (49.3\%) and Bottle (48.4\%)---lost nearly half their fracture patterns, while structurally simpler objects like Teacup (12.8\%) and Statue (13.5\%) were relatively intact. This non-uniform data loss introduced a systematic bias: the model saw disproportionately fewer examples of precisely the most geometrically challenging categories.
+Critically, the missing patterns were not uniformly distributed across categories. Table~\ref{tab:missing_per_category} shows a representative breakdown. Categories with complex, thin-walled geometry---Vase (49.3\%) and Bottle (48.4\%)---lost nearly half their fracture patterns, while structurally simpler objects like Teacup (12.8\%) and Statue (13.5\%) were relatively intact. This non-uniform data loss introduced a systematic bias: the model saw disproportionately fewer examples of precisely the most geometrically challenging categories.
 
 \begin{table}[h]
 \centering
-\caption{Per-category fracture pattern loss in the everyday training split. Categories are sorted by percentage of missing patterns. The same distribution held for the validation split.}
+\caption{Per-category fracture pattern loss in the everyday training split (5 most and 5 least affected categories shown). The same distribution held for the validation split.}
 \label{tab:missing_per_category}
 \begin{tabular}{lrrr}
 \toprule
@@ -218,23 +218,13 @@ Bottle & 4,943 & 2,391 & 48.4\% \\
 ToyFigure & 3,762 & 1,494 & 39.7\% \\
 Bowl & 2,223 & 844 & 38.0\% \\
 Mug & 2,910 & 1,105 & 38.0\% \\
-Mirror & 3,024 & 1,103 & 36.5\% \\
-Plate & 1,002 & 329 & 32.8\% \\
-Cup & 1,932 & 602 & 31.2\% \\
-Spoon & 403 & 114 & 28.3\% \\
-DrinkingUtensil & 896 & 203 & 22.7\% \\
-WineBottle & 1,315 & 290 & 22.1\% \\
-PillBottle & 652 & 128 & 19.6\% \\
-Cookie & 238 & 41 & 17.2\% \\
-WineGlass & 717 & 118 & 16.5\% \\
-Teapot & 754 & 123 & 16.3\% \\
-Ring & 587 & 95 & 16.2\% \\
+\midrule
 BeerBottle & 704 & 112 & 15.9\% \\
 DrinkBottle & 528 & 79 & 15.0\% \\
 Statue & 275 & 37 & 13.5\% \\
 Teacup & 491 & 63 & 12.8\% \\
 \midrule
-\textbf{Total} & \textbf{34,075} & \textbf{12,583} & \textbf{36.9\%} \\
+\textbf{Total (20 categories)} & \textbf{34,075} & \textbf{12,583} & \textbf{36.9\%} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -292,7 +282,7 @@ Baseline & \textbf{70.5} & \textbf{27.2} & \textbf{5.17} & \textbf{11.0} & \text
 \end{tabular}
 \end{table}
 
-Neither modification improved upon the baseline. Pair attention remained largely neutral even in the 3--4 piece setting, where triplet angles become available and fragment-pair biases can in principle differentiate between target fragments. As discussed in Section~\ref{par:pair_attn_limitations}, the independently normalized coordinate frame limits the spatial signal available to the pair encoder compared to iterative architectures like GPAT. To better understand the encoder's behavior, we analyzed the weight evolution across training (Table~\ref{tab:weight_evolution}). The MLP projection layers showed only modest adaptation, consistent with the reduced geometric signal in the normalized representation. Importantly, the module did not destabilize the baseline, confirming that the gated integration is safe even when the bias carries limited information.
+Neither modification improved upon the baseline. Pair attention remained neutral even in the 3--4 piece setting, where triplet angles become available. As discussed in Section~\ref{par:pair_attn_limitations}, the independent centering applied during preprocessing limits the geometric variation available to the pair encoder, preventing it from producing discriminative biases even when more fragments are present. To verify this interpretation, we analyzed the weight evolution across training (Table~\ref{tab:weight_evolution}). The MLP projection layers showed only modest adaptation, consistent with the limited input signal. Importantly, the module did not destabilize the baseline, confirming that the gated integration is safe even when the pair encoder operates under constrained input conditions.
 
 \begin{table}[h]
 \centering
@@ -348,9 +338,7 @@ Gentle ($\beta$@9, $\gamma$@never) & \textbf{80.4} & \textbf{19.6} & \textbf{69.
 \end{tabular}
 \end{table}
 
-This result points to an important dynamic. In the standard schedule, the matching loss is active from epoch 0, pressuring the randomly initialized second attention layers to produce useful matching features. Even though the gates start at zero, the gradients from the matching loss flow backward through the gates, creating tension between the pretrained pathway and the new pathway from the very first step. The gentle schedule, by contrast, gives the new layers 9 epochs to adapt purely through the segmentation loss---a much softer learning signal---before the matching loss introduces its stronger gradient. The absence of rigidity loss further reduces the optimization burden, letting the matching module explore the loss landscape more freely.
-
-This sensitivity to loss scheduling highlights a challenge of finetuning with gated residual connections: while the zero-initialized gates protect the pretrained features at initialization, the \textit{gradients} are not gated. An aggressive loss schedule can destabilize the pretrained representations through gradient interference before the new layers have had time to calibrate.
+This result reveals an important subtlety of finetuning with gated residual connections. Although the zero-initialized gates protect the pretrained features at initialization, the \textit{gradients} are not gated. Under the standard schedule, the matching loss pressures the randomly initialized layers from epoch 0, creating tension with the pretrained pathway before the new layers have calibrated. The gentle schedule avoids this by letting the new layers adapt through the softer segmentation signal first, and by removing the rigidity loss entirely, reducing the optimization burden.
 
 \section{Gate Behavior Analysis}
 \label{sec:gate_introspection}
@@ -384,18 +372,16 @@ Three patterns emerge:
 
 The experiments presented in this chapter yield several conclusions about the interplay between architecture, data, and optimization in 3D fracture assembly.
 
-\paragraph{Data quantity outweighs architectural changes.} The most impactful variable across all experiments was the amount of training data. The 10-point improvement from restoring the missing 37\% of fracture patterns exceeded every architectural modification we tested. This is consistent with a well-known trend in deep learning: when the model architecture is already well-matched to the problem structure---as Jigsaw's attention-based pipeline is for geometric matching---performance scales more reliably with data than with architectural complexity.
+\paragraph{Data quantity outweighs architectural changes.} The 10-point improvement from restoring the missing 37\% of training data exceeded every architectural modification we tested. When the model architecture is already well-matched to the problem---as Jigsaw's attention-based pipeline is for geometric matching---performance scales more reliably with data than with architectural complexity.
 
-\paragraph{Architectural modifications act as implicit regularizers in data-scarce regimes.} The double attention layers provided a measurable benefit (+2--5 points) when training data was limited, but became redundant with the full dataset. This pattern is consistent with a known phenomenon: in data-limited settings, additional model capacity can act as an inductive bias, extracting patterns that the base model cannot recover from sparse examples. When the full dataset is available, the base model learns those same patterns directly, and the extra capacity offers diminishing returns.
+\paragraph{Architectural modifications act as implicit regularizers in data-scarce regimes.} The double attention layers provided a measurable benefit (+2--5 points) when training data was limited, but became redundant with the full dataset. The additional capacity helped extract patterns from sparse examples that the single-pass model could not recover; once sufficient data was available, the base model learned those patterns directly.
 
-\paragraph{ICP refinement is a reliable, orthogonal improvement.} Unlike the attention-based modifications, ICP consistently improved results by approximately 1 percentage point across all configurations. As a post-processing step that exploits dense geometric information without introducing learnable parameters, it carries no risk of overfitting or interference with the training dynamics.
+\paragraph{ICP refinement is a reliable, orthogonal improvement.} ICP consistently improved results by approximately 1 percentage point across all configurations. As a parameter-free post-processing step, it carries no risk of overfitting or interference with training dynamics.
 
-\paragraph{Loss scheduling is an important but often overlooked hyperparameter.} The finding that a gentler loss schedule outperformed the standard one highlights the importance of the loss activation schedule during finetuning. When integrating new architectural components into a pretrained model, the rate at which different loss terms are activated can determine whether the new components integrate smoothly or disrupt the pretrained representations. Due to limited computational resources, we were unable to conduct a systematic grid search over loss schedules, leaving this as an important direction for future work.
+\paragraph{Loss scheduling matters for gated finetuning.} A gentler loss schedule outperformed the standard one, highlighting that the rate at which loss terms are activated determines whether new components integrate smoothly or disrupt pretrained representations. A systematic search over schedules remains an important direction for future work.
 
-\paragraph{Geometric pair attention requires a meaningful spatial frame.}
-The pair geometric encoder, adapted from GPAT \cite{Li2023GPAT}, did not produce consistent improvements in Jigsaw's pipeline. This does not invalidate the idea of geometric pair attention itself; rather, it highlights an important architectural dependency. In GPAT, pairwise descriptors are recomputed after pose updates, so centroid distances and angular relationships gradually become more meaningful as the assembly improves. In Jigsaw, the neural network operates before pose recovery, and the independently normalized fragment coordinates provide only a weak spatial signal. Consequently, the pair bias behaves more like a lightweight relation-level regularizer than a true geometric compatibility prior.
-
-This finding clarifies a limitation of directly transferring geometric attention mechanisms between architectures. Pair attention is most promising when the model either preserves meaningful initial spatial relationships or includes an iterative pose-estimation mechanism that can progressively refine them. A natural future direction would be to introduce a coarse pose proposal before the attention layers, allowing the pair encoder to operate on geometrically informative fragment positions.
+\paragraph{Geometric pair attention requires iterative pose refinement.}
+The pair geometric encoder, adapted from GPAT \cite{Li2023GPAT}, did not produce improvements under Jigsaw's preprocessing. The mechanism is effective in GPAT because fragment poses are iteratively refined, providing progressively more informative geometric input. In Jigsaw's single-pass architecture, where fragments are independently normalized before the network sees them, the pair encoder operates under constrained input conditions that limit its ability to produce useful biases. This finding confirms that pair attention and iterative pose refinement are tightly coupled: the geometric descriptors require an evolving spatial signal that single-pass architectures do not provide. A natural future direction would be a two-pass architecture where initial pose estimates from the first pass provide meaningful coordinates for the pair encoder in a second pass.
 
 Figure~\ref{fig:val_losses} provides an overview of validation loss trajectories across all experiments. The most visible pattern is the separation between two-piece configurations (lower losses) and multi-piece configurations (higher losses), reflecting the increased difficulty of assembling more fragments. Within each group, the different architectural variants follow similar trajectories, consistent with the finding that the proposed modifications do not substantially alter the model's learning dynamics when sufficient data is available.
 

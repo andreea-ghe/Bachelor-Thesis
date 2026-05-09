@@ -101,9 +101,9 @@ To address the computational bottleneck of dense point matching, the PHFormer \c
     \label{fig:phformer}
 \end{figure}
 
-PHFormer processes these proxy features using a two-level attention mechanism. \textbf{Intra-fragment attention} enables proxies within the same fragment to exchange information, allowing the network to build a coherent representation of each fragment’s internal geometry. Subsequently, \textbf{inter-fragment attention} facilitates communication between proxies belonging to different fragments, enabling the model to reason about their spatial relationships. These two attention mechanisms are applied iteratively, allowing each proxy representation to incorporate both local context and cross-fragment relational information.
+PHFormer processes these proxy features using a two-level attention mechanism applied iteratively: \textbf{intra-fragment attention} builds a coherent representation of each fragment's internal geometry, while \textbf{inter-fragment attention} enables reasoning about spatial relationships across fragments.
 
-From a geometric perspective, the relationships between proxies can be categorized into three cases: (1) proxies originating from the same fragment, (2) proxies from different fragments that are adjacent along fracture surfaces, and (3) proxies from different fragments that are spatially unrelated. Based on this observation, PHFormer decomposes the overall pose estimation task into three subproblems: adjacency prediction, relative pose estimation, and absolute pose regression. First, the model predicts whether pairs of fragments are adjacent. Then, for adjacent fragment pairs, it estimates their relative transformations. Finally, the fragments are modeled as nodes in a graph, where edges encode the predicted relationships between them. To mitigate the influence of incorrect or irrelevant connections, adjacency probabilities are used as edge weights, ensuring that message passing is dominated by likely neighboring fragments. Through this graph-based aggregation of reliable local transformations, the network ultimately regresses the global rigid pose of each fragment.
+Based on these enriched representations, PHFormer decomposes pose estimation into three subproblems: adjacency prediction, relative pose estimation, and absolute pose regression. Fragments are modeled as nodes in a graph whose edges are weighted by predicted adjacency probabilities, ensuring that message passing is dominated by geometrically plausible neighbors. Through this graph-based aggregation, the network regresses globally consistent rigid poses.
 
 \paragraph{3D Geometric Shape Assembly via Efficient Point Cloud Matching} \mbox{} \\
 A different solution to the same problem was introduced by Proxy Match Transformer (PMTR) \cite{lee20243d} introduces a sub-quadratic matching paradigm that replaces dense point-to-point comparisons with a shared, low dimensional proxy space.
@@ -121,9 +121,7 @@ The PMTR pipeline operates through a highly efficient coarse-to-fine hierarchy, 
     \label{fig:pmtr}
 \end{figure}
 
-\textbf{Fine Matching} Once the coarse regions are identified, the network must precisely align the higher-resolution features. To do that, they first pass the medium-resolution features through a PMT layer to establish intermediate, refined structural correspondences. Secondly, the network feeds both this refined medium-resolution output and the raw fine-resolution features (passed directly via a skip connection from the encoder) into a final PMT layer. 
-
-\textbf{Geometric Pose Registration} Unlike many deep learning methods that use neural networks to guess the final rotation and translation, PMTR bridges the gap between deep feature extraction and traditional mathematical geometry. It employs a "point-to-node grouping" strategy, which restricts the search area by clustering the high-resolution fine features strictly around the reliable coarse matches. An Optimal Transport algorithm (Sinkhorn) \cite{cuturi2013sinkhorn} is then applied within these localized clusters to predict exact 1-to-1 point correspondences. Finally, the network uses a robust Singular Value Decomposition \cite{golub2013matrix} algorithm to mathematically calculate the exact rigid 6-DoF pose required to seamlessly lock the fragments together.
+\textbf{Fine Matching and Pose Registration.} Once coarse regions are identified, the network refines the correspondences through additional PMT layers at medium and fine resolution, using skip connections to preserve high-resolution detail. The final correspondences are extracted via Optimal Transport (Sinkhorn) \cite{cuturi2013sinkhorn} within localized clusters around the coarse matches, and a Singular Value Decomposition \cite{golub2013matrix} step computes the rigid 6-DoF transformation.
 
 \subsection{The Attention Bottleneck}
 
@@ -136,26 +134,11 @@ Each part is represented by a feature vector that combines local geometric infor
 
 Unlike standard self-attention, where attention scores depend only on feature similarity, GPAT incorporates geometric information into this process. Queries, keys, and values are still computed as linear projections of part features, but the attention scores are adjusted using additional geometric terms.
 
-To model spatial relationships, the method introduces \textbf{Pair Attention}, where each pair of parts is treated as a connection in a fully connected graph. For each part, a centroid is computed as
-\begin{equation}
-\label{eq:gpat_centroid}
-p_i = \frac{1}{N_i} \sum_{j=1}^{N_i} x_j,
-\end{equation}
-and geometric features such as distances and angles between parts are encoded using radial basis functions. These features allow the model to capture how parts are positioned relative to each other.
+To model spatial relationships, the method introduces \textbf{Pair Attention}, where each pair of parts is treated as a connection in a fully connected graph. For each part, a centroid is computed, and geometric features such as distances and angles between parts are encoded using radial basis functions. These features capture how parts are positioned relative to each other.
 
-In addition, GPAT introduces a \textbf{Point Attention} module that incorporates 6-DoF pose information directly into the attention mechanism. Each part generates a set of learnable 3D points, which are transformed using the current predicted pose $T_i$. The alignment between two parts is then measured as
-\begin{equation}
-\label{eq:gpat_alignment}
-p_{ij} = \sum_{m=1}^{M} \left\| T_i(q_i^m) - T_j(k_j^m) \right\|_2.
-\end{equation}
-This term reflects how well two parts align: larger values indicate misalignment and reduce their interaction.
+In addition, GPAT introduces a \textbf{Point Attention} module that incorporates 6-DoF pose information directly into the attention mechanism. Each part generates a set of learnable 3D points, which are transformed using the current predicted pose. The alignment between two parts is measured by comparing the transformed points, with larger distances indicating misalignment and reducing their interaction.
 
-The final attention score combines feature similarity, geometric relationships, and alignment (Figure~\ref{fig:gpat}):
-\begin{equation}
-\label{eq:gpat_attention}
-a_{ij} = \text{softmax}(n_{ij} + e_{ij} - p_{ij}),
-\end{equation}
-where $n_{ij}$ captures feature similarity, $e_{ij}$ encodes geometric information, and $p_{ij}$ penalizes incorrect alignment. In this way, attention is guided not only by appearance but also by spatial consistency.
+The final attention score combines feature similarity, geometric relationships, and alignment penalty into a single expression. In this way, attention is guided not only by appearance but also by spatial consistency.
 
 Finally, the model refines its predictions through a \textbf{Geometric Recycling} mechanism. After each iteration, the predicted poses are applied to the parts, new features are extracted, and the process is repeated. This iterative refinement allows the model to progressively improve the assembly.
 
@@ -178,24 +161,9 @@ To enable this, Jigsaw++ avoids operating directly on raw 3D point clouds. Inste
 
 These images are processed by a pre-trained encoder (LEAP with DINOv2 features \cite{jiang2024leap}), which extracts two latent representations: a global semantic code $g$, capturing category-level information, and a reconstruction code $r$, encoding geometric structure. The task is thus reformulated as recovering a complete latent representation from an incomplete one.
 
-This recovery process is modeled as a continuous transformation in latent space using Rectified Flow. Starting from an initial latent $Z_0$, the model learns a trajectory toward a target latent $Z_1$, governed by
-\begin{equation}
-\label{eq:jigsawpp_flow}
-\frac{dZ_t}{dt} = v(Z_t, t), \quad \text{with} \quad v(Z_t, t) \approx Z_1-Z_0
-\end{equation}
-This formulation enables the model to progressively transform incomplete or corrupted representations into valid full-shape embeddings.
+This recovery process is modeled as a continuous transformation in latent space using Rectified Flow, which progressively maps incomplete or corrupted representations into valid full-shape embeddings.
 
-In practice, partial assemblies may be highly inaccurate, resulting in biased latent representations. To mitigate this, Jigsaw++ introduces a \textbf{retargeting} step. Given an initial latent $\hat{x}_0$, it is perturbed as
-\begin{equation}
-\label{eq:jigsawpp_retarget}
-x_0 = \alpha \hat{x}_0 + \sqrt{1 - \alpha^2}\,\xi, \quad \xi \sim \mathcal{N}(0, I),
-\end{equation}
-which shifts the representation toward regions of higher probability in the latent space. The model is then trained to map this perturbed latent to the ground-truth latent $x_1$ by minimizing
-\begin{equation}
-\label{eq:jigsawpp_loss}
-\mathbb{E}_{x_0,x_1} \left\| (x_0-x_1)-v(x_t, t) \right\|^2.
-\end{equation}
-
+In practice, partial assemblies may be inaccurate. To mitigate this, Jigsaw++ introduces a \textbf{retargeting} step that perturbs the initial latent representation toward regions of higher probability in the latent space, then trains the model to map this perturbed latent to the ground-truth embedding.
 \begin{figure}[H]
     \centering
     \includegraphics[width=1\linewidth]{figures/jigsaw++.png}
@@ -217,19 +185,7 @@ Formally, each fragment pose \(T^i = (r^i, a^i) \in SE(3)\) evolves according to
 \label{eq:garf_flow}
 \frac{d}{dt}\psi_t(T) = v_t(\psi_t(T)), \quad v_t \in \mathfrak{se}(3),
 \end{equation}
-where \(\mathfrak{se}(3)\) is the tangent space encoding instantaneous rigid motion (translation + rotation velocity). This formulation allows the model to learn how to move fragments, rather than where they should be placed.
-
-To guide this motion, GARF defines the target trajectories as geodesics on \(SE(3)\), i.e., the shortest paths between initial and final poses. Translations follow linear interpolation \(a_t = (1-t)a_0 + t a_1\), while rotations evolve on \(SO(3)\) via:
-\begin{equation}
-\label{eq:garf_rotation}
-r_t = \exp_{r_0}(t\,\log_{r_0}(r_1)).
-\end{equation}
-The network is trained via a flow-matching objective that aligns the predicted velocity field with the true geodesic velocity:
-\begin{equation}
-\label{eq:garf_loss}
-\mathcal{L}_{FM} = \mathbb{E} \sum_i \left\| v_r^i - \frac{\log_{r_t}(r_1)}{1-t} \right\|^2 + \left\| v_a^i - \frac{a_1 - a_t}{1-t} \right\|^2.
-\end{equation}
-This avoids unstable pose regression and instead enforces physically meaningful transformations along optimal paths.
+where \(\mathfrak{se}(3)\) is the tangent space encoding instantaneous rigid motion (translation and rotation velocity). This formulation allows the model to learn how to \emph{move} fragments rather than predicting where they should be placed. The target trajectories are defined as geodesics on \(SE(3)\)---the shortest paths between initial and final poses---and the network is trained via a flow-matching objective that aligns the predicted velocity field with the true geodesic velocity.
 
 A key challenge in this formulation is global ambiguity: since the entire object can drift rigidly in space, the learning signal becomes ill-posed. GARF resolves this through a \textbf{multi-anchor training} strategy, where a random subset of fragments is fixed (zero velocity), forcing the remaining pieces to assemble relative to these anchors. Importantly, the anchor set changes at every iteration, meaning the model does not memorize absolute positions, but instead learns consistent relative geometric relationships across fragments.
 

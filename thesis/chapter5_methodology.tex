@@ -24,7 +24,7 @@ The proposed extensions target three specific points in this pipeline, summarize
 \toprule
 \textbf{Pipeline Stage} & \textbf{Original Component} & \textbf{Proposed Modification} \\
 \midrule
-Feature extraction & Cross-attention & Pair geometric attention bias \\
+Feature extraction & Cross-attention & Pair geometric attention bias (transfer experiment) \\
 Feature refinement & Single attention pass & Gated double attention pass \\
 Pose recovery & RANSAC pairwise estimation & ICP refinement before synchronization \\
 \bottomrule
@@ -44,7 +44,7 @@ First, a Point Transformer self-attention layer models the internal structure of
 f_p^s = \sum_{f_q \in N(p)} \text{softmax}(\text{MLP}_s((W_Q^s f_p - W_K^s f_q + p^{enc}))) \odot (W_V^s f_q + p^{enc})
 \end{equation}
 
-The attention neighborhood \(N(p)\) is restricted to the \(k\)-nearest neighbors, keeping computation tractable while capturing local geometric structure. The mapping function \(\text{MLP}_s\) produces vector-valued attention weights rather than scalars, enabling per-channel modulation (\(\odot\)) for a more expressive representation of local 3D variations. Relative positional encodings \(p^{enc}\) are added to make the representation sensitive to the physical displacement between points.
+The attention is restricted to the \(k\)-nearest neighbors for efficiency. Unlike standard scalar attention, \(\text{MLP}_s\) produces vector-valued weights enabling per-channel modulation (\(\odot\)), and relative positional encodings \(p^{enc}\) make the representation sensitive to physical displacement between points.
 
 After encoding each fragment's internal structure, a \textbf{cross-attention} layer models inter-fragment relationships. In this layer, queries are obtained from one fragment while keys and values come from other fragments, allowing local features on one fracture surface to interact with features from other fragments. This supports the discovery of point-to-point correspondences required for reassembly. A standard multi-head attention block is applied:
 \begin{equation}
@@ -64,47 +64,44 @@ and
 
 Here, \(FFN(\cdot)\) consists of two linear layers with ReLU and LayerNorm. This cross-attention layer is the insertion point for the pair geometric attention bias (Section~\ref{par:pair_attn_limitations}), and the entire self-attention + cross-attention block is duplicated by the gated double attention extension.
 
-\subsection{Proposed Improvement: Pair Geometric Attention Bias}
+\subsection{Proposed Extension: Pair Geometric Attention Bias}
 
-The standard cross-attention mechanism treats all pairs of points from different fragments in the same way, relying only on learned feature similarity. As a result, the model does not explicitly account for the spatial relationship between fragments. In practice, this means that points belonging to nearby fragments are considered just as likely as those from distant or unrelated fragments. In multi-piece reconstruction, where the number of possible matches grows rapidly, this lack of geometric awareness can make learning less efficient and more prone to errors.
+\paragraph{Motivation.}
+In Jigsaw's cross-attention, all point pairs across fragments are scored purely by learned feature similarity. The model has no explicit notion of which fragments are spatially close or geometrically compatible at the fragment level. In multi-piece reconstruction, this means the network must discover these relationships entirely from point-level features, without any coarse spatial guidance.
 
-To address this limitation, we draw inspiration from GPAT's "Pair Attention" module \cite{Li2023GPAT} and introduce \textbf{geometric inductive bias} into the attention mechanism. Concretely, we add a learnable scalar bias $b_{ij}$ for each pair of fragments $(i,j)$:
+The GPAT architecture \cite{Li2023GPAT} addresses this by introducing a \textbf{Pair Attention} mechanism: for each pair of fragments, geometric descriptors (centroid distances, triplet angles) are encoded and added as a bias to the attention scores. In GPAT, this is combined with an iterative \textbf{geometric recycling} mechanism that updates fragment poses after each attention layer, so the geometric descriptors become progressively more accurate as the assembly improves.
+
+This raises a natural question: does the geometric pair bias contribute independently, or does it require the iterative pose refinement to be useful? To answer this, we integrate the same pair bias mechanism into Jigsaw's single-pass architecture, where no pose updates occur inside the network.
+
+\paragraph{Mechanism.}
+We add a learnable scalar bias $b_{ij}$ to the cross-attention logits for each pair of fragments $(i,j)$:
 \begin{equation}
 \label{eq:pair_bias_attn}
 \alpha_{pq} = \frac{\mathbf{q}_p^T \mathbf{k}_q}{\sqrt{d_k}} + b_{ij}.
 \end{equation}
-This bias depends only on the geometric relationship between fragments and is shared across all point pairs between them. In this way, the model can incorporate coarse spatial information while still relying on learned features for fine-grained matching.
-
-\paragraph{Geometric Feature Encoding.}
-The bias $b_{ij}$ is computed from simple geometric descriptors at the fragment level. First, we consider the distance between fragment centroids:
+The bias is shared across all point pairs between fragments $i$ and $j$. It is computed from fragment-level geometric descriptors: centroid distances encoded via Gaussian Radial Basis Functions and triplet angles aggregated across all fragment triples:
 \begin{equation}
 \label{eq:centroid_distance}
 \mathbf{p}_i = \frac{1}{N_i} \sum_{x \in P_i} x, \quad d_{ij} = \|\mathbf{p}_i - \mathbf{p}_j\|_2.
 \end{equation}
-This distance is transformed using a Gaussian Radial Basis Function (RBF) encoding, which allows the model to learn flexible, non-linear relationships.
-
-In addition, we include angular information that captures how fragments are arranged relative to each other. For this, we compute triplet angles between fragments and aggregate them into a descriptor. This provides a notion of global spatial configuration, complementing the pairwise distance.
-
-\paragraph{Bias Integration.}
-The distance and angle features are concatenated and passed through a small multi-layer perceptron:
 \begin{equation}
 \label{eq:bias_mlp}
-b_{ij} = \text{MLP}([\mathbf{d}_{ij}; \mathbf{r}_{ij}]).
+b_{ij} = \text{MLP}([\text{RBF}(d_{ij});\; \textstyle\sum_k \text{RBF}(\cos \angle_{ijk})]).
 \end{equation}
-The resulting scalar is then added to the attention logits for all point pairs between fragments $i$ and $j$, encouraging the model to favor geometrically plausible matches before applying the softmax.
 
-\paragraph{Motivation and Expected Role.}
-In contrast to methods such as GPAT, where pairwise geometric descriptors are updated as fragment poses are progressively refined, the proposed integration into Jigsaw is deliberately minimal. The bias is introduced without changing the rest of the pipeline, allowing us to evaluate whether a GPAT-inspired geometric prior can transfer to a single-pass, correspondence-based architecture. A pairwise bias provides a lightweight mechanism for modulating attention at the fragment-pair level, while still allowing the point-level features to determine the fine-grained correspondences. The purpose of this module is not to replace Jigsaw's learned matching mechanism, but to investigate whether coarse fragment-pair information can provide a useful auxiliary signal during attention.
-
-\paragraph{Architectural Considerations.}
+\paragraph{Architectural Tension with Jigsaw's Preprocessing.}
 \label{par:pair_attn_limitations}
-The bias is meaningful when the attention softmax is computed over candidate points from multiple fragments, because different target fragments can receive different fragment-pair biases. In the two-piece setting, or when attention is normalized separately for each fragment pair, the same scalar is added to all logits associated with the target fragment and therefore has little direct effect after the softmax normalization.
+The pair bias mechanism was designed for architectures like GPAT, where fragment poses are iteratively updated through geometric recycling. After each refinement step, centroids move toward their predicted positions, so the distances and angles fed to the pair encoder become progressively more informative. The pair encoder and the iterative pose refinement form a tightly coupled loop: one provides geometric input, the other improves it.
 
-More fundamentally, the effectiveness of this bias depends on the coordinate frame in which the fragment-level descriptors are computed. In architectures such as GPAT \cite{Li2023GPAT}, fragment poses are iteratively updated through geometric recycling. After each refinement step, centroid distances and angular relationships are recomputed in a progressively more meaningful spatial configuration. In that setting, the pair encoder receives an increasingly informative geometric signal.
+Jigsaw's preprocessing pipeline follows a different design philosophy, optimized for correspondence-based matching rather than iterative pose refinement. Each fragment is independently centered and randomly rotated before being passed to the model, which ensures that the feature extractor learns position-invariant representations. A side effect of this normalization is that the fragment centroids seen by the pair encoder carry limited spatial variation, substantially reducing the geometric signal available for pairwise distance and angle computation compared to what the mechanism was originally designed to receive.
 
-Jigsaw follows a different design philosophy. It does not iteratively update fragment poses inside the neural network; instead, it predicts point correspondences in a single forward pass and performs pose recovery afterward through RANSAC and transformation synchronization. Moreover, under the standard preprocessing protocol, fragments are independently normalized and randomly rotated before being passed to the model. As a result, absolute centroid distances and global angular relationships are less informative than in iterative pose-refinement architectures.
+\paragraph{Why Test It Anyway?}
+The constraint above was identified during the design phase. We chose to run the experiment for two reasons. First, the degree to which the degenerate input limits learning is an empirical question: the MLP could, in principle, learn a useful initialization bias even from a constant input if it interacts favorably with the rest of the gradient signal. Second, the experiment isolates the specific contribution of geometric pair descriptors by removing the iterative refinement that GPAT bundles with them. This provides a controlled test of whether pair attention transfers to single-pass architectures, which had not been documented in the literature.
 
-For this reason, the proposed pair bias should be interpreted as a lightweight compatibility experiment: it tests whether a GPAT-inspired fragment-level prior can still provide useful regularization when inserted into Jigsaw's single-pass attention pipeline. The empirical results in Section~\ref{sec:pair_attn_results} show that this transfer is limited under the current preprocessing, but the experiment remains informative because it clarifies when geometric pair attention is expected to be useful.
+The results (Section~\ref{sec:pair_attn_results}) confirm that the transfer does not succeed under Jigsaw's preprocessing. The finding clarifies that pair attention is tightly coupled to iterative pose refinement: the geometric descriptors must improve over time for the bias to carry a meaningful signal.
+
+\paragraph{Future Direction: Two-Pass Architecture.}
+A natural extension would be to run Jigsaw's full pipeline once to obtain initial pose estimates, then feed those poses back to the pair encoder in a second forward pass using stop-gradient (treating the estimated poses as fixed constants). This would provide non-degenerate geometric input without requiring a differentiable pose predictor. We leave this to future work, as it requires doubling the forward pass during training---significantly increasing GPU memory and computation time---which exceeds the hardware budget available for this thesis.
 
 \subsection{Proposed Improvement: Gated Double Attention}
 

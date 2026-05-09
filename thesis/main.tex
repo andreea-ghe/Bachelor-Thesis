@@ -1,0 +1,57 @@
+%\documentclass[12pt]{scrreprt}
+\documentclass[12pt]{report} 
+
+% language may be romanian or english (default is english)
+% type may be bachelor or master (default is bachelor)
+\usepackage[language=english, type=bachelor]{style}
+
+%\geometry{a4paper,top=2.5cm,left=3cm,right=2.5cm,bottom=2.5cm}
+%in style
+%controlling the appearance of your headers and footers
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\lhead{}
+\chead{}
+\renewcommand{\headrulewidth}{0.2pt}
+\renewcommand{\footrulewidth}{0.2pt}
+
+\begin{document}
+
+\specialization{ARTIFICIAL INTELLIGENCE}
+\title{3D Object Reassembly of Broken Objects using Deep Learning Methods}
+\author{GHEORGHE Andreea-Ioana}
+\supervisor{Dr. ANDREICA Anca, University Professor \\ CHIȘ Raluca-Diana, PhD candidate}
+
+\pagenumbering{gobble}
+\maketitle
+
+\newpage
+\thispagestyle{empty}
+\mbox{}
+\newpage
+\pagenumbering{roman}
+
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+
+% Write your abstract here
+
+\tableofcontents
+
+\newpage
+\pagenumbering{arabic}
+
+\input{chapters/chapter1_introduction}
+
+\input{chapters/chapter2_problem_def}
+\input{chapters/chapter3_theoretical_back_related_work}
+\input{chapters/chapter4_related_work}
+\input{chapters/chapter5_methodology}
+\input{chapters/chapter6_experiments_results}
+\input{chapters/chapter7_application}
+
+\input{chapters/chapter8_conclusions}
+
+\bibliography{references}
+
+\end{document}
