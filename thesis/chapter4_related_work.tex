@@ -106,13 +106,16 @@ PHFormer processes these proxy features using a two-level attention mechanism ap
 Based on these enriched representations, PHFormer decomposes pose estimation into three subproblems: adjacency prediction, relative pose estimation, and absolute pose regression. Fragments are modeled as nodes in a graph whose edges are weighted by predicted adjacency probabilities, ensuring that message passing is dominated by geometrically plausible neighbors. Through this graph-based aggregation, the network regresses globally consistent rigid poses.
 
 \paragraph{3D Geometric Shape Assembly via Efficient Point Cloud Matching} \mbox{} \\
-A different solution to the same problem was introduced by Proxy Match Transformer (PMTR) \cite{lee20243d} introduces a sub-quadratic matching paradigm that replaces dense point-to-point comparisons with a shared, low dimensional proxy space.
+A complementary approach to the efficiency problem is the Proxy Match Transformer (PMTR) \cite{lee20243d}, which replaces dense point-to-point comparisons with a sub-quadratic matching paradigm based on a shared proxy space (Figure~\ref{fig:pmtr}).
 
-The PMTR pipeline operates through a highly efficient coarse-to-fine hierarchy, which can be broken down into four stages:
+The pipeline begins with \textbf{multi-scale feature extraction}. A U-Net-style \cite{ronneberger2015u} backbone processes the raw point clouds of two fragments $X$ and $Y$ and produces feature maps at three spatial resolutions: coarse, medium, and fine. This allows the network to capture both the macro-structure of the fragments and the fine-grained details of the fracture edges.
 
-\textbf{Multi-Scale Feature Extraction} Rather than processing the raw point cloud all at once, PMTR utilizes a U-Net-style \cite{ronneberger2015u} backbone to extract geometric features at three distinct spatial resolutions: \textit{coarse}, \textit{medium}, and \textit{fine}. This allows the network to analyze both the macro-structure of the fragments and the microscopic details of the fracture edges.
-
-\textbf{Coarse Matching} To evaluate potential matches between the lowest-resolution coarse features without computing a massive correlation matrix, PMTR introduces the Proxy Match Transform (PMT) layer (Figure~\ref{fig:pmtr}). Instead of multiplying the features of Fragment A directly with Fragment B, the network learns a small, artificial set of virtual points called a Proxy Tensor. Both fragments independently project their features onto this shared proxy. By acting as a shared communicative middleman, the proxy tensor allows the fragments to exchange spatial information and identify overlapping mating regions.
+The next stage is \textbf{coarse matching}. In standard geometric matching, evaluating the compatibility of two fragments requires computing a dense pairwise correlation matrix $F_X F_Y^\top$, which has $O(N \times M)$ quadratic memory complexity. Instead of this direct computation, PMTR introduces the Proxy Match Transform (PMT) layer. The key idea is to introduce a small, learnable Proxy Tensor $P$---effectively a virtual set of points whose dimensionality is much smaller than $F_X$ or $F_Y$. Each fragment independently projects its features onto this shared proxy. For a single attention head, the transform applies a second-order convolution (which, by the authors' lemma, is equivalent to a head of self-attention):
+\begin{equation}
+\label{eq:pmt}
+PMT(F_X) = \sum_{h=1}^{N_h} A_X^{(h)} F_X P^{(h)\top} w_X^{(h)}
+\end{equation}
+where $A_X$ is a local attention matrix containing binary values that restricts computation to spatial neighborhoods, $w_X$ is a learnable scalar weight, and $P^\top$ contains the proxy features. This operation refines the initial features of each fragment while capturing the essence of their interaction, because the dot-product of the two independent outputs approximates the full pairwise convolution: $PMT(F_X) \cdot PMT(F_Y)^\top \approx \text{Conv}(F_X, F_Y)$---but without ever computing the quadratic correlation matrix. From these refined coarse features, PMTR computes a score matrix that identifies candidate mating regions, laying the foundation for more granular alignment.
 
 \begin{figure}[H]
     \centering
@@ -121,31 +124,35 @@ The PMTR pipeline operates through a highly efficient coarse-to-fine hierarchy, 
     \label{fig:pmtr}
 \end{figure}
 
-\textbf{Fine Matching and Pose Registration.} Once coarse regions are identified, the network refines the correspondences through additional PMT layers at medium and fine resolution, using skip connections to preserve high-resolution detail. The final correspondences are extracted via Optimal Transport (Sinkhorn) \cite{cuturi2013sinkhorn} within localized clusters around the coarse matches, and a Singular Value Decomposition \cite{golub2013matrix} step computes the rigid 6-DoF transformation.
+The pipeline then proceeds to \textbf{fine matching}. The same PMT layers are applied to the medium-resolution features, producing a second round of refined representations. These are then combined with the fine-resolution features from the U-Net backbone via skip connections, and passed through another round of PMT layers. This yields high-resolution, spatially precise feature maps. To connect the coarse and fine stages, PMTR performs a \textit{point-to-node grouping} step: fine-level features are clustered around their spatially proximate coarse matches, ensuring that the fine matching is guided by the coarse structure. This hierarchical refinement is the core of the architecture's precision.
+
+Finally, the resulting score matrix is transformed by a Sinkhorn Optimal Transport layer \cite{cuturi2013sinkhorn}, which enforces a doubly-stochastic constraint to produce a confidence matrix of one-to-one point correspondences. From these refined correspondences, a Singular Value Decomposition \cite{golub2013matrix} step computes the rigid 6-DoF transformation (rotation and translation) that assembles the fragments.
 
 \subsection{The Attention Bottleneck}
 
-Standard attention mechanisms are limited in geometric assembly tasks because they rely mainly on feature similarity, without explicitly considering spatial constraints such as distances, angles, or relative orientations. However, in semantic reassembly, these geometric relationships are essential for determining how parts fit together. To address this limitation, recent methods aim to incorporate geometric information directly into the attention process.
+Standard attention mechanisms are limited in assembly tasks because they rely mainly on feature similarity, without explicitly considering spatial constraints such as distances, angles, or relative orientations between fragments. These geometric relationships are essential for determining how parts fit together, yet vanilla cross-attention ignores them entirely. To address this limitation, recent methods aim to incorporate geometric information directly into the attention process.
 
 \paragraph{Geometric Point Attention Transformer for 3D Shape Reassembly} \mbox{} \\
-The Geometric Point Attention Transformer (GPAT) \cite{Li2023GPAT} improves attention by explicitly modeling geometric relationships between parts.
+The Geometric Point Attention Transformer (GPAT) \cite{Li2023GPAT} addresses the attention bottleneck by explicitly encoding geometric relationships into the attention computation.
 
-Each part is represented by a feature vector that combines local geometric information $h_i^{local}$, a global context vector $h^{global}$ (obtained by averaging features across all parts), and pose-related embeddings from previous iterations. In addition, pairwise features $z_{ij}$ are constructed to capture interactions between pairs of parts.
+The architecture begins with a PointNet backbone that extracts local geometric features ($h_i^{local}$) from each fragment. These are pooled across all parts to form a global context feature ($h^{global}$), providing a structural shape prior. The local and global features are concatenated with recycled geometric embeddings---initialized to zero on the first pass---and processed through an MLP to produce node features ($h_i$). Simultaneously, pairwise cross-part features ($z_{ij}$) are constructed by concatenating the local features of fragments $i$ and $j$ together with recycled geometric pair features.
 
-Unlike standard self-attention, where attention scores depend only on feature similarity, GPAT incorporates geometric information into this process. Queries, keys, and values are still computed as linear projections of part features, but the attention scores are adjusted using additional geometric terms.
+To iteratively refine these features, GPAT introduces a specialized attention mechanism composed of three branches:
 
-To model spatial relationships, the method introduces \textbf{Pair Attention}, where each pair of parts is treated as a connection in a fully connected graph. For each part, a centroid is computed, and geometric features such as distances and angles between parts are encoded using radial basis functions. These features capture how parts are positioned relative to each other.
+\begin{itemize}
+    \item \textbf{Part Attention} acts as a global context extractor. Standard dot-product attention over the node features ($h_i$) evaluates high-level interactions between all fragments, forming a fully connected graph where parts attend to one another.
+    \item \textbf{Pair Attention} introduces explicit spatial constraints. It transforms the cross-part features ($z_{ij}$) into edge attention terms, encoding invariant geometric signals: the distances between the centers of mass of each pair of pieces and the triplet-wise dihedral angles between them, mapped into a continuous vector space via Radial Basis Functions (RBFs). This spatial bias is crucial for maintaining geometrically valid relative placements.
+    \item \textbf{Point Attention} models 6-DoF pose interactions directly. Each part's node features are mapped to $N$ virtual 3D keypoints in Euclidean space. The currently estimated rigid poses ($T_i$, $T_j$) are applied to these query and key points, and alignment quality is measured via $\|T_i \circ q_i^m - T_j \circ k_j^m\|_2$.
+\end{itemize}
 
-In addition, GPAT introduces a \textbf{Point Attention} module that incorporates 6-DoF pose information directly into the attention mechanism. Each part generates a set of learnable 3D points, which are transformed using the current predicted pose. The alignment between two parts is measured by comparing the transformed points, with larger distances indicating misalignment and reducing their interaction.
+The outputs of the three branches are fused into a single attention score: $a_{ij} = \text{softmax}(n_{ij} + e_{ij} - p_{ij})$. The Point Attention term ($p_{ij}$) is subtracted because it represents a spatial distance error: larger misalignment penalizes the attention score.
 
-The final attention score combines feature similarity, geometric relationships, and alignment penalty into a single expression. In this way, attention is guided not only by appearance but also by spatial consistency.
-
-Finally, the model refines its predictions through a \textbf{Geometric Recycling} mechanism. After each iteration, the predicted poses are applied to the parts, new features are extracted, and the process is repeated. This iterative refinement allows the model to progressively improve the assembly.
+Rather than predicting absolute poses, the network outputs a relative update ($\delta R_i, \delta t_i$) at each iteration. GPAT then employs \textbf{Geometric Recycling}: the updated poses are physically applied to the point clouds, which are passed back through the PointNet backbone to re-extract spatially aware features for the next iteration. This progressive refinement is central to the architecture's effectiveness---the geometric descriptors become increasingly informative as the fragments approach their correct positions (Figure~\ref{fig:gpat}).
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=1\linewidth]{figures/gpat.png}
-    \caption{Overview of the GPAT architecture \cite{Li2023GPAT}. The attention mechanism integrates feature similarity, geometric pair descriptors (distances and angles between centroids), and point-level pose alignment to produce spatially informed attention scores.}
+    \caption{Overview of the GPAT architecture \cite{Li2023GPAT}. The attention mechanism integrates feature similarity (Part Attention), geometric pair descriptors (Pair Attention), and point-level pose alignment (Point Attention). Geometric Recycling feeds updated poses back through the feature extractor for iterative refinement.}
     \label{fig:gpat}
 \end{figure}
 
@@ -155,23 +162,20 @@ Classical reassembly methods rely primarily on local geometric cues, such as mat
 
 \paragraph{Jigsaw++: Learning Global Shape Priors for Robust Reassembly} \mbox{} \\
 
-Jigsaw++ \cite{lu2024jigsawpp} addresses this limitation by introducing a global shape prior. Rather than directly estimating fragment poses, the method first reconstructs a plausible complete object from a partial assembly, which subsequently provides guidance for the alignment process.
+Jigsaw++ \cite{lu2024jigsawpp} addresses this limitation by introducing a generative global shape prior. Rather than directly estimating fragment poses, the method first hallucinates a plausible complete object from a partial assembly, which then serves as a structural guide for the final geometric alignment.
 
-To enable this, Jigsaw++ avoids operating directly on raw 3D point clouds. Instead, it maps the 3D geometry into a 2D representation that allows the use of powerful pre-trained vision models. Each point $o_i \in \mathbb{R}^3$ is encoded as an RGB value $c_i = \lfloor 255\, o_i \rfloor$, producing a colored point cloud. By rendering this representation from multiple viewpoints, the model obtains a set of images that capture the global structure of the object (Figure~\ref{fig:jigsawpp}).
+The architecture operates in two phases (Figure~\ref{fig:jigsawpp}). In the first phase, the network is trained exclusively on intact, unbroken objects to learn what complete shapes look like. The 3D geometry is projected into multi-view 2D images and passed through LEAP \cite{jiang2024leap}, a pre-trained image-to-3D encoder built on DINOv2 vision features. This produces latent representations of perfect objects, forming the target distribution $\pi_1$. A \textbf{Rectified Flow} model then learns an Ordinary Differential Equation that transports samples from a standard Gaussian noise distribution $\pi_0$ along straight-line trajectories in latent space until they match $\pi_1$. At the end of this phase, the generative model can create complete 3D shapes from noise.
 
-These images are processed by a pre-trained encoder (LEAP with DINOv2 features \cite{jiang2024leap}), which extracts two latent representations: a global semantic code $g$, capturing category-level information, and a reconstruction code $r$, encoding geometric structure. The task is thus reformulated as recovering a complete latent representation from an incomplete one.
+In the second phase, the actual broken object is introduced. The partial assembly is rendered and encoded through LEAP, producing a biased, incomplete latent representation $\hat{x}_0$. Because this represents a broken shape, it sits in a low-likelihood region of $\pi_0$. To initiate repair, Jigsaw++ applies a controlled perturbation via Langevin dynamics, pushing the broken latent into a better starting position $x_0$. The Rectified Flow model then performs a \textbf{retargeting} step: it fine-tunes the generative flow to transport this perturbed broken latent directly onto the corresponding complete latent $x_1$.
 
-This recovery process is modeled as a continuous transformation in latent space using Rectified Flow, which progressively maps incomplete or corrupted representations into valid full-shape embeddings.
-
-In practice, partial assemblies may be inaccurate. To mitigate this, Jigsaw++ introduces a \textbf{retargeting} step that perturbs the initial latent representation toward regions of higher probability in the latent space, then trains the model to map this perturbed latent to the ground-truth embedding.
 \begin{figure}[H]
     \centering
     \includegraphics[width=1\linewidth]{figures/jigsaw++.png}
-    \caption{Overview of the Jigsaw++ pipeline \cite{lu2024jigsawpp}. Partial assemblies are rendered into multi-view images, encoded into a latent space, and refined via Rectified Flow to reconstruct a plausible complete shape that guides subsequent geometric alignment.}
+    \caption{Overview of the Jigsaw++ pipeline \cite{lu2024jigsawpp}. Partial assemblies are rendered into multi-view images and encoded into a latent space. Rectified Flow transports the incomplete latent toward the manifold of valid complete shapes, providing a global structural prior for subsequent geometric alignment.}
     \label{fig:jigsawpp}
 \end{figure}
 
-Through this procedure, Jigsaw++ learns to correct structural inconsistencies in partial assemblies and project them onto the manifold of valid shapes. Importantly, the output is not a final alignment, but a coherent global reconstruction that provides strong guidance for subsequent geometric matching methods.
+The output of this process is not a final alignment but a coherent global shape reconstruction. This reconstructed shape provides strong geometric guidance for subsequent matching methods, effectively enabling the pipeline to reason about what the assembled object \emph{should} look like even when fragments are incomplete or severely misaligned.
 
 \subsection{The Synthetic-to-Real Gap}
 
