@@ -1,62 +1,34 @@
-"""Count 2-piece fracture patterns available for the reduced dataset splits."""
+"""Count 2-piece fracture patterns and inspect pre-computed caches."""
 import os
-import sys
-from collections import defaultdict
+import pickle
 
 
-def load_mesh_list(path):
-    """Load mesh directory names from a metadata file.
-    
-    Lines might be paths like 'Bottle/abc123def' or just 'abc123def'.
-    We store both the raw last component AND a Category_hash version 
-    for matching against CSV format.
-    """
-    meshes = set()
-    with open(path, 'r') as f:
-        for line in f:
-            line = line.strip().rstrip('/')
-            if not line:
-                continue
-            parts = line.split('/')
-            meshes.add(parts[-1])  # just the hash
-            if len(parts) >= 2:
-                meshes.add(f"{parts[-2]}_{parts[-1]}")  # Category_hash
-    
-    # Print a few samples for debugging
-    samples = list(meshes)[:3]
-    print(f"  Sample mesh names: {samples}")
-    return meshes
-
-
-def count_patterns_from_csv(csv_path, mesh_set):
-    """Count unique fracture patterns in the CSV that belong to the given mesh set."""
-    matched = set()
-    total = 0
-    printed_sample = False
-    with open(csv_path, 'r') as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-            total += 1
-
-            if not printed_sample:
-                print(f"  Sample CSV line: {line}")
-                printed_sample = True
-
-            piece0 = line.split(',')[0].replace('.obj', '')
-            # Use regex to split on _fractured_N_piece_M
-            # Format varies: Category_hash_fractured_N_piece_0.obj
-            idx = piece0.find('_fractured_')
-            if idx == -1:
-                continue
-            mesh_name = piece0[:idx]
-            fracture_id = piece0[:piece0.find('_piece_')]
-
-            if mesh_name in mesh_set:
-                matched.add(fracture_id)
-
-    return matched, total
+def try_load_pickle(path):
+    """Try loading a file as a pickle cache (data loader format)."""
+    try:
+        with open(path, 'rb') as f:
+            meta = pickle.load(f)
+        if isinstance(meta, dict) and 'data_list' in meta:
+            data_list = meta['data_list']
+            print(f"  → Pickle cache with {len(data_list)} patterns")
+            if data_list:
+                print(f"  → Sample entry: {data_list[0]}")
+            return len(data_list)
+        else:
+            print(f"  → Pickle loaded but unexpected format: {type(meta)}")
+            return None
+    except Exception:
+        # Not a pickle, try as text
+        try:
+            with open(path, 'r') as f:
+                lines = [l.strip() for l in f if l.strip()]
+            print(f"  → Text file with {len(lines)} lines")
+            if lines:
+                print(f"  → Sample line: {lines[0]}")
+            return len(lines)
+        except Exception as e:
+            print(f"  → Cannot read: {e}")
+            return None
 
 
 def count_patterns_from_disk(meta_path, data_dir):
@@ -64,12 +36,11 @@ def count_patterns_from_disk(meta_path, data_dir):
     count = 0
     with open(meta_path, 'r') as f:
         meshes = [line.strip() for line in f if line.strip()]
-
     for mesh in meshes:
         mesh_dir = os.path.join(data_dir, mesh)
         if not os.path.isdir(mesh_dir):
             continue
-        for entry in os.listdir(mesh_dir):
+        for entry in sorted(os.listdir(mesh_dir)):
             frac_dir = os.path.join(mesh_dir, entry)
             if entry.startswith('fractured_') and os.path.isdir(frac_dir):
                 pieces = [p for p in os.listdir(frac_dir) if p.endswith('.obj')]
@@ -81,42 +52,60 @@ def count_patterns_from_disk(meta_path, data_dir):
 if __name__ == '__main__':
     data_dir = '/workspace'
 
+    print("=" * 60)
+    print("1. Check ALL pre-computed cache files at /workspace/")
+    print("=" * 60)
+
+    cache_candidates = [
+        'fracture_assembly_metadata_2_2_everyday.train.txt',
+        'fracture_assembly_metadata_2_2_everyday.val.txt',
+        'original_fracture_assembly_metadata_2_2_everyday.train.txt',
+        'original_fracture_assembly_metadata_2_2_everyday.val.txt',
+        'fracture_assembly_metadata_2_2_artifact.train.txt',
+        'fracture_assembly_metadata_2_2_artifact.val.txt',
+        'metadata_train_this_server.pkl',
+    ]
+
+    for name in cache_candidates:
+        path = os.path.join(data_dir, name)
+        if os.path.exists(path):
+            size = os.path.getsize(path)
+            print(f"\n  [{name}] ({size:,} bytes)")
+            try_load_pickle(path)
+        else:
+            print(f"\n  [{name}] NOT FOUND")
+
+    # Also check everyday_all_2 directory
+    all2_dir = os.path.join(data_dir, 'everyday_all_2')
+    if os.path.isdir(all2_dir):
+        print(f"\n  --- Files in everyday_all_2/ ---")
+        for name in sorted(os.listdir(all2_dir)):
+            path = os.path.join(all2_dir, name)
+            size = os.path.getsize(path)
+            print(f"\n  [everyday_all_2/{name}] ({size:,} bytes)")
+            try_load_pickle(path)
+
+    print()
+    print("=" * 60)
+    print("2. Disk scan: 2-piece patterns per reduced dataset split")
+    print("=" * 60)
+
     train_meta = os.path.join(data_dir, 'original_everyday.train.txt')
     val_meta = os.path.join(data_dir, 'original_everyday.val.txt')
-    csv_path = os.path.join(data_dir, 'everyday_all_2', 'everyday_pairs_all_2.csv')
 
-    print("=" * 60)
-    print("Reduced dataset: mesh counts")
-    print("=" * 60)
-
-    train_meshes = load_mesh_list(train_meta)
-    val_meshes = load_mesh_list(val_meta)
-    print(f"  Train meshes: {len(train_meshes)}")
-    print(f"  Val meshes:   {len(val_meshes)}")
+    if os.path.exists(train_meta):
+        train_disk = count_patterns_from_disk(train_meta, data_dir)
+        print(f"  Reduced train (from original_everyday.train.txt): {train_disk}")
+    if os.path.exists(val_meta):
+        val_disk = count_patterns_from_disk(val_meta, data_dir)
+        print(f"  Reduced val (from original_everyday.val.txt):     {val_disk}")
+        print(f"  Combined: {train_disk + val_disk}")
 
     print()
     print("=" * 60)
-    print("Method 1: Cross-reference CSV with reduced mesh lists")
+    print("3. Summary")
     print("=" * 60)
-
-    train_patterns, csv_total = count_patterns_from_csv(csv_path, train_meshes)
-    val_patterns, _ = count_patterns_from_csv(csv_path, val_meshes)
-    print(f"  CSV total lines:          {csv_total}")
-    print(f"  2-piece train patterns:   {len(train_patterns)}")
-    print(f"  2-piece val patterns:     {len(val_patterns)}")
-    print(f"  Combined:                 {len(train_patterns) + len(val_patterns)}")
-
-    print()
-    print("=" * 60)
-    print("Method 2: Scan disk for fractured_* dirs with exactly 2 .obj files")
-    print("=" * 60)
-
-    train_disk = count_patterns_from_disk(train_meta, data_dir)
-    val_disk = count_patterns_from_disk(val_meta, data_dir)
-    print(f"  2-piece train patterns:   {train_disk}")
-    print(f"  2-piece val patterns:     {val_disk}")
-    print(f"  Combined:                 {train_disk + val_disk}")
-
-    print()
-    print("These are the samples your Gabriel experiment will train on")
-    print(f"(with MAX_NUM_PART=2 and BATCH_SIZE=4 → ~{train_disk // 4} batches/epoch)")
+    print("  Compare the pickle cache counts with the disk scan counts.")
+    print("  If a pickle cache exists for your DATA_FN, the data loader")
+    print("  uses it DIRECTLY instead of scanning disk.")
+    print("  Your previous experiments used whichever cache was present.")
