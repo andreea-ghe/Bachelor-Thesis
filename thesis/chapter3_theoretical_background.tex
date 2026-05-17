@@ -1,7 +1,7 @@
 \chapter{Theoretical Background}
 \label{chap:ch3}
 
-In this chapter, we present the theoretical foundations underlying the proposed approach for 3D fractured object reassembly. We begin by introducing point cloud representations and their unique structural properties, which motivate the need for specialized processing techniques. We then review key deep learning architectures for point sets, including PointNet and PointNet++, highlighting their strengths and limitations in capturing geometric features. Building on this, we introduce transformer-based models and attention mechanisms, which enable richer modeling of relationships between points and across fragments. Finally, we describe the RANSAC algorithm and its integration with Singular Value Decomposition (SVD) for robust estimation of rigid transformations, providing the mathematical tools necessary for accurate geometric alignment.
+This chapter presents the theoretical foundations underlying the proposed approach: point cloud representations and their structural properties, deep learning architectures for point sets (PointNet, PointNet++), transformer-based attention mechanisms, and the RANSAC algorithm for robust rigid transformation estimation.
 
 \section{Point Cloud Representation}
 
@@ -44,12 +44,12 @@ Because of these unique properties, standard Convolutional Neural Networks are f
 
 To address the inherent challenges of processing unstructured 3D data, early research introduced architectures designed specifically for point sets, like PointNet \cite{qi2017pointnet}. Instead of aggregating information from local neighbors using a spatial kernel and extracting a feature from a local patch of pixels, PointNet learns features for each point independently. It replaces the convolutional kernel with a shared Multi-Layer Perceptron (MLP), denoted \(h:\mathbf{R}^3 \xrightarrow{} \mathbf{R}^K\), which acts as a pointwise feature extractor. For every individual point \(x_i\), the network computes a high-dimensional feature vector \(h(x_i)\). 
 
-But because these features are extracted in complete isolation, the network requires a mechanism to capture the global structure of the object while remaining strictly invariant to the permutation of the input points. PointNet achieves this through a symmetric aggregation function, specifically global max pooling:
+Because these features are extracted independently, a permutation-invariant aggregation is needed to capture global structure. PointNet achieves this through global max pooling:
 \begin{equation}
 \label{eq:pointnet_pool}
 g=\max_{i=1 \ldots n}h(x_i)
 \end{equation}
-This works because \(\max(a, b)=\max(b, a)\). So, while CNNs build global understanding progressively by combining localized structures, PointNet defines global understanding as a collected set of the most dominant pointwise responses (Figure~\ref{fig:pointnet}). 
+Because \(\max\) is a symmetric function, the output is invariant to input ordering. While CNNs build global understanding by progressively combining localized structures, PointNet aggregates the most dominant pointwise responses directly (Figure~\ref{fig:pointnet}). 
 
 \begin{figure}[h]
     \centering
@@ -71,19 +71,11 @@ This hierarchical feature learning is achieved through an encoder made of repeat
 
 \section{Transformers and Attention Mechanisms}
 
-Although PointNet++ successfully captures local geometric structures using hierarchical neighborhoods, its reliance on max-pooling introduces some limitations. Max-pooling identifies the most prominent feature within a local region but discards the complex geometric relationships between the remaining points. For tasks that require identifying compatible fracture boundaries, the network must understand not just the presence of a feature, but exactly how different points relate to one another. To overcome this, modern architectures replace max-pooling with the Attention mechanism \cite{vaswani2017attention}, the foundational building block of Transformer networks.
+Although PointNet++ captures local geometric structures through hierarchical neighborhoods, max-pooling discards the relationships between points within each region. For tasks such as fracture boundary matching, the network must understand how different points relate to one another, not just which features are most prominent. Modern architectures address this by replacing max-pooling with the Attention mechanism \cite{vaswani2017attention}, the core component of Transformer networks.
 
-Originally designed for natural language processing to model long-range dependencies between words in a sentence, transformers are remarkably well-suited for 3D point cloud processing. Fundamentally, the self-attention operator at the core of a transformer is a set operator. Because it computes relationships by comparing elements against one another rather than relying on a fixed grid or sequential order, it is invariant to both the permutation and cardinality of the input data. This makes the transformer a perfect mathematical match for processing unordered point clouds.
+Originally designed for natural language processing, transformers have proven effective for 3D point cloud processing. The self-attention operator at their core is a set operator: it computes relationships by comparing elements against one another rather than relying on a fixed grid or sequential order, making it invariant to both the permutation and cardinality of the input. This makes the transformer well suited for processing unordered point clouds.
 
-At its core, the attention mechanism can be described as mapping a Query and a set of Key-Value pairs to an output representation. The features of each point are linearly projected into three distinct vectors:
-
-\begin{itemize}
-    \item Query (Q): Represents what a specific point is looking for
-    \item Key (K): Represents what a point has (its own structural identity)
-    \item Value (V): The actual information of the underlying feature of that point
-\end{itemize}
-
-To compute the relationships between points, the network calculates the dot product between the Query of one point and the Keys of all other points. A high dot-product score indicates strong geometric compatibility or relevance. These scores are passed through a softmax function to create normalized attention weights, which dictate exactly how much of each point's Value should be mixed into the final aggregated feature. Instead of just taking the maximum value like PointNet, attention creates a dynamically weighted sum of the entire neighborhood based on structural context.
+At its core, the attention mechanism maps a Query and a set of Key-Value pairs to an output representation. Each point's features are linearly projected into a Query vector (encoding what the point is searching for), a Key vector (encoding its structural identity), and a Value vector (carrying its feature content). The network computes dot products between Queries and Keys to measure pairwise compatibility; these scores are normalized via softmax to produce attention weights that determine how much each point's Value contributes to the output. Unlike the hard selection of max pooling, attention computes a dynamically weighted sum based on structural context.
 
 In the context of 3D fractured object reassembly, architectures like Jigsaw \cite{lu2023jigsaw} utilize two distinct variations of this mechanism to establish geometric matches:
 
@@ -100,6 +92,7 @@ Formally, given a dataset \(P\) and a model requiring \(n\) points to instantiat
 
 The Jigsaw framework adopts this exact methodology to filter out false point-to-point correspondences predicted between fracture surfaces. Because neural networks inevitably predict some erroneous matches (outliers) that would severely degrade a global pose estimation, RANSAC is used to isolate the reliable geometric matches. In SE(3) space, the minimum number of points required to determine a rigid transformation is 3. Therefore, RANSAC randomly samples 3 corresponding point pairs from the two fragments.
 
-To compute the transformation hypothesis from these 3 pairs, the algorithm utilizes Singular Value Decomposition (SVD) \cite{golub2013matrix}. First, the points from both fragments are centered at the origin by subtracting their respective centroids. These centered points are assembled into coordinate matrices \(A\) and \(B\). To find the optimal rotation matrix R that minimizes the least-squares error \(\lVert AR-B \rVert\), the algorithm computes the cross-covariance matrix \(H=A^TB\) and decomposes it via SVD such that \(H=U \sum V^T\). Because physical fragments must undergo a rigid transformation without any scaling or stretching, the singular values matrix \(\sum\) is discarded, and the pure rotation is extracted as \(R=UV^T\). The translation vector is then easily calculated by measuring the offset between the two original centroids after the rotation is applied.
+To compute the transformation hypothesis from these 3 pairs, the algorithm solves the orthogonal Procrustes problem via Singular Value Decomposition (SVD) \cite{golub2013matrix}: the points are centered, the cross-covariance matrix is decomposed, and the optimal rotation is extracted while the translation is recovered from the centroid offset. The full SVD-based derivation is presented in Chapter~\ref{chap:ch5} (Equation~\ref{eq:procrustes}), where it is also used for differentiable pose estimation during training.
+% To compute the transformation hypothesis from these 3 pairs, the algorithm utilizes Singular Value Decomposition (SVD) \cite{golub2013matrix}. First, the points from both fragments are centered at the origin by subtracting their respective centroids. These centered points are assembled into coordinate matrices \(A\) and \(B\). To find the optimal rotation matrix R that minimizes the least-squares error \(\lVert AR-B \rVert\), the algorithm computes the cross-covariance matrix \(H=A^TB\) and decomposes it via SVD such that \(H=U \sum V^T\). Because physical fragments must undergo a rigid transformation without any scaling or stretching, the singular values matrix \(\sum\) is discarded, and the pure rotation is extracted as \(R=UV^T\). The translation vector is then easily calculated by measuring the offset between the two original centroids after the rotation is applied.
 
 Once this candidate transformation is calculated, it is applied to all other matched points to determine the consensus set. By repeating this hypothesis-and-evaluation loop, RANSAC successfully discards the hallucinated matches and outputs a highly reliable pairwise transformation based purely on the geometric inliers.

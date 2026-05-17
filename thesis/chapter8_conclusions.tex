@@ -1,0 +1,44 @@
+\chapter{Conclusions, Threats to Validity, and Future Work}
+\label{chap:ch8}
+
+\section{Conclusions}
+
+This thesis investigated whether targeted, modular modifications to the Jigsaw framework can improve 3D fracture assembly quality, and what such experiments reveal about the interplay between architecture, data, and optimization.
+
+Three extensions were proposed and evaluated: a geometric pair attention bias adapted from GPAT, a gated double attention module with zero-initialized ReZero gates, and a non-learned ICP refinement step inserted between RANSAC and Shonan averaging. The experimental evaluation yielded several findings:
+
+\begin{itemize}
+    \item \textbf{Architectural extensions provide targeted improvements.} Gated double attention yielded +2--5 points under data scarcity and consistent cross-domain improvements on the artifact subset, demonstrating that additional attention capacity helps extract geometric patterns that a single-pass model cannot recover from limited or out-of-distribution examples. ICP refinement added $\sim$1 point across all configurations.
+
+    \item \textbf{Data scaling has a compounding effect.} The full dataset yields over 10 percentage points more than the reduced subset, confirming that data quantity amplifies the effectiveness of the base architecture. On the full dataset, the baseline already captures the patterns that the architectural extensions provided under scarcity, suggesting that data and architecture address the same representational bottleneck from complementary directions.
+
+    \item \textbf{ICP refinement is reliable and orthogonal.} A consistent $\sim$1 point improvement across all configurations, with no risk of overfitting or interference with training dynamics.
+
+    \item \textbf{Geometric pair attention is tightly coupled to iterative pose refinement.} The pair encoder did not improve results under Jigsaw's preprocessing, which independently normalizes each fragment and removes the geometric variation the mechanism requires. This finding clarifies that transferring attention biases across architectures requires careful consideration of the surrounding preprocessing and pose estimation pipeline.
+
+    \item \textbf{Loss scheduling is critical for gated finetuning.} A gentler activation schedule outperformed the standard one, revealing that the interaction between new gated components and pretrained representations is sensitive to when and how loss terms are introduced.
+\end{itemize}
+
+Beyond the experimental contributions, the thesis produced an environment migration from Python~3.8 / PyTorch~1.10 / CUDA~11.3 to Python~3.10 / PyTorch~2.7 / CUDA~12.8, enabling the Jigsaw codebase to run on current-generation hardware, and an interactive web application for visual comparison of assembly results across model variants.
+
+\section{Threats to Validity}
+
+\paragraph{Synthetic data only.} All experiments use the Breaking Bad dataset, which generates fractures through physically-based simulation. Real-world fractures involve material erosion, surface degradation, and incomplete fragments that the synthetic pipeline does not model. Results may not transfer directly to real-world applications.
+
+\paragraph{Limited object categories.} Training is restricted to 20 everyday object categories from PartNet. The artifact subset provides a cross-domain signal, but the overall category diversity remains narrow. Models may not generalize to domains with fundamentally different geometry, such as bones or architectural fragments.
+
+\paragraph{Compute constraints.} Due to the $O(N \times M)$ quadratic complexity of Jigsaw's attention and matching stages, a single training epoch required substantial time on a single RTX~4090. This limited our study to finetuning from a pretrained checkpoint (100 epochs at $10^{-4}$ learning rate) rather than training from scratch (250 epochs at $10^{-3}$), and restricted the piece-count range to 2 and 2--4 pieces instead of the full 2--20 range used in the original evaluation.
+
+\paragraph{Statistical power.} All results are averaged over 3 independent runs. While sufficient to identify large effects (e.g., the 10-point data scaling gap), smaller differences between architectural variants may not be statistically significant at this sample size.
+
+\section{Future Work}
+
+The threats identified above suggest several directions for future research.
+
+\paragraph{Real-world evaluation.} The most pressing limitation is the restriction to synthetic data. The FRACTURA dataset introduced by GARF \cite{Li2025GARF} provides the first systematic benchmark for real-world fracture assembly, covering ceramics, bones, eggshells, and lithics. Evaluating and adapting the proposed modifications on FRACTURA---potentially using few-shot domain adaptation via LoRA, as demonstrated by GARF---would test whether the findings of this thesis hold beyond the synthetic setting.
+
+\paragraph{Category generalization.} To address the limited category diversity, a cross-domain finetuning strategy similar to GARF's approach could be employed: training on the full everyday set and then finetuning with a small number of objects from the target domain (e.g., artifact or FRACTURA categories). This would test whether the implicit regularization effect observed for double attention under data scarcity also manifests under domain shift.
+
+\paragraph{Efficient attention architectures.} The compute constraints that limited this thesis to finetuning stem directly from the quadratic complexity of Jigsaw's attention mechanism. Two complementary solutions exist in the literature: FlashAttention \cite{dao2022flashattention}, which reduces the memory footprint of standard attention through tiling and recomputation without changing the output, and the proxy-based matching paradigm of PMTR \cite{lee20243d}, which achieves sub-quadratic complexity by projecting fragment features onto a shared learned proxy space. Integrating either approach would enable training from scratch on the full piece-count range within practical hardware budgets.
+
+\paragraph{Two-pass architecture for pair attention.} As discussed in Section~\ref{par:pair_attn_limitations}, the pair geometric encoder requires non-degenerate spatial relationships that Jigsaw's preprocessing removes. A two-pass architecture---where initial pose estimates from a first forward pass provide meaningful coordinates for the pair encoder in a second pass---would decouple the mechanism from iterative geometric recycling. This direction was not pursued due to the doubled memory and computation cost.

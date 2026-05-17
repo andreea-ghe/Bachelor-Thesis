@@ -36,11 +36,11 @@ The main contributions of this thesis are:
 \begin{enumerate}
     \item \textbf{Geometric pair attention transfer experiment.} We adapt the pair attention mechanism from GPAT and integrate it into Jigsaw's cross-attention layers. The experiment reveals that the effectiveness of geometric pair descriptors depends on the surrounding architectural context, identifying specific conditions under which this type of spatial bias provides a benefit.
 
-    \item \textbf{Gated double attention with training dynamics analysis.} We extend the feature extractor with a second attention pass using zero-initialized ReZero gates. On a reduced dataset the additional capacity acts as an implicit regularizer, but the effect vanishes with sufficient training data. We further analyze the learned gate values and demonstrate the sensitivity of gated finetuning to loss scheduling.
+    \item \textbf{Gated double attention with training dynamics analysis.} We extend the feature extractor with a second attention pass using zero-initialized ReZero gates. On a reduced dataset the additional capacity acts as an implicit regularizer, providing +2--5 percentage points. On the full dataset, the baseline already captures these patterns, confirming that data and architecture address the same representational bottleneck from complementary directions. We further analyze the learned gate values and demonstrate the sensitivity of gated finetuning to loss scheduling.
 
-    \item \textbf{ICP refinement for pairwise pose estimation.} Point-to-point ICP inserted between RANSAC and Shonan averaging yields a consistent improvement of approximately 1 percentage point across all configurations. The modification is parameter-free, orthogonal to the attention-based extensions, and carries no risk of overfitting.
+    \item \textbf{ICP refinement for pairwise pose estimation.} Point-to-point ICP inserted between RANSAC and Shonan averaging yields a consistent improvement of approximately 1 percentage point across all configurations. The modification is non-learned, orthogonal to the attention-based extensions, and carries no risk of overfitting.
 
-    \item \textbf{Data scaling analysis.} Through the discovery and correction of a 37\% data loss in the training set, we provide controlled evidence that restoring the missing data improved part accuracy by over 10 percentage points---far exceeding any architectural change---highlighting the dominance of data quantity when the model is already well-matched to the problem.
+    \item \textbf{Data scaling analysis.} By comparing results on the full dataset against a reduced subset ($\sim$63\% of everyday training patterns), we quantify the effect of data quantity on assembly quality---the full dataset yields over 10 percentage points more---and show that the proposed architectural modifications provide consistent improvements under data scarcity, acting as implicit regularizers that complement the baseline.
 
     \item \textbf{Interactive web application.} A Django and FastAPI-based demo with Three.js 3D visualization, enabling users to run inference across six model variants and visually compare reconstruction quality.
 \end{enumerate}
@@ -58,9 +58,9 @@ The remainder of this thesis is organized as follows:
 
     \item \textbf{Chapter~\ref{chap:ch5}} presents the proposed extensions to the Jigsaw pipeline: the pair geometric attention bias, the gated double attention module, and the ICP refinement step, including their integration points and known architectural constraints.
 
-    \item \textbf{Chapter~\ref{chap:ch6}} reports the experimental evaluation, including the dataset scaling analysis, results on both incomplete and complete datasets, loss scheduling effects, and gate behavior analysis.
+    \item \textbf{Chapter~\ref{chap:ch6}} reports the experimental evaluation, including results on the full dataset, a data scaling analysis on a reduced subset, loss scheduling effects, and gate behavior analysis.
 
     \item \textbf{Chapter~\ref{chap:ch7}} describes the design, implementation, and testing of the interactive web application, including system architecture, user interface, and automated test coverage.
 
-    \item \textbf{Chapter~8} concludes the thesis with a summary of findings and directions for future work.
+    \item \textbf{Chapter~\ref{chap:ch8}} concludes the thesis with a summary of findings, discusses threats to validity, and outlines directions for future work.
 \end{itemize}

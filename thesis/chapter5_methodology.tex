@@ -104,6 +104,7 @@ The results (Section~\ref{sec:pair_attn_results}) confirm that the transfer does
 A natural extension would be to run Jigsaw's full pipeline once to obtain initial pose estimates, then feed those poses back to the pair encoder in a second forward pass using stop-gradient (treating the estimated poses as fixed constants). This would provide non-degenerate geometric input without requiring a differentiable pose predictor. We leave this to future work, as it requires doubling the forward pass during training---significantly increasing GPU memory and computation time---which exceeds the hardware budget available for this thesis.
 
 \subsection{Proposed Improvement: Gated Double Attention}
+\label{sec:double_attn_method}
 
 The original Jigsaw architecture applies a single self-attention layer followed by a cross-attention layer to extract and propagate geometric features. While this design enables both intra-fragment and inter-fragment reasoning, it limits the model to a single round of feature refinement before downstream tasks such as segmentation and matching.
 
@@ -145,9 +146,7 @@ The proposed modification increases computational cost and model complexity. In 
 \section{Fracture Surface Segmentation}
 \paragraph{Unmodified baseline component.} This module is inherited from Jigsaw without modification, but is described here because its output defines the input to both the matching module and the ICP refinement step.
 
-Following feature extraction, the network employs a surface segmentation module to identify the overlapping fracture surfaces where pieces should connect. Jigsaw frames this as a point-wise \textbf{binary classification} task, predicting whether each point \(p\) belongs to the fracture surface or the original intact surface.
-
-The module takes the extracted geometric feature vector \(f_p\) and passes it through two MLP layers, reducing the dimensionality to a single channel, followed by a Sigmoid activation to output a fracture confidence score \(\tilde{c}_p \in [0,1]\). The classifier is trained with a binary cross-entropy loss:
+Following feature extraction, the network classifies each point as fracture or intact surface. An MLP maps the extracted feature vector \(f_p\) to a fracture confidence score \(\tilde{c}_p \in [0,1]\) via Sigmoid activation, trained with binary cross-entropy:
 \begin{equation}
     \label{eq:seg_loss}
     L_{seg} =
@@ -158,41 +157,34 @@ The module takes the extracted geometric feature vector \(f_p\) and passes it th
     (1 - c_p) \log(1 - \tilde{c}_p)
     \right]
     \end{equation}
-
-The ground truth label \(c_p\) is generated automatically by evaluating the physical distance from point \(p\) to its nearest neighbor on any other piece within the assembled object. A point is classified as fracture (\(c_p = 1\)) if this distance is below a predefined threshold \(\eta = 0.025\):
+Ground truth labels are generated automatically: a point is labeled as fracture (\(c_p = 1\)) if its distance to the nearest point on any other fragment is below \(\eta = 0.025\):
 \begin{equation}
 \label{eq:gt_label}
 c_p = \begin{cases} 1 & \text{if } \text{Dis}(p, \text{NN}(p, P \setminus P_i)) \leq \eta \\ 0 & \text{otherwise} \end{cases}
 \end{equation}
-
-Despite the inherent class imbalance (fracture areas are typically much smaller than intact outer surfaces), the two MLP layers provide sufficient capacity for accurate segmentation. By isolating fracture points, this module significantly reduces the search space for the subsequent matching stage, focusing it exclusively on the actual broken boundaries.
+By isolating fracture points, this module reduces the search space for the subsequent matching stage to the actual broken boundaries.
 
 \section{Multi-Part Point Matching}
 \paragraph{Unmodified baseline component.} This module is inherited from Jigsaw without modification. It is summarized here because its output (point-to-point correspondences) feeds directly into the pose recovery stage, where the proposed ICP refinement operates.
 
-Unlike sequential pairwise methods that accumulate drift, Jigsaw evaluates all fracture points from all fragments simultaneously through a global matching module. This module computes a global matching probability matrix and uses optimal transport and assignment algorithms to predict globally consistent point-to-point connections.
+Unlike sequential pairwise methods that accumulate drift, Jigsaw evaluates all fracture points from all fragments simultaneously, using optimal transport and assignment to predict globally consistent correspondences.
 
-\textbf{Primal-Dual Descriptors.} When a solid object breaks, the resulting pieces exhibit complementary geometry: a convex protrusion on one fragment corresponds to a concave indentation on another. Standard feature extractors are designed to find identical surfaces, which fails in this context. To address this, Jigsaw introduces the \textbf{Primal-Dual Descriptor} (Figure~\ref{fig:primal_dual_desc}).
-
-The module takes the initial geometric embeddings of the fracture surfaces \(\hat{f}_i^c\) and projects them into two distinct representational spaces to capture both viewing directions of the same fracture. This is achieved by applying an MLP mapping, implemented as a \(1 \times 1\) convolution with a ReLU activation, followed by a normalization layer for numerical stability. The features are split into:
-\begin{itemize}
-    \item A Primal Descriptor \(\hat{f}_i^p\), which encodes the local convex shape of the piece.
-    \item A Dual Descriptor \(\hat{f}_i^d\), which encodes the corresponding concavity as observed from the outside.
-\end{itemize}
-
-\begin{figure}[h]
+\begin{wrapfigure}{r}{0.45\textwidth}
     \centering
-    \includegraphics[width=0.75\linewidth]{figures/primal-dual.png}
-    \caption{The Primal-Dual Descriptor mechanism. Fracture surface features are projected into two complementary representational spaces: a primal descriptor encoding the convex geometry, and a dual descriptor encoding the corresponding concavity.}
+    \vspace{-12pt}
+    \includegraphics[width=0.43\textwidth]{figures/primal-dual.png}
+    \caption{The Primal-Dual Descriptor mechanism. Fracture features are projected into complementary primal (convex) and dual (concave) spaces.}
     \label{fig:primal_dual_desc}
-\end{figure}
+    \vspace{-10pt}
+\end{wrapfigure}
+\textbf{Primal-Dual Descriptors.} When a solid object breaks, the resulting pieces exhibit complementary geometry: a convex protrusion on one fragment corresponds to a concave indentation on another. Standard feature extractors are designed to find identical surfaces, which fails in this context. Jigsaw addresses this by projecting the fracture surface embeddings \(\hat{f}_i^c\) through an MLP (\(1 \times 1\) convolution with ReLU and normalization) into two complementary spaces (Figure~\ref{fig:primal_dual_desc}): a \textbf{Primal Descriptor} \(\hat{f}_i^p\) encoding the local convex shape, and a \textbf{Dual Descriptor} \(\hat{f}_i^d\) encoding the corresponding concavity.
 
 \textbf{Global Affinity and Sinkhorn Optimal Transport.} A global affinity matrix \(M\) is computed via the scaled dot-product between primal and dual features:
 \begin{equation}
 \label{eq:affinity}
 M = \exp\!\left(\frac{\hat{F}_p^T A \hat{F}_d}{\tau}\right)
 \end{equation}
-where \(A\) represents learnable affinity weights and \(\tau\) is a temperature parameter controlling the sharpness of the distribution. To convert these raw affinity scores into valid probabilities, the module applies a \textbf{Sinkhorn layer}. The Sinkhorn layer transforms the affinity matrix into a doubly stochastic matrix by iteratively normalizing its rows and columns. This process enforces a soft one-to-one matching constraint: each point distributes its matching probability across all candidates, while simultaneously competing with other points to be selected. As a result, the matrix \(\tilde{X}\) approximates a permutation matrix, making it suitable for global matching.
+where \(A\) represents learnable affinity weights and \(\tau\) is a temperature parameter. A \textbf{Sinkhorn layer} \cite{cuturi2013sinkhorn} converts these scores into a doubly stochastic matrix \(\tilde{X}\) by iteratively normalizing rows and columns, enforcing a soft one-to-one matching constraint that approximates a permutation matrix.
 
 \textbf{Training Losses.} The matching loss is a cross-entropy between predicted soft matches and a ground-truth correspondence matrix \(X_{gt}\):
 \begin{equation}
@@ -213,7 +205,7 @@ Even if the network correctly predicts which points correspond to one another, t
 \label{eq:target_location}
 p' = \frac{\tilde{X}_{ij}(p) P_j}{\|\tilde{X}_{ij}(p)\|_1}
 \end{equation}
-Using these matched pairs, the algorithm solves the classical orthogonal Procrustes problem to find the optimal relative rotation \(\tilde{R}_{ij}\) and translation \(\tilde{t}_{ij}\) that minimize the weighted Mean Squared Error between the points. This closed-form solution is computed differentiably using Singular Value Decomposition:
+The optimal rigid transformation is obtained by solving the orthogonal Procrustes problem differentiably via SVD:
 \begin{equation}
     \label{eq:procrustes}
     R_{ij}, t_{ij} =
@@ -228,7 +220,7 @@ The Rigidity Loss \(\mathcal{L}_{rig}\) penalizes this residual alignment error,
 L = \alpha L_{seg} + \beta L_{mat} + \gamma L_{rig}
 \end{equation}
 
-\textbf{Hungarian Assignment.} The Sinkhorn output \(\tilde{X}\) provides continuous soft probabilities, but physical reassembly requires discrete matches. The \textbf{Hungarian algorithm} solves the linear assignment problem in polynomial time, producing a strict binary permutation matrix \(X\) of globally optimal 1-to-1 assignments.
+\textbf{Hungarian Assignment.} At inference time, the continuous Sinkhorn output \(\tilde{X}\) is discretized by the \textbf{Hungarian algorithm}, which solves the linear assignment problem in polynomial time to produce globally optimal 1-to-1 correspondences.
 
 \section{Pose Recovery and Alignment}
 \paragraph{Baseline component with proposed refinement.} The pose recovery pipeline is inherited from Jigsaw, with one proposed modification: an ICP refinement step inserted between RANSAC and Shonan averaging.
@@ -237,14 +229,15 @@ L = \alpha L_{seg} + \beta L_{mat} + \gamma L_{rig}
 
 \textbf{Global Alignment via Transformation Synchronization.} While RANSAC successfully aligns fragments in isolated pairs, assembling a multi-part object from pairwise transformations alone would lead to cumulative drift. To achieve a globally consistent assembly, the framework represents the object as a factor graph where nodes are the absolute global poses of each fragment and edges are the relative pairwise transformations from RANSAC. Because a single piece may connect to multiple fragments, chaining these relative transformations often results in slight mathematical contradictions (cycle inconsistencies).
 
-To resolve these conflicting constraints, the framework employs Shonan averaging \cite{dellaert2020shonan} (Figure~\ref{fig:shonan_avg}), a transformation synchronization algorithm. Rather than aligning pieces one by one, Shonan averaging jointly optimizes the global poses of all nodes simultaneously. It distributes and minimizes the accumulated alignment errors across all edges, finding the solution that best satisfies all local pairwise constraints at once. This results in a cohesive, drift-free final 3D reassembly.
-
-\begin{figure}[h]
+\begin{wrapfigure}{r}{0.45\textwidth}
     \centering
-    \includegraphics[width=0.75\linewidth]{figures/shonan.png}
-    \caption{Transformation synchronization via Shonan averaging. Pairwise relative transformations (edges) are jointly optimized to recover globally consistent absolute poses (nodes), distributing alignment errors across the entire factor graph.}
+    \vspace{-12pt}
+    \includegraphics[width=0.43\textwidth]{figures/shonan.png}
+    \caption{Transformation synchronization via Shonan averaging. Pairwise transformations (edges) are jointly optimized to recover globally consistent poses (nodes).}
     \label{fig:shonan_avg}
-\end{figure}
+    \vspace{-10pt}
+\end{wrapfigure}
+To resolve these conflicting constraints, the framework employs Shonan averaging \cite{dellaert2020shonan} (Figure~\ref{fig:shonan_avg}), a transformation synchronization algorithm. Rather than aligning pieces one by one, Shonan averaging jointly optimizes the global poses of all nodes simultaneously. It distributes and minimizes the accumulated alignment errors across all edges, finding the solution that best satisfies all local pairwise constraints at once. This results in a cohesive, drift-free final 3D reassembly.
 
 \subsection{Proposed Improvement: ICP Refinement for Pairwise Poses}
 \label{sec:icp_methodology}
@@ -271,12 +264,7 @@ We use the \texttt{registration\_icp} implementation from Open3D \cite{Zhou2018o
 \end{itemize}
 
 \paragraph{Motivation.}
-RANSAC and ICP address complementary aspects of the alignment problem. RANSAC is designed to handle incorrect correspondences by identifying a transformation supported by a consistent subset of matches, but it relies on small random point subsets (3 per hypothesis) and does not explicitly optimize alignment over the available surface geometry. ICP, on the other hand, performs local refinement by iteratively minimizing distances between nearby points in the two fragments, exploiting the dense geometric structure of the fracture surfaces. However, as a local optimization method, ICP requires a sufficiently accurate initialization to converge to a meaningful solution.
-
-By initializing ICP with the RANSAC estimate, the method combines robustness to outliers with local geometric refinement. RANSAC provides a stable coarse alignment, while ICP adjusts this estimate using a larger set of spatial constraints.
-
-\paragraph{Role in the Alignment Pipeline.}
-The refined transformations are incorporated into the same global synchronization framework described previously. Since Shonan Averaging operates over pairwise constraints, improving the local alignment quality results in more consistent inputs for the global optimization. This preserves the overall structure of the pipeline, while introducing an intermediate refinement step between local estimation and global alignment.
+RANSAC and ICP address complementary aspects of the alignment problem. RANSAC handles outlier correspondences but relies on small random subsets (3 points per hypothesis) without optimizing over the full surface geometry. ICP performs local refinement by iteratively minimizing distances between nearby points, but requires a sufficiently accurate initialization. By initializing ICP with the RANSAC estimate, the method combines robustness to outliers with dense geometric refinement.
 
 \paragraph{Limitations.}
 The additional ICP step increases computational cost and remains dependent on the quality of the initial transformation. Since ICP operates only on the predicted fracture points rather than the full surface, its effectiveness depends on the quality of the upstream segmentation. Furthermore, point-to-point ICP converges more slowly than point-to-plane ICP and may settle in local minima if the initial alignment is poor. In practice, however, the RANSAC initialization is sufficiently accurate for the refinement to consistently improve alignment quality (see Section~\ref{sec:incomplete}).

@@ -51,14 +51,15 @@ Before the advent of deep learning, the field relied on \textbf{Traditional Geom
     \label{fig:feature_descriptors}
 \end{figure}
 
-Because pure geometric matching struggles when fragments are severely damaged or missing, a sub-branch of research focused on \textbf{Template-Guided Assembly}. These methods rely on a complete reference model to guide the placement of fragments. A prominent example is the automatic assembly and completion framework proposed by Yin et al. \cite{yin2011automatic}, which roughly aligns fragmented skulls using a healthy template skull before refining the break-curve matches (Figure~\ref{fig:skull_template}).
-
-\begin{figure}[h]
+\begin{wrapfigure}{r}{0.45\textwidth}
     \centering
-    \includegraphics[width=0.5\linewidth]{figures/skull.png}
-    \caption{Template-guided reassembly of a fractured skull \cite{yin2011automatic}. A healthy reference model guides the coarse alignment of the fragments before fine-grained boundary matching refines the assembly.}
+    \vspace{-12pt}
+    \includegraphics[width=0.43\textwidth]{figures/skull.png}
+    \caption{Template-guided reassembly of a fractured skull \cite{yin2011automatic}.}
     \label{fig:skull_template}
-\end{figure}
+    \vspace{-10pt}
+\end{wrapfigure}
+Because pure geometric matching struggles when fragments are severely damaged or missing, a sub-branch of research focused on \textbf{Template-Guided Assembly}. These methods rely on a complete reference model to guide the placement of fragments. A prominent example is the automatic assembly and completion framework proposed by Yin et al. \cite{yin2011automatic}, which roughly aligns fragmented skulls using a healthy template skull before refining the break-curve matches (Figure~\ref{fig:skull_template}).
 
 With the rise of neural networks, the focus shifted towards \textbf{Deep Learning for Semantic Part Assembly}. Rather than physical fractures, these models focused on constructing complete objects from predefined, semantically meaningful parts (e.g., table legs or chair backs). Pioneering methods in this domain include Generative 3D Part Assembly via Dynamic Graph Learning (DGL), which utilizes iterative graph message passing to reason about spatial relationships and refine part poses. \cite{Huang2020DGL}. This was subsequently improved by RGL-Net, a recurrent graph learning framework \cite{harish2022rgl}. Other approaches used different constraints, such as predicting 3D part assembly guided by a single 2D image \cite{li2020learning}, or utilizing PQ-NET, a generative seq2seq network that sequentially predicts part poses to form 3D shapes \cite{wu2020pq}.
 
@@ -73,15 +74,7 @@ Although highly successful, these semantic methods rely heavily on prior structu
 
 A major turning point in the literature occurred with the release of the Breaking Bad dataset, a large-scale synthetic dataset that simulates how real-world objects break using physically-based fracture algorithms \cite{sellan2022breaking}. By removing semantic part consistency, this dataset shifted the direction of exploration definitively toward multi-piece fracture assembly. In this context, Jigsaw emerged as a historical milestone. It is widely recognized as the first learning-based framework specifically designed for the assembly of multiple, physically broken 3D pieces. By using a joint-learning pipeline with attention layers to simultaneously optimize point-wise surface segmentation and global multi-part matching, Jigsaw successfully bridged the gap between semantic-free geometric mating and multi-piece global alignment \cite{lu2023jigsaw}.
 
-Consequently, Jigsaw established the standard baseline for subsequent research in this domain, serving as the foundational architecture upon which the majority of modern fracture assembly networks are built. Their proposed pipeline divides the complex reassembly problem into four distinct conceptual stages:
-
-\begin{itemize}
-    \item \textbf{A front-end feature extractor:} Utilizing PointNet++ alongside self-attention and cross-attention mechanisms to accurately capture the local geometry of each point.
-    \item \textbf{A surface segmentation module:} A binary classifier that processes the extracted features to separate the fracture surfaces from the original surfaces.
-    \item \textbf{A multi-part matching module:} This stage establishes global correspondences by computing the matching probability among fracture points across \textit{all} pieces simultaneously.
-    \item \textbf{A robust global alignment stage:} A final optimization step that recovers pairwise transformations from the matched points and aligns them into a globally consistent set of rigid poses for the entire object.
-\end{itemize}
-Although Jigsaw established a robust and effective baseline for multi-part assembly, its architecture presented several critical bottlenecks. 
+Consequently, Jigsaw established the standard baseline for subsequent research in this domain. Its pipeline consists of four stages: PointNet++ feature extraction with self-attention and cross-attention, binary fracture surface segmentation, global matching via primal-dual descriptors and Sinkhorn optimal transport, and RANSAC-based pose recovery with Shonan synchronization \cite{lu2023jigsaw}. The full pipeline is described in detail in Chapter~\ref{chap:ch5}. Although Jigsaw established a robust baseline for multi-part assembly, its architecture presented several critical bottlenecks. 
 
 \section{New generation of SOTA}
 
@@ -103,7 +96,7 @@ To address the computational bottleneck of dense point matching, the PHFormer \c
 
 PHFormer processes these proxy features using a two-level attention mechanism applied iteratively: \textbf{intra-fragment attention} builds a coherent representation of each fragment's internal geometry, while \textbf{inter-fragment attention} enables reasoning about spatial relationships across fragments.
 
-Based on these enriched representations, PHFormer decomposes pose estimation into three subproblems: adjacency prediction, relative pose estimation, and absolute pose regression. Fragments are modeled as nodes in a graph whose edges are weighted by predicted adjacency probabilities, ensuring that message passing is dominated by geometrically plausible neighbors. Through this graph-based aggregation, the network regresses globally consistent rigid poses.
+Based on these enriched representations, PHFormer decomposes pose estimation into adjacency prediction, relative pose estimation, and absolute pose regression. Fragments form a graph whose edges are weighted by predicted adjacency probabilities, and message passing over this graph produces globally consistent rigid poses.
 
 \paragraph{3D Geometric Shape Assembly via Efficient Point Cloud Matching} \mbox{} \\
 A complementary approach to the efficiency problem is the Proxy Match Transformer (PMTR) \cite{lee20243d}, which replaces dense point-to-point comparisons with a sub-quadratic matching paradigm based on a shared proxy space (Figure~\ref{fig:pmtr}).
@@ -124,7 +117,7 @@ where $A_X$ is a local attention matrix containing binary values that restricts 
     \label{fig:pmtr}
 \end{figure}
 
-The pipeline then proceeds to \textbf{fine matching}. The same PMT layers are applied to the medium-resolution features, producing a second round of refined representations. These are then combined with the fine-resolution features from the U-Net backbone via skip connections, and passed through another round of PMT layers. This yields high-resolution, spatially precise feature maps. To connect the coarse and fine stages, PMTR performs a \textit{point-to-node grouping} step: fine-level features are clustered around their spatially proximate coarse matches, ensuring that the fine matching is guided by the coarse structure. This hierarchical refinement is the core of the architecture's precision.
+The pipeline then proceeds to \textbf{fine matching}. The same PMT layers are applied at medium and fine resolutions, with skip connections from the U-Net backbone progressively refining spatial precision. Fine-level features are grouped around their spatially proximate coarse matches, ensuring that the hierarchical refinement is guided by the coarse structure.
 
 Finally, the resulting score matrix is transformed by a Sinkhorn Optimal Transport layer \cite{cuturi2013sinkhorn}, which enforces a doubly-stochastic constraint to produce a confidence matrix of one-to-one point correspondences. From these refined correspondences, a Singular Value Decomposition \cite{golub2013matrix} step computes the rigid 6-DoF transformation (rotation and translation) that assembles the fragments.
 
@@ -184,27 +177,34 @@ The majority of the previous models were trained and tested on the synthetic Bre
 \paragraph{GARF: Flow-Based 3D Reassembly on SE(3)} \mbox{} \\
 Unlike prior methods such as PHFormer and PMTR, which formulate reassembly as a discrete matching or regression problem, GARF \cite{Li2025GARF} recasts the task as a \emph{continuous dynamical system} defined on the Lie group \(SE(3)\). Instead of directly predicting final poses, the model learns how fragments move over time from an initial noisy configuration to a coherent assembly.
 
-Formally, each fragment pose \(T^i = (r^i, a^i) \in SE(3)\) evolves according to a time-dependent vector field:
+The pipeline begins by extracting local geometric features from each fragment using a Point Transformer V3 (PTv3) backbone---a substantially more powerful feature extractor than the PointNet++ used in Jigsaw. A segmentation head identifies fracture surfaces, and Poisson disk sampling is applied to uniformly resample input point clouds, preventing the network from memorizing training-specific point density distributions. From these features, the network constructs two complementary embeddings: a \emph{shape embedding}, formed by concatenating the PTv3 features with positional encodings of point coordinates, surface normals, and fragment scale; and a \emph{pose embedding} that encodes the fragment's current spatial configuration. These two embeddings are summed and positionally encoded to produce the final representation.
+
+This representation is processed through a deep Transformer. Intra-fragment self-attention, implemented via FlashAttention, refines each fragment's internal geometric understanding. Global cross-attention enables all fragments to exchange spatial context. A Feed-Forward Network processes the resulting features and predicts the rotational and translational velocities for the next integration step.
+
+Each fragment pose \(T^i = (r^i, a^i) \in SE(3)\), consisting of a rotation \(r^i \in SO(3)\) and a translation \(a^i \in \mathbb{R}^3\), evolves according to a learned velocity field:
 \begin{equation}
 \label{eq:garf_flow}
 \frac{d}{dt}\psi_t(T) = v_t(\psi_t(T)), \quad v_t \in \mathfrak{se}(3),
 \end{equation}
-where \(\mathfrak{se}(3)\) is the tangent space encoding instantaneous rigid motion (translation and rotation velocity). This formulation allows the model to learn how to \emph{move} fragments rather than predicting where they should be placed. The target trajectories are defined as geodesics on \(SE(3)\)---the shortest paths between initial and final poses---and the network is trained via a flow-matching objective that aligns the predicted velocity field with the true geodesic velocity.
+where \(\mathfrak{se}(3)\) is the tangent space encoding instantaneous rigid motion. The initial configuration at \(t=0\) consists of uniformly random rotations and Gaussian-distributed translations; the target at \(t=1\) is the ground-truth assembly. The rotation and translation components are decoupled and updated independently. Given predicted angular velocity \(\hat{\omega}^i_t\) and translational velocity \(\hat{v}^i_t\), the pose evolves from time \(t\) to \(t + \Delta t\) as:
+\begin{align}
+\label{eq:garf_rot_update}
+r^i_{t+\Delta t} &= \exp\bigl(\Delta t \cdot \hat{\omega}^i_t\bigr) \cdot r^i_t, \\
+\label{eq:garf_trans_update}
+a^i_{t+\Delta t} &= a^i_t + \Delta t \cdot \hat{v}^i_t,
+\end{align}
+where \(\exp(\cdot)\) denotes the exponential map from \(\mathfrak{so}(3)\) to \(SO(3)\). The network is trained via a flow-matching objective that aligns the predicted velocities with the ground-truth geodesic velocities connecting the noisy and target poses on \(SE(3)\).
 
-A key challenge in this formulation is global ambiguity: since the entire object can drift rigidly in space, the learning signal becomes ill-posed. GARF resolves this through a \textbf{multi-anchor training} strategy, where a random subset of fragments is fixed (zero velocity), forcing the remaining pieces to assemble relative to these anchors. Importantly, the anchor set changes at every iteration, meaning the model does not memorize absolute positions, but instead learns consistent relative geometric relationships across fragments.
+A key challenge in this formulation is global ambiguity: the entire assembly can drift rigidly in space, making the learning signal ill-posed. GARF resolves this by randomly selecting a subset of \(k\) fragments as \emph{anchors} at each training iteration. Anchor fragments are frozen with zero velocity, and the network must assemble the remaining pieces relative to them. Because the anchor set changes every iteration, the model learns consistent relative geometric relationships rather than memorizing absolute positions.
 
-To further improve generalization, GARF decouples the pipeline into local and global components. A fracture-aware pretraining stage learns a segmentation function \(g(x)\) that isolates fracture surfaces using a \textit{Dice loss}, producing geometry-invariant local features. These features provide strong priors for matching complementary interfaces, independent of object category.
-
-At inference time, GARF introduces a \textit{two-stage} integration scheme (figure~\ref{fig:garf}). First, a single-step flow predicts a coarse global alignment from noise, effectively collapsing the search space. Then, a multi-step ODE solver refines the assembly through continuous motion (Figure~\ref{fig:garf}). This coarse-to-fine dynamical process replaces the discrete matching pipelines used in previous methods.
+At inference time, GARF employs a two-stage strategy (Figure~\ref{fig:garf}). A one-step pre-assembly forces the model to predict a coarse alignment in a single large step from \(t=0\) to \(t=1\), collapsing the search space. A multi-step ODE solver then refines this estimate through iterative integration. To bridge the gap to real-world fragments, GARF uses few-shot domain adaptation via LoRA (Low-Rank Adaptation): trainable adapters are injected only into the attention layers, allowing the model to adapt with as few as 5--10 real-world objects. The authors introduce the FRACTURA dataset---containing real-world fractures from ceramics, bones, eggshells, and lithics---as the first systematic benchmark for real-world fracture assembly.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=1\linewidth]{figures/garf.png}
-    \caption{Overview of the GARF pipeline \cite{Li2025GARF}. Fragment poses evolve along learned velocity fields on $SE(3)$, progressing from an initial noisy configuration (left) to a coherent assembly (right) through a two-stage coarse-to-fine integration scheme.}
+    \caption{Overview of the GARF pipeline \cite{Li2025GARF}. Fragment poses evolve along learned velocity fields on $SE(3)$, from an initial noisy configuration (left) to a coherent assembly (right) through a two-stage coarse-to-fine integration scheme.}
     \label{fig:garf}
 \end{figure}
-
-Overall, the key conceptual shift introduced by GARF is the transition from static pose estimation to learning a continuous motion field on \(SE(3)\), enabling smoother optimization, better generalization to unseen shapes, and robustness to missing or extraneous fragments.
 
 \subsection{Summary and Research Gap}
 
