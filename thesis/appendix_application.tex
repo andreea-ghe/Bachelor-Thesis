@@ -6,22 +6,14 @@
 
 Fracture examples are stored as static OBJ files organized in a hierarchical directory structure:
 
+\begin{center}
+\small
 \begin{verbatim}
-meshes/
-  two_pieces/
-    <category>/
-      <mesh_hash>/
-        fractured_0/
-          piece_0.obj
-          piece_1.obj
-  multi_pieces/
-    <category>/
-      <mesh_hash>/
-        fractured_0/
-          piece_0.obj
-          piece_1.obj
-          piece_2.obj
+    meshes/{two_pieces,multi_pieces}/
+        <category>/<mesh_hash>/fractured_0/
+            piece_0.obj, piece_1.obj, ...
 \end{verbatim}
+\end{center}
 
 At startup, the Django application automatically discovers all valid fractures by walking this directory tree. Each fracture is assigned a deterministic 12-character ID derived from its path, ensuring stable URLs across restarts. The discovery logic filters for directories starting with \texttt{fractured\_} and containing at least two \texttt{piece\_*.obj} files.
 
@@ -39,113 +31,11 @@ The FastAPI inference server exposes:
 
 \begin{itemize}
     \item \texttt{GET /health} --- Returns server status and CUDA availability.
-    \item \texttt{GET /models} --- Lists all six available model variants with descriptions and maximum piece counts.
+    \item \texttt{GET /models} --- Lists all nine available model variants with descriptions and maximum piece counts.
     \item \texttt{POST /predict} --- Accepts OBJ files as multipart uploads, runs the full Jigsaw inference pipeline (preprocessing, forward pass, global alignment), and returns the assembled meshes as OBJ text.
 \end{itemize}
 
 The server validates all inputs: it rejects requests with fewer than 2 pieces, more pieces than the selected model supports (2 for two-piece models, 4 for multi-piece), and files that are not valid UTF-8 text.
-
-\section{User Interface Details}
-
-The application presents a single-page layout consisting of two main regions: a scrollable narrative column on the left and a sticky interactive demo panel on the right.
-
-\subsection{Narrative Slides}
-
-The left column contains five full-viewport-height slides summarizing the thesis:
-
-\begin{enumerate}
-    \item \textbf{Problem introduction:} Fracture assembly as a 6-DoF pose estimation problem, applications in archaeology and forensics.
-    \item \textbf{Jigsaw pipeline:} Overview of the four-stage architecture (PointNet++, attention, matching, alignment).
-    \item \textbf{Proposed improvements:} Pair geometric attention and gated double attention mechanisms.
-    \item \textbf{Experimental results:} Key findings on dataset size, architectural modifications, and ICP refinement.
-    \item \textbf{Future work:} Scaling to more pieces, loss scheduling, sim-to-real transfer.
-\end{enumerate}
-
-Users navigate between slides using arrow buttons or by scrolling.
-
-\subsection{Interactive Demo Panel}
-
-The demo panel remains fixed on the right side of the screen and contains:
-
-\begin{itemize}
-    \item \textbf{Model selector:} A dropdown menu listing all six model variants covering different architectural configurations and piece counts.
-    \item \textbf{Category filter:} Filters the available examples by object category (e.g., BeerBottle, Cup).
-    \item \textbf{Example navigator:} Previous/next buttons and a counter to browse through examples within the selected category.
-    \item \textbf{Input viewer:} A 3D viewer displaying the broken fragments in a scattered configuration.
-    \item \textbf{Fix Object button:} Triggers inference and displays a loading indicator during processing.
-    \item \textbf{Output viewer:} A 3D viewer displaying the assembled result after inference completes.
-\end{itemize}
-
-An \textbf{Expand Demo} button opens a fullscreen overlay with a larger 3D viewer and two additional tabs: \textbf{Browse Examples} (a grid of all available fractures with thumbnail cards) and \textbf{Compare Performance} (a side-by-side comparison interface).
-
-\section{User Manual}
-
-\subsection{Step 1: Launch and Overview}
-
-Upon opening the application, the user is presented with a hero section introducing the thesis topic. Scrolling down or clicking \textbf{Explore the Demo} reveals the main content area with narrative slides on the left and the interactive demo on the right.
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.75\linewidth]{figures/hero_landing_page.png}
-    \caption{Landing page with hero section and call-to-action button.}
-    \label{fig:app_hero}
-\end{figure}
-
-\subsection{Step 2: Select a Model and View Fragments}
-
-The user selects a model variant from the dropdown (e.g., ``Baseline (2 pieces)'' or ``Double attention (2-4 pieces)''). The category filter narrows the list of available examples, and the previous/next buttons or the fullscreen grid allow browsing. After selecting an example, the input viewer loads and displays the fragment meshes in a scattered arrangement with distinct colors, allowing inspection via rotation, zoom, and pan.
-
-\subsection{Step 3: Run Inference}
-
-Clicking the \textbf{Fix Object} button triggers the inference process. The button displays a loading animation while the request is processed. The system either performs live inference on the GPU server or retrieves a cached result. A status message indicates the source of the result (live or cached).
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.75\linewidth]{figures/app_result.png}
-    \caption{Assembled result displayed in the output viewer after clicking Fix Object. The status bar indicates whether the result was computed live or retrieved from cache.}
-    \label{fig:app_result}
-\end{figure}
-
-\subsection{Step 4: Inspect and Compare}
-
-The output viewer displays the assembled object. The user can rotate and zoom to inspect alignment quality (Figure~\ref{fig:inspect_result}). Switching to a different model variant and clicking Fix Object again allows comparing reconstruction quality across architectures. The \textbf{Expand Demo} button opens a fullscreen overlay with a larger viewer and a \textbf{Browse Examples} grid for quick selection (Figure~\ref{fig:app_fullscreen}).
-
-\begin{figure}[H]
-    \centering
-    \begin{subfigure}[t]{0.48\linewidth}
-        \centering
-        \includegraphics[width=\linewidth]{figures/show_zoom.png}
-        \caption{Zoomed view of the assembled object.}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.48\linewidth}
-        \centering
-        \includegraphics[width=\linewidth]{figures/show_zoom_rotation.png}
-        \caption{Close-up inspection of the fracture pattern.}
-    \end{subfigure}
-    \caption{Detailed inspection of the reconstruction result from different viewing angles.}
-    \label{fig:inspect_result}
-\end{figure}
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.75\linewidth]{figures/app_fullscreen.png}
-    \caption{Fullscreen demo view with the Browse Examples grid for quick selection.}
-    \label{fig:app_fullscreen}
-\end{figure}
-
-\section{Functional Requirements}
-
-The application satisfies the following functional requirements:
-
-\begin{itemize}
-    \item \textbf{F1 -- Fracture visualization:} Display broken 3D fragments in an interactive viewer with rotation, zoom, and pan controls.
-    \item \textbf{F2 -- Model selection:} Allow the user to choose between six model variants covering different architectural configurations and piece counts.
-    \item \textbf{F3 -- Inference execution:} Perform end-to-end fracture assembly inference (feature extraction, segmentation, matching, and global alignment) given a set of OBJ fragments.
-    \item \textbf{F4 -- Result visualization:} Display the assembled object in a separate 3D viewer for inspection.
-    \item \textbf{F5 -- Graceful degradation:} Operate without a GPU server by serving precomputed results from a static cache.
-    \item \textbf{F6 -- Example browsing:} Provide navigation controls and a fullscreen grid for browsing the complete set of available examples.
-\end{itemize}
 
 \section{Non-Functional Requirements}
 

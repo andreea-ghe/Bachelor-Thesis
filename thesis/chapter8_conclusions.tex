@@ -14,12 +14,32 @@ Three extensions were proposed and evaluated: a geometric pair attention bias ad
 
     \item \textbf{ICP refinement is reliable and orthogonal.} A consistent $\sim$1 point improvement across all configurations, with no risk of overfitting or interference with training dynamics.
 
-    \item \textbf{Geometric pair attention is tightly coupled to iterative pose refinement.} The pair encoder did not improve results under Jigsaw's preprocessing, which independently normalizes each fragment and removes the geometric variation the mechanism requires. This finding clarifies that transferring attention biases across architectures requires careful consideration of the surrounding preprocessing and pose estimation pipeline.
+    \item \textbf{Geometric pair attention reveals an architectural compatibility constraint.} The pair encoder, adapted from GPAT, relies on spatial relationships between fragments that evolve through iterative pose refinement. Within Jigsaw's single-pass architecture, the independent normalization applied during preprocessing limits the geometric variation available to the encoder. This finding highlights that attention mechanisms enriched with spatial priors are not freely portable across architectures---their effectiveness depends on the surrounding preprocessing and pose estimation context, motivating the two-pass extension discussed in future work.
 
     \item \textbf{Loss scheduling is critical for gated finetuning.} A gentler activation schedule outperformed the standard one, revealing that the interaction between new gated components and pretrained representations is sensitive to when and how loss terms are introduced.
 \end{itemize}
 
-Beyond the experimental contributions, the thesis produced an environment migration from Python~3.8 / PyTorch~1.10 / CUDA~11.3 to Python~3.10 / PyTorch~2.7 / CUDA~12.8, enabling the Jigsaw codebase to run on current-generation hardware, and an interactive web application for visual comparison of assembly results across model variants.
+Beyond the experimental contributions, the thesis produced an environment migration from Python~3.8 / PyTorch~1.10 / CUDA~11.3 to Python~3.10 / PyTorch~2.7 / CUDA~12.8, enabling the Jigsaw codebase to run on current-generation hardware, and an interactive web application for visual comparison of assembly results across model variants. Table~\ref{tab:contribution_summary} provides a compact overview of the thesis scope.
+
+\begin{table}[h]
+\centering
+\caption{Thesis contribution summary.}
+\label{tab:contribution_summary}
+\begin{tabular}{ll}
+\toprule
+\textbf{Dimension} & \textbf{Description} \\
+\midrule
+Problem & 3D fracture assembly, 6-DoF pose estimation \\
+Baseline & Jigsaw \cite{lu2023jigsaw} \\
+Contributions & Pair attention, double attention, ICP, data scaling analysis \\
+Dataset & Breaking Bad: everyday + artifact (full and reduced) \\
+Evaluation & Two-piece, multi-piece (2--4), cross-domain (artifact) \\
+Application & Django + FastAPI + Three.js interactive demo \\
+Testing & 27 automated tests (unit, integration, proxy/cache) \\
+Environment & Migrated from PyTorch~1.10 / CUDA~11.3 to PyTorch~2.7 / CUDA~12.8 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \section{Threats to Validity}
 

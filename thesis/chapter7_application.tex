@@ -3,7 +3,7 @@
 
 \section{System Overview}
 
-To demonstrate the models developed in this thesis and allow visual comparison of reconstruction quality across architectural variants, we built an interactive web application. The application allows users to select fractured objects from the Breaking Bad dataset, choose between six model variants (baseline, pair attention, double attention, each for two-piece and multi-piece settings), run inference, and inspect both the broken fragments and the assembled result in interactive 3D viewers.
+To demonstrate the models developed in this thesis and allow visual comparison of reconstruction quality across architectural variants, we built an interactive web application. The application allows users to select fractured objects from the Breaking Bad dataset, choose between nine model variants (baseline, pair attention, and double attention, each trained under three configurations: two-piece on the reduced subset, two-piece on the full dataset, and multi-piece on the full dataset), run inference, and inspect both the broken fragments and the assembled result in interactive 3D viewers.
 
 \section{Architecture}
 
@@ -62,14 +62,75 @@ HTTP client & httpx (Django $\to$ FastAPI proxy) \\
 \end{tabular}
 \end{table}
 
-The user interface presents a single-page layout with a scrollable narrative column summarizing the thesis and a sticky interactive demo panel (Figure~\ref{fig:app_select}). The 3D viewers are built with Three.js, rendering fragment meshes with flat shading and distinct per-piece colors. Each viewer provides orbit controls for rotation, zoom, and pan, with automatic camera fitting. In the input viewer, pieces are scattered outward from their shared centroid to visually separate fragments.
+The user interface presents a single-page layout with a scrollable narrative column summarizing the thesis and a sticky interactive demo panel. The 3D viewers are built with Three.js, rendering fragment meshes with flat shading and distinct per-piece colors. Each viewer provides orbit controls for rotation, zoom, and pan, with automatic camera fitting. In the input viewer, pieces are scattered outward from their shared centroid to visually separate fragments.
+
+\subsection{User Workflow}
+
+Upon opening the application, the user is presented with a landing page introducing the thesis topic (Figure~\ref{fig:app_hero}). Scrolling down reveals the main content area with narrative slides on the left and the interactive demo panel on the right.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.85\linewidth]{figures/app_select.png}
-    \caption{The interactive demo panel. Users select a model variant and category, browse examples, and inspect broken fragments in the 3D viewer. Clicking ``Fix Object'' triggers inference and displays the assembled result.}
+    \includegraphics[width=0.75\linewidth]{figures/hero_landing_page.png}
+    \caption{Landing page with hero section and call-to-action button.}
+    \label{fig:app_hero}
+\end{figure}
+
+The user selects a model variant from a dropdown (e.g., ``Baseline (2 pieces)'' or ``Double attention (2--4 pieces)''), filters by object category, and browses examples using navigation controls or a fullscreen grid (Figure~\ref{fig:app_select}). The input viewer displays the fragment meshes in a scattered arrangement for inspection.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{figures/app_select.png}
+    \caption{The interactive demo panel. Users select a model variant and category, browse examples, and inspect broken fragments in the 3D viewer. Clicking ``Fix Object'' triggers inference.}
     \label{fig:app_select}
 \end{figure}
+
+Clicking \textbf{Fix Object} triggers inference. The system either performs live GPU inference or retrieves a cached result, with a status message indicating the source. The assembled object appears in the output viewer (Figure~\ref{fig:app_result}), where the user can rotate and zoom to inspect alignment quality at the fracture boundary (Figure~\ref{fig:inspect_result}).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{figures/app_result.png}
+    \caption{Assembled result displayed in the output viewer. The status bar indicates whether the result was computed via live GPU inference or retrieved from the precomputed cache.}
+    \label{fig:app_result}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[t]{0.48\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/show_zoom.png}
+        \caption{Zoomed view of the assembled object.}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.48\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/show_zoom_rotation.png}
+        \caption{Close-up inspection of the fracture seam.}
+    \end{subfigure}
+    \caption{Detailed inspection of the reconstruction result from different viewing angles. The interactive viewer enables rotation, zoom, and pan for examining alignment quality.}
+    \label{fig:inspect_result}
+\end{figure}
+
+An \textbf{Expand Demo} button opens a fullscreen overlay with a larger viewer and two additional tabs: \textbf{Browse Examples} (a grid of all available fractures) and \textbf{Compare Performance} (a side-by-side comparison of reconstruction quality across the nine model variants on the same fracture input). Figure~\ref{fig:app_fullscreen} shows the fullscreen grid view.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{figures/app_fullscreen.png}
+    \caption{Fullscreen demo view with the Browse Examples grid for quick selection across categories.}
+    \label{fig:app_fullscreen}
+\end{figure}
+
+\subsection{Functional Requirements}
+
+The application satisfies the following functional requirements:
+
+\begin{itemize}
+    \item \textbf{F1 -- Fracture visualization:} Display broken 3D fragments in an interactive viewer with rotation, zoom, and pan controls.
+    \item \textbf{F2 -- Model selection:} Allow the user to choose between nine model variants covering different architectural configurations, dataset sizes, and piece counts.
+    \item \textbf{F3 -- Inference execution:} Perform end-to-end fracture assembly inference (feature extraction, segmentation, matching, and global alignment) given a set of OBJ fragments.
+    \item \textbf{F4 -- Result visualization:} Display the assembled object in a separate 3D viewer for inspection.
+    \item \textbf{F5 -- Graceful degradation:} Operate without a GPU server by serving precomputed results from a static cache.
+    \item \textbf{F6 -- Example browsing:} Provide navigation controls and a fullscreen grid for browsing the complete set of available examples.
+\end{itemize}
 
 \section{Software Quality Considerations}
 
@@ -106,4 +167,4 @@ FastAPI & End-to-end inference (mocked) & 1 \\
 \end{tabular}
 \end{table}
 
-A detailed user manual, functional and non-functional requirements, data organization, and the full UI walkthrough are provided in Appendix~\ref{app:application}.
+Additional details on data organization, API endpoints, non-functional requirements, and deployment constraints are provided in Appendix~\ref{app:application}.
