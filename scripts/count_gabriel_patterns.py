@@ -5,29 +5,53 @@ from collections import defaultdict
 
 
 def load_mesh_list(path):
-    """Load mesh directory names from a metadata file."""
+    """Load mesh directory names from a metadata file.
+    
+    Lines might be paths like 'Bottle/abc123def' or just 'abc123def'.
+    We store both the raw last component AND a Category_hash version 
+    for matching against CSV format.
+    """
+    meshes = set()
     with open(path, 'r') as f:
-        return set(line.strip().rstrip('/').split('/')[-1] for line in f if line.strip())
+        for line in f:
+            line = line.strip().rstrip('/')
+            if not line:
+                continue
+            parts = line.split('/')
+            meshes.add(parts[-1])  # just the hash
+            if len(parts) >= 2:
+                meshes.add(f"{parts[-2]}_{parts[-1]}")  # Category_hash
+    
+    # Print a few samples for debugging
+    samples = list(meshes)[:3]
+    print(f"  Sample mesh names: {samples}")
+    return meshes
 
 
 def count_patterns_from_csv(csv_path, mesh_set):
     """Count unique fracture patterns in the CSV that belong to the given mesh set."""
     matched = set()
     total = 0
+    printed_sample = False
     with open(csv_path, 'r') as f:
         for line in f:
             line = line.strip()
             if not line:
                 continue
             total += 1
-            # Format: Category_meshhash_fractured_N_piece_0.obj,Category_meshhash_fractured_N_piece_1.obj
-            piece0 = line.split(',')[0]
-            # Extract: Category_meshhash from Category_meshhash_fractured_N_piece_0.obj
-            parts = piece0.replace('.obj', '').split('_')
-            # Find the 'fractured' keyword to split mesh name from fracture info
-            frac_idx = parts.index('fractured')
-            mesh_name = '_'.join(parts[:frac_idx])
-            fracture_id = '_'.join(parts[:frac_idx + 2])  # Category_hash_fractured_N
+
+            if not printed_sample:
+                print(f"  Sample CSV line: {line}")
+                printed_sample = True
+
+            piece0 = line.split(',')[0].replace('.obj', '')
+            # Use regex to split on _fractured_N_piece_M
+            # Format varies: Category_hash_fractured_N_piece_0.obj
+            idx = piece0.find('_fractured_')
+            if idx == -1:
+                continue
+            mesh_name = piece0[:idx]
+            fracture_id = piece0[:piece0.find('_piece_')]
 
             if mesh_name in mesh_set:
                 matched.add(fracture_id)
