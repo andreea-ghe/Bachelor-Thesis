@@ -54,6 +54,9 @@ __C.JIGSAW.USE_PAIR_BIAS = False
 # Must match checkpoint: set True only for training/evaluating with double attention
 __C.JIGSAW.USE_DOUBLE_ATTN = False
 
+# Whether to use Gabriel graph filtering on kNN neighborhoods in PointNet++
+__C.JIGSAW.USE_GABRIEL = False
+
 # Loss function weights and scheduling
 # ℒ = αℒ_seg + βℒ_mat + γℒ_rig
 __C.JIGSAW.LOSS = edict()
