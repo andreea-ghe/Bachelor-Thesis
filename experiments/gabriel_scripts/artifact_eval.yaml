@@ -26,7 +26,7 @@ CALLBACK:
 DATA:
   DATA_DIR: /workspace
   SUBSET: artifact
-  DATA_FN: 'original_artifact.{}.txt'
+  DATA_FN: 'artifact.{}.txt'
   MAX_NUM_PART: 2
   NUM_PC_POINTS: 5000
   SAMPLE_BY: area
