@@ -119,7 +119,8 @@ class JointSegmentationAlignmentModel(MatchingBaseModel):
             self.config.MODEL.ENCODER,
             features_dimension=self.part_comp_feat_dim,
             global_feat=False,
-            in_feat_dim=3 # input 3D coordinates (x, y, z)
+            in_feat_dim=3, # input 3D coordinates (x, y, z)
+            use_gabriel=getattr(self.config.MODEL, 'USE_GABRIEL', False)
         )
         return feature_extractor
 

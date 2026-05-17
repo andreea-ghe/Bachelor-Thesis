@@ -4,19 +4,19 @@ from .utils_encoder_decoder import PointNetEncoder, PointNetDecoder
 
 
 class PointNetPTMSG(nn.Module):
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, use_gabriel=False):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
 
         self.sa1 = PointNetEncoder(0.15, [0.05, 0.1], [16, 32], self.in_channels,
-                                   [[16, 16, 32], [32, 32, 64]])
+                                   [[16, 16, 32], [32, 32, 64]], use_gabriel=use_gabriel)
         self.sa2 = PointNetEncoder(0.25, [0.1, 0.2], [16, 32], 32 + 64,
-                                   [[64, 64, 128], [64, 96, 128]])
+                                   [[64, 64, 128], [64, 96, 128]], use_gabriel=use_gabriel)
         self.sa3 = PointNetEncoder(0.25, [0.2, 0.4], [16, 32], 128 + 128,
-                                   [[128, 196, 256], [128, 196, 256]])
+                                   [[128, 196, 256], [128, 196, 256]], use_gabriel=use_gabriel)
         self.sa4 = PointNetEncoder(0.25, [0.4, 0.8], [16, 32], 256 + 256,
-                                   [[256, 256, 512], [256, 384, 512]])
+                                   [[256, 256, 512], [256, 384, 512]], use_gabriel=use_gabriel)
         self.fp4 = PointNetDecoder(512 + 512 + 256 + 256, [256, 256])
         self.fp3 = PointNetDecoder(128 + 128 + 256, [256, 256])
         self.fp2 = PointNetDecoder(32 + 64 + 256, [256, 128])

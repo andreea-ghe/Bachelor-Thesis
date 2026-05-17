@@ -10,9 +10,11 @@ def build_feature_extractor(arch, features_dimension, **kwargs):
     else:
         input_features_dim = 3  # default
 
+    use_gabriel = kwargs.get('use_gabriel', False)
+
     if isinstance(features_dimension, list):
-        model = PointNetPTMSG(features_dimension[0], features_dimension[1])
+        model = PointNetPTMSG(features_dimension[0], features_dimension[1], use_gabriel=use_gabriel)
     else:
-        model = PointNetPTMSG(input_features_dim, features_dimension)
+        model = PointNetPTMSG(input_features_dim, features_dimension, use_gabriel=use_gabriel)
 
     return model
