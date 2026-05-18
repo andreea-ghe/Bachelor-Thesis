@@ -9,25 +9,27 @@ from .utils import select_points
 _gabriel_log_counter = 0
 
 
-def gabriel_filter(centroid_xyz, neighbor_xyz, neighbor_idx, min_neighbors=4):
+def gabriel_filter(centroid_xyz, neighbor_xyz, neighbor_idx, min_keep_ratio=0.5):
     """
     Filter kNN neighborhoods using the Gabriel graph criterion.
     An edge (centroid, neighbor_j) is kept only if no other neighbor
     lies inside the open ball with diameter |centroid - neighbor_j|.
 
-    The closest `min_neighbors` are always kept to guarantee a minimum
-    neighborhood size for feature aggregation (kNN returns sorted by distance).
+    The closest K*min_keep_ratio neighbors are always protected to guarantee
+    sufficient neighborhood diversity for max-pooling feature aggregation.
+    Gabriel filtering only applies to the outer portion of the neighborhood.
 
     Args:
         centroid_xyz: [B, S, 3] centroid positions
         neighbor_xyz: [B, S, K, 3] neighbor positions (absolute, not relative)
         neighbor_idx: [B, S, K] neighbor index tensor
-        min_neighbors: always keep the M closest neighbors
+        min_keep_ratio: fraction of K to always keep (closest neighbors)
 
     Returns:
         filtered_idx: [B, S, K] with non-Gabriel neighbors set to -1
     """
     B, S, K, _ = neighbor_xyz.shape
+    min_neighbors = max(1, int(K * min_keep_ratio))
     valid = (neighbor_idx != -1)  # [B, S, K]
 
     # Ball center for each (centroid, neighbor) pair: midpoint
@@ -60,10 +62,9 @@ def gabriel_filter(centroid_xyz, neighbor_xyz, neighbor_idx, min_neighbors=4):
     fails_gabriel = inside.any(dim=3)  # [B, S, K]
 
     # Always keep the closest min_neighbors (kNN returns sorted by distance)
-    if min_neighbors > 0 and min_neighbors < K:
-        protect = torch.zeros_like(fails_gabriel)
-        protect[:, :, :min_neighbors] = True
-        fails_gabriel = fails_gabriel & ~protect
+    protect = torch.zeros_like(fails_gabriel)
+    protect[:, :, :min_neighbors] = True
+    fails_gabriel = fails_gabriel & ~protect
 
     filtered_idx = neighbor_idx.clone()
     filtered_idx[fails_gabriel] = -1
@@ -74,7 +75,7 @@ def gabriel_filter(centroid_xyz, neighbor_xyz, neighbor_idx, min_neighbors=4):
         orig = valid.float()
         retention = kept.sum() / max(orig.sum(), 1)
         avg_per_centroid = kept.sum(dim=-1).mean()
-        print(f"[Gabriel] K={K}, min_keep={min_neighbors}, "
+        print(f"[Gabriel] K={K}, min_keep={min_neighbors} (ratio={min_keep_ratio}), "
               f"avg neighbors kept: {avg_per_centroid:.1f}/{K}, "
               f"retention: {retention:.1%}")
         _gabriel_log_counter += 1
