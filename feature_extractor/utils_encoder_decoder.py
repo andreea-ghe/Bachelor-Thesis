@@ -6,59 +6,68 @@ from torch_geometric.utils import to_dense_batch
 from .utils import select_points
 
 
-def gabriel_filter(centroid_xyz, neighbor_xyz, neighbor_idx):
+_gabriel_log_counter = 0
+
+
+def gabriel_filter(centroid_xyz, neighbor_xyz, neighbor_idx, min_neighbors=4):
     """
     Filter kNN neighborhoods using the Gabriel graph criterion.
     An edge (centroid, neighbor_j) is kept only if no other neighbor
     lies inside the open ball with diameter |centroid - neighbor_j|.
 
-    This preserves surface connectivity by removing edges that cut
-    through the interior of thin-walled fragments.
+    The closest `min_neighbors` are always kept to guarantee a minimum
+    neighborhood size for feature aggregation (kNN returns sorted by distance).
 
     Args:
         centroid_xyz: [B, S, 3] centroid positions
         neighbor_xyz: [B, S, K, 3] neighbor positions (absolute, not relative)
         neighbor_idx: [B, S, K] neighbor index tensor
+        min_neighbors: always keep the M closest neighbors
 
     Returns:
         filtered_idx: [B, S, K] with non-Gabriel neighbors set to -1
     """
     B, S, K, _ = neighbor_xyz.shape
+    valid = (neighbor_idx != -1)  # [B, S, K]
 
-    # Ball center for each (centroid, neighbor) pair: midpoint
-    # centroid_xyz: [B, S, 1, 3], neighbor_xyz: [B, S, K, 3]
     centers = (centroid_xyz.unsqueeze(2) + neighbor_xyz) / 2  # [B, S, K, 3]
 
-    # Squared radius: (|centroid - neighbor| / 2)^2
     diff = centroid_xyz.unsqueeze(2) - neighbor_xyz  # [B, S, K, 3]
     radius_sq = (diff * diff).sum(dim=-1) / 4  # [B, S, K]
 
-    # For each ball, check if any OTHER neighbor falls inside it
-    # Distance from each neighbor to each ball center: [B, S, K_ball, K_test]
-    # centers: [B, S, K, 1, 3], neighbor_xyz: [B, S, 1, K, 3]
     delta = centers.unsqueeze(3) - neighbor_xyz.unsqueeze(2)  # [B, S, K, K, 3]
     dist_sq = (delta * delta).sum(dim=-1)  # [B, S, K, K]
 
-    # A neighbor k_test violates the Gabriel criterion for ball k_ball
-    # if dist_sq[k_ball, k_test] < radius_sq[k_ball] and k_test != k_ball
     inside = dist_sq < radius_sq.unsqueeze(3) - 1e-8  # [B, S, K, K]
 
-    # Exclude self (each ball's own neighbor is trivially "inside")
     eye_mask = torch.eye(K, device=inside.device, dtype=torch.bool)
-    eye_mask = eye_mask.unsqueeze(0).unsqueeze(0)  # [1, 1, K, K]
-    inside = inside & ~eye_mask
+    inside = inside & ~eye_mask.unsqueeze(0).unsqueeze(0)
 
-    # Also check if the centroid itself is inside (it always is, so exclude it)
-    centroid_delta = centers - centroid_xyz.unsqueeze(2)  # [B, S, K, 3]
-    centroid_dist_sq = (centroid_delta * centroid_delta).sum(dim=-1)  # [B, S, K]
-    # The centroid is always on the ball boundary, so it won't trigger < check
+    # Invalid neighbors (padded -1) must not act as witnesses or be tested
+    inside = inside & valid.unsqueeze(2)  # witness must be valid
+    inside = inside & valid.unsqueeze(3)  # ball must be for a valid edge
 
-    # An edge fails Gabriel if ANY other neighbor is inside its ball
     fails_gabriel = inside.any(dim=3)  # [B, S, K]
 
-    # Invalidate non-Gabriel neighbors
+    # Always keep the closest min_neighbors (kNN returns sorted by distance)
+    if min_neighbors > 0 and min_neighbors < K:
+        protect = torch.zeros_like(fails_gabriel)
+        protect[:, :, :min_neighbors] = True
+        fails_gabriel = fails_gabriel & ~protect
+
     filtered_idx = neighbor_idx.clone()
     filtered_idx[fails_gabriel] = -1
+
+    global _gabriel_log_counter
+    if _gabriel_log_counter < 5:
+        kept = (filtered_idx != -1).float()
+        orig = valid.float()
+        retention = kept.sum() / max(orig.sum(), 1)
+        avg_per_centroid = kept.sum(dim=-1).mean()
+        print(f"[Gabriel] K={K}, min_keep={min_neighbors}, "
+              f"avg neighbors kept: {avg_per_centroid:.1f}/{K}, "
+              f"retention: {retention:.1%}")
+        _gabriel_log_counter += 1
 
     return filtered_idx
 
