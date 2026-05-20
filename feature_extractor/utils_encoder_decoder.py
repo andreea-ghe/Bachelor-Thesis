@@ -9,7 +9,7 @@ from .utils import select_points
 _gabriel_log_counter = 0
 
 
-def gabriel_filter(centroid_xyz, neighbor_xyz, neighbor_idx, min_keep_ratio=0.5):
+def gabriel_filter(centroid_xyz, neighbor_xyz, neighbor_idx, min_keep_ratio=0.75):
     """
     Filter kNN neighborhoods using the Gabriel graph criterion.
     An edge (centroid, neighbor_j) is kept only if no other neighbor
