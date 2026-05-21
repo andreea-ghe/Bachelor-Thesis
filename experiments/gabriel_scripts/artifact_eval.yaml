@@ -40,4 +40,4 @@ MODEL:
 
 STATS: "./results/jigsaw_finetune_everyday_gabriel_two_piece_correct_ds/stats/eval"
 
-WEIGHT_FILE: results/jigsaw_finetune_everyday_gabriel_two_piece_correct_ds/model_save/modelepoch=079.ckpt
+WEIGHT_FILE: results/jigsaw_finetune_everyday_gabriel_two_piece_correct_ds/model_save/modelepoch=079-v1.ckpt
