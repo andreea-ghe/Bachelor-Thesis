@@ -3,7 +3,7 @@
 
 \section{System Overview}
 
-To demonstrate the models developed in this thesis and allow visual comparison of reconstruction quality across architectural variants, we built an interactive web application. The application allows users to select fractured objects from the Breaking Bad dataset, choose between nine model variants (baseline, pair attention, and double attention, each trained under three configurations: two-piece on the reduced subset, two-piece on the full dataset, and multi-piece on the full dataset), run inference, and inspect both the broken fragments and the assembled result in interactive 3D viewers.
+To demonstrate the models developed in this thesis and allow visual comparison of reconstruction quality across architectural variants, we built an interactive web application. The application allows users to select fractured objects from the Breaking Bad dataset, choose between eleven model variants (baseline, pair attention, double attention, and Gabriel graph filtering, each trained under up to three configurations: two-piece on the reduced subset, two-piece on the full dataset, and multi-piece on the full dataset), run inference, and inspect both the broken fragments and the assembled result in interactive 3D viewers.
 
 \section{Architecture}
 
@@ -110,7 +110,7 @@ Clicking \textbf{Fix Object} triggers inference. The system either performs live
     \label{fig:inspect_result}
 \end{figure}
 
-An \textbf{Expand Demo} button opens a fullscreen overlay with a larger viewer and two additional tabs: \textbf{Browse Examples} (a grid of all available fractures) and \textbf{Compare Performance} (a side-by-side comparison of reconstruction quality across the nine model variants on the same fracture input). Figure~\ref{fig:app_fullscreen} shows the fullscreen grid view.
+An \textbf{Expand Demo} button opens a fullscreen overlay with a larger viewer and two additional tabs: \textbf{Browse Examples} (a grid of all available fractures) and \textbf{Compare Performance} (a side-by-side comparison of reconstruction quality across the eleven model variants on the same fracture input). Figure~\ref{fig:app_fullscreen} shows the fullscreen grid view.
 
 \begin{figure}[H]
     \centering
@@ -125,7 +125,7 @@ The application satisfies the following functional requirements:
 
 \begin{itemize}
     \item \textbf{F1 -- Fracture visualization:} Display broken 3D fragments in an interactive viewer with rotation, zoom, and pan controls.
-    \item \textbf{F2 -- Model selection:} Allow the user to choose between nine model variants covering different architectural configurations, dataset sizes, and piece counts.
+    \item \textbf{F2 -- Model selection:} Allow the user to choose between eleven model variants covering different architectural configurations, dataset sizes, and piece counts.
     \item \textbf{F3 -- Inference execution:} Perform end-to-end fracture assembly inference (feature extraction, segmentation, matching, and global alignment) given a set of OBJ fragments.
     \item \textbf{F4 -- Result visualization:} Display the assembled object in a separate 3D viewer for inspection.
     \item \textbf{F5 -- Graceful degradation:} Operate without a GPU server by serving precomputed results from a static cache.

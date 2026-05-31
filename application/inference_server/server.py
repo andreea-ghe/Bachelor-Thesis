@@ -15,8 +15,13 @@ if REPO_ROOT not in sys.path:
 
 class ModelVariant(str, Enum):
     two_piece_baseline = "two_piece_baseline"
+    two_piece_baseline_incomplete = "two_piece_baseline_incomplete"
     two_piece_pair_attn = "two_piece_pair_attn"
+    two_piece_pair_attn_incomplete = "two_piece_pair_attn_incomplete"
     two_piece_double_attn = "two_piece_double_attn"
+    two_piece_double_attn_incomplete = "two_piece_double_attn_incomplete"
+    two_piece_gabriel_50 = "two_piece_gabriel_50"
+    two_piece_gabriel_75 = "two_piece_gabriel_75"
     multi_piece_baseline = "multi_piece_baseline"
     multi_piece_pair_attn = "multi_piece_pair_attn"
     multi_piece_double_attn = "multi_piece_double_attn"
@@ -24,8 +29,13 @@ class ModelVariant(str, Enum):
 
 MODEL_CONFIGS = {
     ModelVariant.two_piece_baseline: "experiments/two_piece_scripts/everyday_eval.yaml",
+    ModelVariant.two_piece_baseline_incomplete: "experiments/two_piece_scripts/everyday_eval_incomplete.yaml",
     ModelVariant.two_piece_pair_attn: "experiments/pair_attn_scripts/everyday_eval.yaml",
+    ModelVariant.two_piece_pair_attn_incomplete: "experiments/pair_attn_scripts/everyday_eval_incomplete.yaml",
     ModelVariant.two_piece_double_attn: "experiments/double_attn_scripts/everyday_eval.yaml",
+    ModelVariant.two_piece_double_attn_incomplete: "experiments/double_attn_scripts/everyday_eval_incomplete.yaml",
+    ModelVariant.two_piece_gabriel_50: "experiments/gabriel_scripts/everyday_eval_50.yaml",
+    ModelVariant.two_piece_gabriel_75: "experiments/gabriel_scripts/everyday_eval.yaml",
     ModelVariant.multi_piece_baseline: "experiments/multi_piece_scripts/everyday_eval.yaml",
     ModelVariant.multi_piece_pair_attn: "experiments/multi_pair_attn_scripts/everyday_eval.yaml",
     ModelVariant.multi_piece_double_attn: "experiments/multi_double_attn_scripts/everyday_eval.yaml",
@@ -33,8 +43,13 @@ MODEL_CONFIGS = {
 
 MODEL_DESCRIPTIONS = {
     ModelVariant.two_piece_baseline: "Jigsaw baseline (2 pieces)",
+    ModelVariant.two_piece_baseline_incomplete: "Jigsaw baseline (2 pieces, reduced dataset)",
     ModelVariant.two_piece_pair_attn: "Pair geometric attention (2 pieces)",
+    ModelVariant.two_piece_pair_attn_incomplete: "Pair geometric attention (2 pieces, reduced dataset)",
     ModelVariant.two_piece_double_attn: "Double iterative attention (2 pieces)",
+    ModelVariant.two_piece_double_attn_incomplete: "Double iterative attention (2 pieces, reduced dataset)",
+    ModelVariant.two_piece_gabriel_50: "Gabriel graph filtering (2 pieces, 50% retention)",
+    ModelVariant.two_piece_gabriel_75: "Gabriel graph filtering (2 pieces, 75% retention)",
     ModelVariant.multi_piece_baseline: "Jigsaw baseline (2-4 pieces)",
     ModelVariant.multi_piece_pair_attn: "Pair geometric attention (2-4 pieces)",
     ModelVariant.multi_piece_double_attn: "Double iterative attention (2-4 pieces)",
@@ -42,8 +57,13 @@ MODEL_DESCRIPTIONS = {
 
 MODEL_MAX_PIECES = {
     ModelVariant.two_piece_baseline: 2,
+    ModelVariant.two_piece_baseline_incomplete: 2,
     ModelVariant.two_piece_pair_attn: 2,
+    ModelVariant.two_piece_pair_attn_incomplete: 2,
     ModelVariant.two_piece_double_attn: 2,
+    ModelVariant.two_piece_double_attn_incomplete: 2,
+    ModelVariant.two_piece_gabriel_50: 2,
+    ModelVariant.two_piece_gabriel_75: 2,
     ModelVariant.multi_piece_baseline: 4,
     ModelVariant.multi_piece_pair_attn: 4,
     ModelVariant.multi_piece_double_attn: 4,

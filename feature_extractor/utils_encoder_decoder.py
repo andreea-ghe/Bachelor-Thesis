@@ -85,12 +85,13 @@ def gabriel_filter(centroid_xyz, neighbor_xyz, neighbor_idx, min_keep_ratio=0.75
 
 class PointNetEncoder(nn.Module):
     """Encodes point features by multi-scale grouping based on geometric distances."""
-    def __init__(self, ratio, radius_list, nsample_list, in_channel, mlp_list, use_gabriel=False):
+    def __init__(self, ratio, radius_list, nsample_list, in_channel, mlp_list, use_gabriel=False, gabriel_min_keep_ratio=0.75):
         super(PointNetEncoder, self).__init__()
         self.ratio = ratio # ratio to downsample points
         self.radius_list = radius_list # list of radii for each scale
         self.nsample_list = nsample_list # number of samples for each scale
         self.use_gabriel = use_gabriel
+        self.gabriel_min_keep_ratio = gabriel_min_keep_ratio
         self.conv_blocks = nn.ModuleList() # list of convolutional layers for each scale
         self.bn_blocks = nn.ModuleList() # list of batch normalization layers for each scale
         
@@ -158,7 +159,7 @@ class PointNetEncoder(nn.Module):
                 safe_idx = neighborhood_idx.clone()
                 safe_idx[~valid_mask] = 0
                 nb_xyz = select_points(xyz, safe_idx)  # [B, S, K, 3]
-                neighborhood_idx = gabriel_filter(centroids_xyz, nb_xyz, neighborhood_idx)
+                neighborhood_idx = gabriel_filter(centroids_xyz, nb_xyz, neighborhood_idx, min_keep_ratio=self.gabriel_min_keep_ratio)
 
             # replace invalid indices (-1) with the first neighbor's index
             neighborhood_first = neighborhood_idx[:, :, 0].view(B, S, 1).repeat([1, 1, K]) # [B, S, K]

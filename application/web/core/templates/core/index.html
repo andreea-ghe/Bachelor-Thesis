@@ -453,7 +453,98 @@
         }
     }
 
-    
+    // ── Compare tab: side-by-side model comparison ──────
+    let cmpViewerA = null;
+    let cmpViewerB = null;
+
+    function ensureCompareViewers() {
+        if (!cmpViewerA) cmpViewerA = createViewer('cmp-viewer-a');
+        if (!cmpViewerB) cmpViewerB = createViewer('cmp-viewer-b');
+    }
+
+    // Enable compare button when an example is selected
+    function updateCompareButton() {
+        const btn = document.getElementById('cmp-run-btn');
+        if (btn) btn.disabled = currentIndex < 0;
+    }
+
+    // Patch selectExample to also enable compare button
+    const _origSelectExample = selectExample;
+    selectExample = function(idx) {
+        _origSelectExample(idx);
+        updateCompareButton();
+    };
+
+    document.getElementById('cmp-run-btn').addEventListener('click', async () => {
+        if (currentIndex < 0) return;
+        ensureCompareViewers();
+
+        const fracture = filteredFractures[currentIndex];
+        const modelA = document.getElementById('cmp-model-a').value;
+        const modelB = document.getElementById('cmp-model-b').value;
+        const btn = document.getElementById('cmp-run-btn');
+        const statusEl = document.getElementById('cmp-status');
+
+        if (modelA === modelB) {
+            statusEl.textContent = 'Please select two different models.';
+            statusEl.className = 'text-xs text-red-400 mb-4 min-h-[1rem]';
+            return;
+        }
+
+        btn.disabled = true;
+        statusEl.textContent = 'Running inference on both models...';
+        statusEl.className = 'text-xs text-txt-muted mb-4 min-h-[1rem]';
+
+        // Update labels
+        const labelA = document.getElementById('cmp-model-a').selectedOptions[0].text;
+        const labelB = document.getElementById('cmp-model-b').selectedOptions[0].text;
+        document.getElementById('cmp-label-a').textContent = labelA;
+        document.getElementById('cmp-label-b').textContent = labelB;
+
+        async function runOne(model) {
+            const fd = new FormData();
+            fd.append('fracture_id', fracture.id);
+            fd.append('model', model);
+            const resp = await fetch('/api/predict/', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken },
+                body: fd,
+            });
+            const data = await resp.json();
+            if (!resp.ok) throw new Error(data.error || `HTTP ${resp.status}`);
+            return data;
+        }
+
+        try {
+            const [resultA, resultB] = await Promise.all([runOne(modelA), runOne(modelB)]);
+
+            // Display results in side-by-side viewers
+            clearGroup(cmpViewerA.group);
+            document.getElementById('cmp-placeholder-a').style.display = 'none';
+            resultA.pieces.forEach((p, i) => {
+                cmpViewerA.group.add(loadObjString(p.assembled_obj, PIECE_COLORS[i % PIECE_COLORS.length]));
+            });
+            fitCamera(cmpViewerA);
+
+            clearGroup(cmpViewerB.group);
+            document.getElementById('cmp-placeholder-b').style.display = 'none';
+            resultB.pieces.forEach((p, i) => {
+                cmpViewerB.group.add(loadObjString(p.assembled_obj, PIECE_COLORS[i % PIECE_COLORS.length]));
+            });
+            fitCamera(cmpViewerB);
+
+            const srcA = resultA.source === 'precomputed' ? ' (cached)' : '';
+            const srcB = resultB.source === 'precomputed' ? ' (cached)' : '';
+            statusEl.textContent = `Done — A${srcA} vs B${srcB}`;
+            statusEl.className = 'text-xs text-emerald-400 mb-4 min-h-[1rem]';
+        } catch (err) {
+            statusEl.textContent = `Error: ${err.message}`;
+            statusEl.className = 'text-xs text-red-400 mb-4 min-h-[1rem]';
+        } finally {
+            btn.disabled = false;
+        }
+    });
+
     </script>
 </body>
 </html>

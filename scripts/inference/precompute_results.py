@@ -20,8 +20,13 @@ from application.web.core.fractures import discover_fractures
 
 TWO_PIECE_MODELS = [
     "two_piece_baseline",
+    "two_piece_baseline_incomplete",
     "two_piece_pair_attn",
+    "two_piece_pair_attn_incomplete",
     "two_piece_double_attn",
+    "two_piece_double_attn_incomplete",
+    "two_piece_gabriel_50",
+    "two_piece_gabriel_75",
 ]
 
 MULTI_PIECE_MODELS = [

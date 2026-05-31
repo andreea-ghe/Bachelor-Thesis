@@ -14,8 +14,13 @@ logger = logging.getLogger(__name__)
 
 MODEL_CHOICES = [
     ("two_piece_baseline", "Baseline (2 pieces)"),
+    ("two_piece_baseline_incomplete", "Baseline (2 pieces, reduced)"),
     ("two_piece_pair_attn", "Pair attention (2 pieces)"),
+    ("two_piece_pair_attn_incomplete", "Pair attention (2 pieces, reduced)"),
     ("two_piece_double_attn", "Double attention (2 pieces)"),
+    ("two_piece_double_attn_incomplete", "Double attention (2 pieces, reduced)"),
+    ("two_piece_gabriel_50", "Gabriel filtering (2 pieces, 50% retention)"),
+    ("two_piece_gabriel_75", "Gabriel filtering (2 pieces, 75% retention)"),
     ("multi_piece_baseline", "Baseline (2-4 pieces)"),
     ("multi_piece_pair_attn", "Pair attention (2-4 pieces)"),
     ("multi_piece_double_attn", "Double attention (2-4 pieces)"),

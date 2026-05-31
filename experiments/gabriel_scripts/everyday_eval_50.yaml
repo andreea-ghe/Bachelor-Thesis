@@ -35,9 +35,9 @@ DATA:
 
 MODEL:
   USE_GABRIEL: true
-  GABRIEL_MIN_KEEP_RATIO: 0.75
+  GABRIEL_MIN_KEEP_RATIO: 0.5
   PC_CLS_METHOD: multi
 
-STATS: "./results/jigsaw_finetune_everyday_gabriel_two_piece_correct_ds/stats/eval"
+STATS: "./results/jigsaw_finetune_everyday_gabriel_two_piece_correct_ds/stats/eval_50"
 
-WEIGHT_FILE: results/jigsaw_finetune_everyday_gabriel_two_piece_correct_ds/model_save/modelepoch=079-v1.ckpt
+WEIGHT_FILE: results/jigsaw_finetune_everyday_gabriel_two_piece_correct_ds/model_save/modelepoch=079.ckpt

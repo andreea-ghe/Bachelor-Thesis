@@ -129,34 +129,54 @@
                 </div>
             </div>
 
-            {# Tab: Compare Performance — hardcoded placeholder #}
+            {# Tab: Compare two models side-by-side #}
             <div id="tab-compare" class="fs-tab-content flex-1 overflow-y-auto pr-2 hidden">
                 <p class="text-txt-secondary text-sm mb-4">
-                    Compare how different models perform on the same fracture.
+                    Run two models on the same fracture and compare results side by side.
                 </p>
-                <div class="border border-brd-soft rounded-xl p-5 space-y-4">
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm">Baseline</span>
-                        <span class="text-xs text-txt-muted">rot: 12.4° · trans: 0.031</span>
-                    </div>
-                    <div class="w-full bg-white/5 rounded-full h-1.5">
-                        <div class="bg-accent-low h-1.5 rounded-full" style="width: 65%"></div>
-                    </div>
 
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm">Pair Attention</span>
-                        <span class="text-xs text-txt-muted">rot: 8.1° · trans: 0.022</span>
+                {# Model selectors #}
+                <div class="flex gap-3 mb-4">
+                    <div class="flex-1">
+                        <label class="text-xs text-txt-muted block mb-1.5">Model A</label>
+                        <select id="cmp-model-a" class="select">
+                            {% for value, label in model_choices %}
+                            <option value="{{ value }}"{% if forloop.first %} selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
-                    <div class="w-full bg-white/5 rounded-full h-1.5">
-                        <div class="bg-accent-mid h-1.5 rounded-full" style="width: 45%"></div>
+                    <div class="flex-1">
+                        <label class="text-xs text-txt-muted block mb-1.5">Model B</label>
+                        <select id="cmp-model-b" class="select">
+                            {% for value, label in model_choices %}
+                            <option value="{{ value }}"{% if forloop.counter == 5 %} selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
+                </div>
 
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm">Double Attention</span>
-                        <span class="text-xs text-txt-muted">rot: 5.7° · trans: 0.015</span>
+                <button id="cmp-run-btn" class="btn w-full mb-3" disabled>Compare Models</button>
+                <div id="cmp-status" class="text-xs text-txt-muted mb-4 min-h-[1rem]"></div>
+
+                {# Side-by-side viewers #}
+                <div class="flex gap-3">
+                    <div class="flex-1 space-y-2">
+                        <span id="cmp-label-a" class="text-xs text-txt-muted block text-center">Model A</span>
+                        <div class="viewer-box aspect-square" id="cmp-viewer-a">
+                            <div id="cmp-placeholder-a"
+                                 class="absolute inset-0 flex items-center justify-center text-txt-muted text-xs pointer-events-none">
+                                Result A
+                            </div>
+                        </div>
                     </div>
-                    <div class="w-full bg-white/5 rounded-full h-1.5">
-                        <div class="bg-accent-high h-1.5 rounded-full" style="width: 30%"></div>
+                    <div class="flex-1 space-y-2">
+                        <span id="cmp-label-b" class="text-xs text-txt-muted block text-center">Model B</span>
+                        <div class="viewer-box aspect-square" id="cmp-viewer-b">
+                            <div id="cmp-placeholder-b"
+                                 class="absolute inset-0 flex items-center justify-center text-txt-muted text-xs pointer-events-none">
+                                Result B
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

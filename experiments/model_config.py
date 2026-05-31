@@ -56,6 +56,7 @@ __C.JIGSAW.USE_DOUBLE_ATTN = False
 
 # Whether to use Gabriel graph filtering on kNN neighborhoods in PointNet++
 __C.JIGSAW.USE_GABRIEL = False
+__C.JIGSAW.GABRIEL_MIN_KEEP_RATIO = 0.75
 
 # Loss function weights and scheduling
 # ℒ = αℒ_seg + βℒ_mat + γℒ_rig

@@ -31,7 +31,7 @@ The FastAPI inference server exposes:
 
 \begin{itemize}
     \item \texttt{GET /health} --- Returns server status and CUDA availability.
-    \item \texttt{GET /models} --- Lists all nine available model variants with descriptions and maximum piece counts.
+    \item \texttt{GET /models} --- Lists all eleven available model variants with descriptions and maximum piece counts.
     \item \texttt{POST /predict} --- Accepts OBJ files as multipart uploads, runs the full Jigsaw inference pipeline (preprocessing, forward pass, global alignment), and returns the assembled meshes as OBJ text.
 \end{itemize}
 
