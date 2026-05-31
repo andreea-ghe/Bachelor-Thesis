@@ -1,7 +1,7 @@
 \chapter{Methodology: Proposed Extensions to Jigsaw}
 \label{chap:ch5}
 
-This chapter presents the methodological foundation of this thesis: three targeted extensions to the Jigsaw framework for 3D fractured object reassembly. The original Jigsaw pipeline is first summarized to establish the baseline architecture and identify the insertion points of the proposed modifications. The chapter then describes the three contributions investigated in this work: a pair geometric attention bias for fragment-level relational information, a gated double attention module for controlled feature refinement, and an ICP refinement step for improving pairwise pose estimates before global synchronization.
+This chapter presents the methodological foundation of this thesis: four targeted extensions to the Jigsaw framework for 3D fractured object reassembly. The original Jigsaw pipeline is first summarized to establish the baseline architecture and identify the insertion points of the proposed modifications. The chapter then describes the four contributions investigated in this work: a pair geometric attention bias for fragment-level relational information, a gated double attention module for controlled feature refinement, a Gabriel graph neighborhood filter for surface-faithful feature extraction, and an ICP refinement step for improving pairwise pose estimates before global synchronization.
 
 \section{Baseline Pipeline and Modification Points}
 
@@ -26,6 +26,7 @@ The proposed extensions target three specific points in this pipeline, summarize
 \midrule
 Feature extraction & Cross-attention & Pair geometric attention bias (transfer experiment) \\
 Feature refinement & Single attention pass & Gated double attention pass \\
+Neighborhood construction & kNN grouping & Gabriel graph filtering \\
 Pose recovery & RANSAC pairwise estimation & ICP refinement before synchronization \\
 \bottomrule
 \end{tabular}
@@ -64,44 +65,16 @@ and
 
 Here, \(FFN(\cdot)\) consists of two linear layers with ReLU and LayerNorm. This cross-attention layer is the insertion point for the pair geometric attention bias (Section~\ref{par:pair_attn_limitations}), and the entire self-attention + cross-attention block is duplicated by the gated double attention extension.
 
-\subsection{Proposed Extension: Pair Geometric Attention Bias}
+\subsection{Transfer Experiment: Pair Geometric Attention Bias}
+\label{par:pair_attn_limitations}
 
-\paragraph{Motivation.}
-In Jigsaw's cross-attention, all point pairs across fragments are scored purely by learned feature similarity. The model has no explicit notion of which fragments are spatially close or geometrically compatible at the fragment level. In multi-piece reconstruction, this means the network must discover these relationships entirely from point-level features, without any coarse spatial guidance.
-
-The GPAT architecture \cite{Li2023GPAT} addresses this by introducing a \textbf{Pair Attention} mechanism: for each pair of fragments, geometric descriptors (centroid distances, triplet angles) are encoded and added as a bias to the attention scores. In GPAT, this is combined with an iterative \textbf{geometric recycling} mechanism that updates fragment poses after each attention layer, so the geometric descriptors become progressively more accurate as the assembly improves.
-
-This raises a natural question: does the geometric pair bias contribute independently, or does it require the iterative pose refinement to be useful? To answer this, we integrate the same pair bias mechanism into Jigsaw's single-pass architecture, where no pose updates occur inside the network.
-
-\paragraph{Mechanism.}
-We add a learnable scalar bias $b_{ij}$ to the cross-attention logits for each pair of fragments $(i,j)$:
+The GPAT architecture \cite{Li2023GPAT} enriches cross-attention with fragment-level spatial information through a \textbf{Pair Attention} mechanism. The core idea is to add a bias $b_{ij}$ to the cross-attention logits for each fragment pair $(i,j)$, computed from geometric descriptors---centroid distances and triplet angles encoded via Gaussian Radial Basis Functions:
 \begin{equation}
 \label{eq:pair_bias_attn}
-\alpha_{pq} = \frac{\mathbf{q}_p^T \mathbf{k}_q}{\sqrt{d_k}} + b_{ij}.
-\end{equation}
-The bias is shared across all point pairs between fragments $i$ and $j$. It is computed from fragment-level geometric descriptors: centroid distances encoded via Gaussian Radial Basis Functions and triplet angles aggregated across all fragment triples:
-\begin{equation}
-\label{eq:centroid_distance}
-\mathbf{p}_i = \frac{1}{N_i} \sum_{x \in P_i} x, \quad d_{ij} = \|\mathbf{p}_i - \mathbf{p}_j\|_2.
-\end{equation}
-\begin{equation}
-\label{eq:bias_mlp}
+\alpha_{pq} = \frac{\mathbf{q}_p^T \mathbf{k}_q}{\sqrt{d_k}} + b_{ij}, \qquad
 b_{ij} = \text{MLP}([\text{RBF}(d_{ij});\; \textstyle\sum_k \text{RBF}(\cos \angle_{ijk})]).
 \end{equation}
-
-\paragraph{Architectural Tension with Jigsaw's Preprocessing.}
-\label{par:pair_attn_limitations}
-The pair bias mechanism was designed for architectures like GPAT, where fragment poses are iteratively updated through geometric recycling. After each refinement step, centroids move toward their predicted positions, so the distances and angles fed to the pair encoder become progressively more informative. The pair encoder and the iterative pose refinement form a tightly coupled loop: one provides geometric input, the other improves it.
-
-Jigsaw's preprocessing pipeline follows a different design philosophy, optimized for correspondence-based matching rather than iterative pose refinement. Each fragment is independently centered and randomly rotated before being passed to the model, which ensures that the feature extractor learns position-invariant representations. A side effect of this normalization is that the fragment centroids seen by the pair encoder carry limited spatial variation, substantially reducing the geometric signal available for pairwise distance and angle computation compared to what the mechanism was originally designed to receive.
-
-\paragraph{Why Test It Anyway?}
-The constraint above was identified during the design phase. We chose to run the experiment for two reasons. First, the degree to which the degenerate input limits learning is an empirical question: the MLP could, in principle, learn a useful initialization bias even from a constant input if it interacts favorably with the rest of the gradient signal. Second, the experiment isolates the specific contribution of geometric pair descriptors by removing the iterative refinement that GPAT bundles with them. This provides a controlled test of whether pair attention transfers to single-pass architectures, which had not been documented in the literature.
-
-The results (Section~\ref{sec:pair_attn_results}) confirm that the transfer does not succeed under Jigsaw's preprocessing. The finding clarifies that pair attention is tightly coupled to iterative pose refinement: the geometric descriptors must improve over time for the bias to carry a meaningful signal.
-
-\paragraph{Future Direction: Two-Pass Architecture.}
-A natural extension would be to run Jigsaw's full pipeline once to obtain initial pose estimates, then feed those poses back to the pair encoder in a second forward pass using stop-gradient (treating the estimated poses as fixed constants). This would provide non-degenerate geometric input without requiring a differentiable pose predictor. We leave this to future work, as it requires doubling the forward pass during training---significantly increasing GPU memory and computation time---which exceeds the hardware budget available for this thesis.
+In GPAT, this is combined with iterative geometric recycling that progressively updates fragment poses, so the descriptors improve after each refinement step. We adapted this idea into Jigsaw's single-pass cross-attention to test whether the geometric bias contributes independently of the iterative refinement. However, Jigsaw's preprocessing independently centers and randomly rotates each fragment, limiting the spatial variation available to the pair encoder. The results (Section~\ref{sec:complete}) confirm that the bias does not transfer effectively without the iterative context it was designed for.
 
 \subsection{Proposed Improvement: Gated Double Attention}
 \label{sec:double_attn_method}
@@ -127,21 +100,46 @@ g_s \cdot \left(\text{SelfAttn}_2(\mathbf{f}^{(1)}) - \mathbf{f}^{(1)}\right),
 g_c \cdot \left(\text{CrossAttn}_2(\mathbf{f}_{\text{self}}^{(2)}) - \mathbf{f}_{\text{self}}^{(2)}\right).
 \end{equation}
 
-Here, $g_s$ and $g_c$ are learnable scalar parameters initialized to zero. Both $\text{SelfAttn}_2$ and $\text{CrossAttn}_2$ share the same architecture as their first-pass counterparts, but use independent parameters.
-
-\paragraph{Motivation.}
-The zero-initialized gates ensure a stable integration of the new layers. At initialization, $g_s = g_c = 0$, and the second attention pass is inactive:
-\begin{equation}
-\label{eq:gated_identity}
-\mathbf{f}_{\text{cross}}^{(2)} = \mathbf{f}^{(1)}.
-\end{equation}
-Thus, the model starts from the pretrained solution and preserves the feature distribution expected by downstream modules. During training, the gates are free to grow, allowing the model to incorporate the second attention pass only if it improves the objective.
+Here, $g_s$ and $g_c$ are learnable scalar parameters initialized to zero. Both $\text{SelfAttn}_2$ and $\text{CrossAttn}_2$ share the same architecture as their first-pass counterparts, but use independent parameters. At initialization, $g_s = g_c = 0$ and the second pass is inactive ($\mathbf{f}_{\text{cross}}^{(2)} = \mathbf{f}^{(1)}$), so the model starts from the pretrained solution. During training, the gates are free to grow, incorporating the second pass only if it improves the objective.
 
 \paragraph{Expected Benefits.}
 The additional self-attention layer enables further refinement of local geometric features within each fragment, while the second cross-attention layer provides an additional opportunity for information exchange between fragments. Together, they act as a refinement stage that can improve both intra-fragment consistency and inter-fragment relationships.
 
 \paragraph{Limitations.}
 The proposed modification increases computational cost and model complexity. In addition, since the contribution of the second attention pass is controlled by learned gates, it may have little effect if the optimization does not find it beneficial.
+
+\subsection{Proposed Extension: Gabriel Graph Neighborhood Filtering}
+\label{sec:gabriel_method}
+
+\paragraph{Motivation.}
+The PointNet++ backbone constructs local neighborhoods using $k$-nearest neighbors (kNN), which groups the $K$ spatially closest points around each centroid regardless of surface topology. On dense point clouds, kNN can include spatially close points that are not surface-connected to the centroid---for example, points on a nearby but distinct surface region, or points reachable only by passing through the object's interior. These topologically distant neighbors introduce geometrically misleading information into the shared MLP and max-pooling aggregation, potentially degrading the quality of the learned local features.
+
+\paragraph{Gabriel Graph Criterion.}
+The Gabriel graph \cite{gabriel1969new}, originally introduced for geographic contiguity analysis, provides a parameter-free geometric test for surface-faithful connectivity. Two points $A$ and $B$ are connected in the Gabriel graph if and only if no other point $C$ lies inside the open ball whose diameter is the segment $\overline{AB}$:
+\begin{equation}
+\label{eq:gabriel_criterion}
+(A, B) \in \mathcal{G} \iff \forall\, C \neq A, B: \; \|C - \tfrac{A+B}{2}\|^2 > \tfrac{\|A-B\|^2}{4}
+\end{equation}
+Intuitively, if a third point falls inside this ball, it lies ``between'' $A$ and $B$, indicating that the edge $\overline{AB}$ likely crosses interior space rather than following the surface. By filtering kNN neighborhoods through this criterion, we retain only edges that respect the local surface geometry.
+
+\paragraph{Integration into PointNet++.}
+The Gabriel filter is applied after kNN grouping and before the shared MLP at each Set Abstraction level. For each centroid, every neighbor is tested against the Gabriel criterion using the remaining neighbors as potential witnesses. Neighbors that fail the test are excluded from the feature aggregation.
+
+Preliminary experiments revealed that the Gabriel criterion is highly aggressive on dense point clouds: with $K{=}32$, naive filtering retained only $\sim$6 neighbors per centroid (19\% retention). To ensure sufficient diversity for max-pooling, we protect the closest $\lfloor K \cdot r \rfloor$ neighbors unconditionally and apply Gabriel filtering only to the remaining outer portion:
+\begin{equation}
+\label{eq:gabriel_protect}
+\text{filtered}(j) = \begin{cases}
+\text{keep} & \text{if } j \leq \lfloor K \cdot r \rfloor \\
+\text{Gabriel test} & \text{otherwise}
+\end{cases}
+\end{equation}
+where $r \in [0, 1]$ is the minimum keep ratio. The filter introduces no learnable parameters---it is a purely geometric operation that does not change the model's parameter count.
+
+\paragraph{Expected Benefits.}
+By removing topologically distant neighbors, the local features computed via max-pooling should more faithfully represent the surface geometry around each centroid, potentially improving the quality of downstream point correspondences and pose estimation.
+
+\paragraph{Limitations.}
+The choice of $r$ controls the trade-off between surface fidelity and neighborhood diversity: too aggressive filtering leaves max-pooling with insufficient diversity, while too conservative filtering has negligible effect. Additionally, the filter's aggressiveness depends on local point density, which varies across objects and may introduce sensitivity to the data distribution.
 
 \section{Fracture Surface Segmentation}
 \paragraph{Unmodified baseline component.} This module is inherited from Jigsaw without modification, but is described here because its output defines the input to both the matching module and the ICP refinement step.
@@ -252,6 +250,9 @@ T_{\text{refined}} = \text{ICP}(P_{\text{source}}, P_{\text{target}}, T_{\text{r
 \end{equation}
 The resulting refined transformations replace the RANSAC estimates as input edges in the factor graph optimized by Shonan Averaging.
 
+\paragraph{Motivation.}
+RANSAC and ICP address complementary aspects of the alignment problem. RANSAC handles outlier correspondences but relies on small random subsets (3 points per hypothesis) without optimizing over the full surface geometry. ICP performs local refinement by iteratively minimizing distances between nearby points, but requires a sufficiently accurate initialization. By initializing ICP with the RANSAC estimate, the method combines robustness to outliers with dense geometric refinement.
+
 \paragraph{Implementation Details.}
 We use the \texttt{registration\_icp} implementation from Open3D \cite{Zhou2018open3d}. The specific configuration is as follows:
 
@@ -263,8 +264,8 @@ We use the \texttt{registration\_icp} implementation from Open3D \cite{Zhou2018o
     \item \textbf{Convergence:} Open3D's default criteria are used: the algorithm terminates when the relative change in fitness falls below $10^{-6}$, or after 30 iterations, whichever comes first.
 \end{itemize}
 
-\paragraph{Motivation.}
-RANSAC and ICP address complementary aspects of the alignment problem. RANSAC handles outlier correspondences but relies on small random subsets (3 points per hypothesis) without optimizing over the full surface geometry. ICP performs local refinement by iteratively minimizing distances between nearby points, but requires a sufficiently accurate initialization. By initializing ICP with the RANSAC estimate, the method combines robustness to outliers with dense geometric refinement.
+\paragraph{Expected Benefits.}
+Since ICP introduces no learnable parameters, it is orthogonal to the attention-based modifications and carries no risk of overfitting. The refinement is expected to consistently tighten pairwise alignments, improving the quality of the constraints fed to global synchronization.
 
 \paragraph{Limitations.}
 The additional ICP step increases computational cost and remains dependent on the quality of the initial transformation. Since ICP operates only on the predicted fracture points rather than the full surface, its effectiveness depends on the quality of the upstream segmentation. Furthermore, point-to-point ICP converges more slowly than point-to-plane ICP and may settle in local minima if the initial alignment is poor. In practice, however, the RANSAC initialization is sufficiently accurate for the refinement to consistently improve alignment quality (see Section~\ref{sec:incomplete}).

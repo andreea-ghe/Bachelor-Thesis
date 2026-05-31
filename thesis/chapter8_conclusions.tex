@@ -5,18 +5,20 @@
 
 This thesis investigated whether targeted, modular modifications to the Jigsaw framework can improve 3D fracture assembly quality, and what such experiments reveal about the interplay between architecture, data, and optimization.
 
-Three extensions were proposed and evaluated: a geometric pair attention bias adapted from GPAT, a gated double attention module with zero-initialized ReZero gates, and a non-learned ICP refinement step inserted between RANSAC and Shonan averaging. The experimental evaluation yielded several findings:
+The four proposed extensions---pair geometric attention, gated double attention, Gabriel graph neighborhood filtering, and ICP refinement---were evaluated systematically across multiple data regimes. The experimental evaluation yielded several findings:
 
 \begin{itemize}
-    \item \textbf{Architectural extensions provide targeted improvements.} Gated double attention yielded +2--5 points under data scarcity and consistent cross-domain improvements on the artifact subset, demonstrating that additional attention capacity helps extract geometric patterns that a single-pass model cannot recover from limited or out-of-distribution examples. ICP refinement added $\sim$1 point across all configurations.
+    \item \textbf{Geometric pair attention reveals an architectural compatibility constraint.} The pair encoder, adapted from GPAT, relies on spatial relationships between fragments that evolve through iterative pose refinement. Within Jigsaw's single-pass architecture, the independent normalization applied during preprocessing limits the geometric variation available to the encoder. This finding highlights that attention mechanisms enriched with spatial priors are not freely portable across architectures---their effectiveness depends on the surrounding preprocessing and pose estimation context.
 
-    \item \textbf{Data scaling has a compounding effect.} The full dataset yields over 10 percentage points more than the reduced subset, confirming that data quantity amplifies the effectiveness of the base architecture. On the full dataset, the baseline already captures the patterns that the architectural extensions provided under scarcity, suggesting that data and architecture address the same representational bottleneck from complementary directions.
+    \item \textbf{Gated double attention provides targeted improvements under data scarcity.} Double attention yielded +2--5 points under data scarcity and consistent cross-domain improvements on the artifact subset, demonstrating that additional attention capacity helps extract geometric patterns that a single-pass model cannot recover from limited or out-of-distribution examples.
+
+    \item \textbf{Loss scheduling is critical for gated finetuning.} A gentler activation schedule outperformed the standard one, revealing that the interaction between new gated components and pretrained representations is sensitive to when and how loss terms are introduced.
+
+    \item \textbf{Gabriel graph filtering produces higher-quality matches at the cost of fewer correspondences.} Replacing kNN with Gabriel-filtered neighborhoods---a parameter-free geometric modification---improved cross-domain pose quality on artifact objects (chamfer distance $-$10\%, translation MAE $-$5\%), indicating that surface-faithful neighborhoods yield more geometrically precise features. However, pruning neighbors reduces the total number of correspondences found, slightly lowering the primary matching metric on in-domain data. A validation-to-test gap (val mat\_f1 0.143 vs.\ test 0.102) suggests sensitivity to point density variations across objects.
 
     \item \textbf{ICP refinement is reliable and orthogonal.} A consistent $\sim$1 point improvement across all configurations, with no risk of overfitting or interference with training dynamics.
 
-    \item \textbf{Geometric pair attention reveals an architectural compatibility constraint.} The pair encoder, adapted from GPAT, relies on spatial relationships between fragments that evolve through iterative pose refinement. Within Jigsaw's single-pass architecture, the independent normalization applied during preprocessing limits the geometric variation available to the encoder. This finding highlights that attention mechanisms enriched with spatial priors are not freely portable across architectures---their effectiveness depends on the surrounding preprocessing and pose estimation context, motivating the two-pass extension discussed in future work.
-
-    \item \textbf{Loss scheduling is critical for gated finetuning.} A gentler activation schedule outperformed the standard one, revealing that the interaction between new gated components and pretrained representations is sensitive to when and how loss terms are introduced.
+    \item \textbf{Data scaling has a compounding effect.} The full dataset yields over 10 percentage points more than the reduced subset, confirming that data quantity amplifies the effectiveness of the base architecture. On the full dataset, the baseline already captures the patterns that the architectural extensions provided under scarcity, suggesting that data and architecture address the same representational bottleneck from complementary directions.
 \end{itemize}
 
 Beyond the experimental contributions, the thesis produced an environment migration from Python~3.8 / PyTorch~1.10 / CUDA~11.3 to Python~3.10 / PyTorch~2.7 / CUDA~12.8, enabling the Jigsaw codebase to run on current-generation hardware, and an interactive web application for visual comparison of assembly results across model variants. Table~\ref{tab:contribution_summary} provides a compact overview of the thesis scope.
@@ -31,7 +33,7 @@ Beyond the experimental contributions, the thesis produced an environment migrat
 \midrule
 Problem & 3D fracture assembly, 6-DoF pose estimation \\
 Baseline & Jigsaw \cite{lu2023jigsaw} \\
-Contributions & Pair attention, double attention, ICP, data scaling analysis \\
+Contributions & Pair attention, double attention, Gabriel filtering, ICP, data scaling analysis \\
 Dataset & Breaking Bad: everyday + artifact (full and reduced) \\
 Evaluation & Two-piece, multi-piece (2--4), cross-domain (artifact) \\
 Application & Django + FastAPI + Three.js interactive demo \\
@@ -60,5 +62,7 @@ The threats identified above suggest several directions for future research.
 \paragraph{Category generalization.} To address the limited category diversity, a cross-domain finetuning strategy similar to GARF's approach could be employed: training on the full everyday set and then finetuning with a small number of objects from the target domain (e.g., artifact or FRACTURA categories). This would test whether the implicit regularization effect observed for double attention under data scarcity also manifests under domain shift.
 
 \paragraph{Efficient attention architectures.} The compute constraints that limited this thesis to finetuning stem directly from the quadratic complexity of Jigsaw's attention mechanism. Two complementary solutions exist in the literature: FlashAttention \cite{dao2022flashattention}, which reduces the memory footprint of standard attention through tiling and recomputation without changing the output, and the proxy-based matching paradigm of PMTR \cite{lee20243d}, which achieves sub-quadratic complexity by projecting fragment features onto a shared learned proxy space. Integrating either approach would enable training from scratch on the full piece-count range within practical hardware budgets.
+
+\paragraph{Gabriel filtering from pretraining.} Our experiments showed that Gabriel graph neighborhood filtering improves cross-domain pose quality but slightly reduces the number of correspondences found. The validation-to-test gap suggests sensitivity to point density variations across objects. Training PointNet++ with Gabriel-filtered neighborhoods from scratch---rather than applying the filter during finetuning---would allow the encoder to learn features adapted to surface-faithful connectivity from the start, potentially closing this gap. A learnable keep ratio, rather than the fixed hyperparameter $r$ used in this work, could further improve adaptability.
 
 \paragraph{Two-pass architecture for pair attention.} As discussed in Section~\ref{par:pair_attn_limitations}, the pair geometric encoder requires non-degenerate spatial relationships that Jigsaw's preprocessing removes. A two-pass architecture---where initial pose estimates from a first forward pass provide meaningful coordinates for the pair encoder in a second pass---would decouple the mechanism from iterative geometric recycling. This direction was not pursued due to the doubled memory and computation cost.

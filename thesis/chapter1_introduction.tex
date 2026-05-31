@@ -15,7 +15,7 @@ The landscape shifted with two key developments. First, specialized neural archi
 
 Since Jigsaw, the field has evolved rapidly along several directions. To address the computational cost of dense point matching, PMTR \cite{lee20243d} introduced sub-quadratic proxy tensors, while PHFormer \cite{cui2024phformer} decomposed pose estimation into adjacency prediction and transformation regression using proxy-level attention. To enrich attention with spatial reasoning, the Geometric Point Attention Transformer (GPAT) \cite{Li2023GPAT} demonstrated that encoding pairwise distances and angles between fragments directly into the attention scores can improve assembly quality. To introduce global shape awareness, Jigsaw++ \cite{lu2024jigsawpp} incorporated a shape prior through latent space reconstruction using Rectified Flow. To bridge the gap between synthetic training data and real-world fractures, GARF \cite{Li2025GARF} recast the problem as learning continuous velocity fields on the Lie group $SE(3)$, achieving state-of-the-art performance by moving fragments along geodesic paths.
 
-Despite this rapid progress, several open questions remain within the Jigsaw pipeline, which continues to serve as the foundational baseline for fracture assembly on Breaking Bad. Its cross-attention mechanism relies purely on learned feature similarity without explicit 3D spatial priors---a limitation that architectures like GPAT have begun to address in other assembly settings. The feature extractor uses a single round of attention, while recent work suggests that deeper feature refinement improves geometric representations. And pairwise pose estimates are recovered from sparse RANSAC correspondences without fully exploiting the dense geometry available on fracture surfaces.
+Despite this rapid progress, several open questions remain within the Jigsaw pipeline, which continues to serve as the foundational baseline for fracture assembly on Breaking Bad. Its cross-attention mechanism relies purely on learned feature similarity without explicit 3D spatial priors---a limitation that architectures like GPAT have begun to address in other assembly settings. The feature extractor uses a single round of attention, while recent work suggests that deeper feature refinement improves geometric representations. The PointNet++ backbone constructs local neighborhoods via $k$-nearest neighbors without regard for surface topology, potentially including spatially close but topologically distant points in each centroid's neighborhood. And pairwise pose estimates are recovered from sparse RANSAC correspondences without fully exploiting the dense geometry available on fracture surfaces.
 
 \section{Objectives}
 
@@ -24,6 +24,7 @@ The objective of this thesis is to investigate whether targeted, modular modific
 \begin{enumerate}
     \item Study whether geometric spatial priors, adapted from GPAT, can improve cross-attention quality within the Jigsaw pipeline.
     \item Evaluate whether a second round of self-attention and cross-attention, safely integrated via zero-initialized gating, provides useful additional feature refinement.
+    \item Investigate whether Gabriel graph filtering of kNN neighborhoods produces more surface-faithful features for fracture matching.
     \item Assess whether an ICP refinement step, inserted between RANSAC and Shonan averaging, improves pairwise alignment by exploiting dense fracture surface geometry.
     \item Analyze the relative importance of data quantity versus architectural modifications through a controlled experimental study.
     \item Develop an interactive web application for visual comparison of assembly results across model variants.
@@ -37,6 +38,8 @@ The main contributions of this thesis are:
     \item \textbf{Geometric pair attention transfer experiment.} We adapt the pair attention mechanism from GPAT and integrate it into Jigsaw's cross-attention layers. The experiment reveals that the effectiveness of geometric pair descriptors depends on the surrounding architectural context, identifying specific conditions under which this type of spatial bias provides a benefit.
 
     \item \textbf{Gated double attention with training dynamics analysis.} We extend the feature extractor with a second attention pass using zero-initialized ReZero gates. On a reduced dataset the additional capacity acts as an implicit regularizer, providing +2--5 percentage points. On the full dataset, the baseline already captures these patterns, confirming that data and architecture address the same representational bottleneck from complementary directions. We further analyze the learned gate values and demonstrate the sensitivity of gated finetuning to loss scheduling.
+
+    \item \textbf{Gabriel graph neighborhood filtering.} We replace the standard kNN grouping in PointNet++ with a Gabriel graph filter that prunes topologically distant neighbors from each centroid's neighborhood. The experiment shows that surface-faithful neighborhoods produce higher-quality matches and improve cross-domain pose metrics on artifact objects, but the reduced neighborhood diversity slightly lowers the overall correspondence count. A systematic study of the retention ratio $r$ reveals the trade-off between pruning aggressiveness and feature aggregation quality.
 
     \item \textbf{ICP refinement for pairwise pose estimation.} Point-to-point ICP inserted between RANSAC and Shonan averaging yields a consistent improvement of approximately 1 percentage point across all configurations. The modification is non-learned, orthogonal to the attention-based extensions, and carries no risk of overfitting.
 
@@ -56,9 +59,9 @@ The remainder of this thesis is organized as follows:
 
     \item \textbf{Chapter~\ref{chap:ch4}} reviews related work, tracing the evolution from traditional geometry-based methods through deep learning approaches for semantic and geometric assembly, and identifying the research gaps addressed in this thesis.
 
-    \item \textbf{Chapter~\ref{chap:ch5}} presents the proposed extensions to the Jigsaw pipeline: the pair geometric attention bias, the gated double attention module, and the ICP refinement step, including their integration points and known architectural constraints.
+    \item \textbf{Chapter~\ref{chap:ch5}} presents the proposed extensions to the Jigsaw pipeline: the pair geometric attention bias, the gated double attention module, Gabriel graph neighborhood filtering, and the ICP refinement step.
 
-    \item \textbf{Chapter~\ref{chap:ch6}} reports the experimental evaluation, including results on the full dataset, a data scaling analysis on a reduced subset, loss scheduling effects, and gate behavior analysis.
+    \item \textbf{Chapter~\ref{chap:ch6}} reports the experimental evaluation, including results on the full dataset, a data scaling analysis on a reduced subset, loss scheduling effects, gate behavior analysis, and Gabriel graph filtering experiments.
 
     \item \textbf{Chapter~\ref{chap:ch7}} describes the design, implementation, and testing of the interactive web application, including system architecture, user interface, and automated test coverage.
 

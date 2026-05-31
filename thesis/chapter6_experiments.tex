@@ -70,7 +70,7 @@ All models are fine-tuned from the official pretrained Jigsaw checkpoint, which 
 
 \begin{table}[h]
 \centering
-\caption{Shared hyperparameters for all finetuning experiments. The only parameters that vary across experiments are the architectural flags (\texttt{USE\_PAIR\_BIAS}, \texttt{USE\_DOUBLE\_ATTN}) and the loss schedule (\texttt{mat\_epoch}, \texttt{rig\_epoch}).}
+\caption{Shared hyperparameters for all finetuning experiments. The only parameters that vary across experiments are the architectural flags (\texttt{USE\_PAIR\_BIAS}, \texttt{USE\_DOUBLE\_ATTN}, \texttt{USE\_GABRIEL}) and the loss schedule (\texttt{mat\_epoch}, \texttt{rig\_epoch}).}
 \label{tab:hyperparams}
 \begin{tabular}{ll}
 \toprule
@@ -152,9 +152,9 @@ GARF \cite{Li2025GARF} & \textbf{6.10} & \textbf{1.22} & \textbf{95.33} & \textb
 
 \subsection{Two-Piece Assembly}
 
-As a first step, we fine-tuned the pretrained Jigsaw model exclusively on 2-piece fracture patterns from the full everyday training set using the standard loss schedule. Adding an ICP refinement step between RANSAC and Shonan averaging (Section~\ref{sec:icp_methodology}) yielded a consistent improvement of approximately 1 percentage point on both subsets. Since ICP introduces no learnable parameters, this improvement is entirely orthogonal to the attention-based modifications. We retain ICP in all subsequent experiments.
+As a first step, we fine-tuned the pretrained Jigsaw model exclusively on 2-piece fracture patterns from the full everyday training set using the standard loss schedule. Adding an ICP refinement step between RANSAC and Shonan averaging (Section~\ref{sec:icp_methodology}) yielded a consistent improvement of approximately 1 percentage point on both subsets. Since ICP introduces no learnable parameters, this improvement is entirely orthogonal to the other modifications. We retain ICP in all subsequent experiments.
 
-On the full dataset, the baseline already achieves 86.4\% PA on everyday objects, leaving limited headroom for architectural improvements on in-distribution data (Table~\ref{tab:two_piece_complete}). Pair attention remained neutral on everyday, consistent with its theoretical limitation: Jigsaw's preprocessing independently centers and rotates each fragment, leaving the pair encoder with minimal geometric variation to exploit. Crucially, on the \textit{artifact} subset---which serves as a cross-domain generalization benchmark---both modifications show consistent improvements in translation, CD, and rotation metrics, confirming that the additional capacity provides a measurable benefit when the model operates outside its training distribution.
+On the full dataset, the baseline already achieves 86.4\% PA on everyday objects, leaving limited headroom for architectural improvements on in-distribution data (Table~\ref{tab:two_piece_complete}). All four modifications were evaluated: pair attention (Section~\ref{par:pair_attn_limitations}), double attention (Section~\ref{sec:double_attn_method}), and Gabriel graph filtering (Section~\ref{sec:gabriel_method}) at the best retention ratio ($r{=}0.75$; see Section~\ref{sec:gabriel_tuning} for the tuning analysis). On everyday, the baseline remains the strongest. On the \textit{artifact} subset---which serves as a cross-domain generalization benchmark---all modifications show improvements in pose metrics, with Gabriel producing the best chamfer distance ($-$10\%) and double attention the best translation error.
 
 \begin{table}[H]
 \centering
@@ -166,12 +166,15 @@ On the full dataset, the baseline already achieves 86.4\% PA on everyday objects
 \textbf{Model} & PA$\uparrow$ & R-MAE$\downarrow$ & \shortstack{T-MAE$\downarrow$\\($\times 10^{-2}$)} & CD$\downarrow$
                & PA$\uparrow$ & R-MAE$\downarrow$ & \shortstack{T-MAE$\downarrow$\\($\times 10^{-2}$)} & CD$\downarrow$ \\
 \midrule
-Baseline & \textbf{86.4} & \textbf{16.8} & 2.48 & \textbf{2.68} & 72.7 & 26.7 & 6.47 & 11.6 \\
-+ Pair Attn & 85.8 & 16.7 & 2.58 & 2.96 & \textbf{74.0} & \textbf{25.9} & \textbf{6.33} & \textbf{11.2} \\
-+ Double Attn & 86.0 & 17.8 & \textbf{2.60} & 2.87 & 72.9 & 26.3 & \textbf{6.29} & \textbf{10.6} \\
+Baseline & \textbf{86.4} & \textbf{16.8} & \textbf{2.48} & \textbf{2.68} & 72.7 & 26.7 & 6.47 & 11.6 \\
++ Pair Attn & 85.8 & 16.7 & 2.58 & 2.96 & \textbf{74.0} & \textbf{25.9} & 6.33 & 11.2 \\
++ Double Attn & 86.0 & 17.8 & 2.60 & 2.87 & 72.9 & 26.3 & 6.29 & 10.6 \\
++ Gabriel & 85.9 & 17.6 & 2.63 & 3.18 & 73.4 & 26.6 & \textbf{6.16} & \textbf{10.4} \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+Pair attention remained neutral on everyday, consistent with its known limitation (Section~\ref{par:pair_attn_limitations}): Jigsaw's preprocessing independently centers and rotates each fragment, leaving the pair encoder with minimal geometric variation to exploit.
 
 \subsection{Multi-Piece Assembly (2--4 Pieces)}
 
@@ -194,7 +197,7 @@ Baseline & \textbf{70.5} & \textbf{27.2} & \textbf{5.17} & \textbf{11.0} & \text
 \end{tabular}
 \end{table}
 
-In the multi-piece setting, the baseline remains strong and the modifications yield marginal changes. Pair attention remained neutral even with 3--4 pieces, where triplet angles become available. As discussed in Section~\ref{par:pair_attn_limitations}, the independent centering applied during preprocessing limits the geometric variation available to the pair encoder. To verify this interpretation, we analyzed the weight evolution across training (Table~\ref{tab:weight_evolution}). The MLP projection layers showed only modest adaptation, consistent with the limited input signal. Importantly, the gated integration ensured stability: the module did not degrade baseline performance in any configuration, confirming that the zero-initialized gates provide a safe mechanism for integrating experimental extensions.
+In the multi-piece setting, the baseline remains strong and the modifications yield marginal changes. Double attention continues to show the best cross-domain improvements (CD $-$4\%, T-MAE $-$2\%). Pair attention remained neutral even with 3--4 pieces; the weight evolution of its encoder (Table~\ref{tab:weight_evolution}) confirms limited adaptation, consistent with the preprocessing constraint discussed in Section~\ref{par:pair_attn_limitations}.
 
 \begin{table}[h]
 \centering
@@ -323,9 +326,25 @@ Three patterns emerge:
 
 \paragraph{Greater adaptation does not imply greater marginal gain.} On the full dataset, the gates open wider and the layers diverge more than on the reduced subset, yet the marginal improvement is small. This is consistent with the data scaling finding: with sufficient data, the single-pass model already captures the patterns that the second pass provided under scarcity. The two mechanisms---additional attention capacity and additional data---address the same representational bottleneck from complementary directions.
 
+\section{Gabriel Graph: Retention Ratio Analysis}
+\label{sec:gabriel_tuning}
+
+The Gabriel filter's aggressiveness is controlled by the minimum keep ratio $r$ (Section~\ref{sec:gabriel_method}). We evaluated three configurations on the full everyday two-piece dataset to determine the optimal setting before reporting the test results in Table~\ref{tab:two_piece_complete}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{figures/validation_loss_gabriel.png}
+    \caption{Gabriel filter retention and validation performance across configurations. All models trained for 100 epochs on the full everyday two-piece dataset.}
+    \label{fig:enter-label}
+\end{figure}
+
+The progression is clear: aggressive pruning ($r{=}0$) leaves max-pooling with almost no diversity and collapses performance. As more neighbors are preserved, performance improves monotonically. The 75\% configuration achieved the highest validation mat\_f1 (0.143), substantially above the baseline's $\sim$0.10, confirming that conservative filtering preserves sufficient neighborhood diversity while removing the most topologically distant neighbors.
+
+The validation gains did not fully transfer to test (val mat\_f1 0.143 vs.\ test PA 85.9\%, compared to baseline 86.4\%). On cross-domain data (artifact), Gabriel produced the best chamfer distance ($-$10\%) and translation error ($-$5\%) of any modification (Table~\ref{tab:two_piece_complete}), suggesting that surface-faithful neighborhoods yield more geometrically precise features---the matches found are of higher quality, but fewer in total. The validation-to-test gap is likely caused by sensitivity to point density variations across objects: denser regions trigger more aggressive pruning, and the distribution of object densities differs between splits. Training from scratch with Gabriel-filtered neighborhoods would allow the encoder to learn features adapted to the reduced neighborhoods from the start.
+
 \section{Discussion}
 
-The experiments yield several conclusions. \textbf{Architectural modifications provide targeted improvements:} double attention yielded +2--5 points under data scarcity and consistent cross-domain gains on the artifact subset. \textbf{Data scaling has a compounding effect:} the full dataset yields over 10 points more than the reduced subset, confirming that data quantity amplifies the base architecture's capacity; on the full dataset, the baseline already captures the patterns that the extensions provided under scarcity. \textbf{ICP refinement is reliable and orthogonal:} a consistent $\sim$1 point improvement across all configurations, with no risk of overfitting. \textbf{Loss scheduling matters for gated finetuning:} a gentler activation schedule outperformed the standard one, indicating that the interaction between new gated components and pretrained representations is sensitive to optimization dynamics. \textbf{Geometric pair attention reveals an architectural compatibility constraint:} the pair encoder's effectiveness depends on the surrounding preprocessing and pose estimation context, motivating future work on a two-pass architecture that would provide the spatial signal the encoder requires.
+The experiments yield several conclusions. \textbf{Architectural modifications provide targeted improvements:} double attention yielded +2--5 points under data scarcity and consistent cross-domain gains on the artifact subset. \textbf{Data scaling has a compounding effect:} the full dataset yields over 10 points more than the reduced subset, confirming that data quantity amplifies the base architecture's capacity; on the full dataset, the baseline already captures the patterns that the extensions provided under scarcity. \textbf{ICP refinement is reliable and orthogonal:} a consistent $\sim$1 point improvement across all configurations, with no risk of overfitting. \textbf{Loss scheduling matters for gated finetuning:} a gentler activation schedule outperformed the standard one, indicating that the interaction between new gated components and pretrained representations is sensitive to optimization dynamics. \textbf{Geometric pair attention reveals an architectural compatibility constraint:} the pair encoder's effectiveness depends on the surrounding preprocessing and pose estimation context, motivating future work on a two-pass architecture that would provide the spatial signal the encoder requires. \textbf{Gabriel graph filtering improves cross-domain pose quality but reduces in-domain matching count:} surface-faithful neighborhoods produce higher-quality matches on out-of-distribution data (artifact), but the pruning reduces the total number of correspondences, slightly lowering the primary matching metric on in-domain data.
 
 Figure~\ref{fig:val_losses} provides an overview of validation loss trajectories across all experiments. The most visible pattern is the separation between two-piece configurations (lower losses) and multi-piece configurations (higher losses), reflecting the increased difficulty of assembling more fragments. Within each group, the different architectural variants follow similar trajectories, consistent with the finding that the proposed modifications do not substantially alter the model's learning dynamics when sufficient data is available.
 

@@ -10,21 +10,24 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
-RESULTS_ROOT = Path(__file__).resolve().parent.parent / "results"
-OUTPUT_DIR = Path(__file__).resolve().parent.parent / "results" / "plots"
+RESULTS_ROOT = Path(__file__).resolve().parent.parent.parent / "results"
+OUTPUT_DIR = Path(__file__).resolve().parent.parent.parent / "results" / "plots"
 
 
 TRAINING_CURVES = {
-    "Two Pieces Baseline Incomplete": sorted(glob.glob(str(RESULTS_ROOT / "jigsaw_finetune_everyday_two_piece" / "jigsaw_finetune_everyday_2026-02-15-19-06-54" / "version_0" / "metrics.csv"))),
+    # "Two Pieces Baseline Incomplete": sorted(glob.glob(str(RESULTS_ROOT / "jigsaw_finetune_everyday_two_piece" / "jigsaw_finetune_everyday_2026-02-15-19-06-54" / "version_0" / "metrics.csv"))),
     "Two Pieces Baseline Complete": sorted(glob.glob(str(RESULTS_ROOT / "jigsaw_finetune_everyday_two_piece_correct_ds" / "jigsaw_finetune_everyday_two_piece_correct_ds_2026-03-15-17-25-40" / "version_0" / "metrics.csv"))),
-    "Two Pieces Pair Attention Incomplete": sorted(glob.glob(str(RESULTS_ROOT / "jigsaw_finetune_everyday_pair_attn" / "jigsaw_finetune_everyday_pair_attn_2026-02-18-17-34-42" / "version_0" / "metrics.csv"))),
-    "Two Pieces Pair Attention Complete": sorted(glob.glob(str(RESULTS_ROOT / "jigsaw_finetune_everyday_pair_attn_correct_ds" / "jigsaw_finetune_everyday_pair_attn_correct_ds_2026-03-17-21-42-06" / "version_0" / "metrics.csv"))),
-    "Two Pieces Double Attention Incomplete": sorted(glob.glob(str(RESULTS_ROOT / "jigsaw_finetune_everyday_double_attn_correct_ds" / "jigsaw_finetune_everyday_double_attn_correct_ds_2026-03-20-11-22-32" / "version_0" / "metrics.csv"))),
-    "Two Pieces Double Attention Complete": sorted(glob.glob(str(RESULTS_ROOT / "jigsaw_finetune_everyday_double_attn_correct_ds_correct_params" / "jigsaw_finetune_everyday_double_attn_correct_ds_correct_params_2026-04-13-21-37-45" / "version_0" / "metrics.csv"))),
-    "Two Pieces Double Attention Incomplete Wrong Params": sorted(glob.glob(str(RESULTS_ROOT / "jigsaw_finetune_everyday_double_attn" / "jigsaw_finetune_everyday_new_arch_2026-03-06-22-04-25" / "version_0" / "metrics.csv"))),
-    "Multi Pieces Baseline Complete": sorted(glob.glob(str(RESULTS_ROOT / "jigsaw_finetune_multi_everyday_correct_ds" / "jigsaw_finetune_multi_everyday_correct_ds_2026-03-26-07-28-12" / "version_0" / "metrics.csv"))),
-    "Multi Pieces Pair Attention Complete": sorted(glob.glob(str(RESULTS_ROOT / "jigsaw_finetune_multi_everyday_pair_attn_correct_ds" / "jigsaw_finetune_multi_everyday_pair_attn_correct_ds_2026-03-28-04-04-22" / "version_0" / "metrics.csv"))),
-    "Multi Pieces Double Attention Complete": sorted(glob.glob(str(RESULTS_ROOT / "jigsaw_finetune_multi_everyday_double_attn_correct_ds" / "jigsaw_finetune_multi_everyday_double_attn_correct_ds_2026-03-30-06-03-46" / "version_0" / "metrics.csv"))),
+    # "Two Pieces Pair Attention Incomplete": sorted(glob.glob(str(RESULTS_ROOT / "jigsaw_finetune_everyday_pair_attn" / "jigsaw_finetune_everyday_pair_attn_2026-02-18-17-34-42" / "version_0" / "metrics.csv"))),
+    # "Two Pieces Pair Attention Complete": sorted(glob.glob(str(RESULTS_ROOT / "jigsaw_finetune_everyday_pair_attn_correct_ds" / "jigsaw_finetune_everyday_pair_attn_correct_ds_2026-03-17-21-42-06" / "version_0" / "metrics.csv"))),
+    # "Two Pieces Double Attention Incomplete": sorted(glob.glob(str(RESULTS_ROOT / "jigsaw_finetune_everyday_double_attn_correct_ds" / "jigsaw_finetune_everyday_double_attn_correct_ds_2026-03-20-11-22-32" / "version_0" / "metrics.csv"))),
+    # "Two Pieces Double Attention Complete": sorted(glob.glob(str(RESULTS_ROOT / "jigsaw_finetune_everyday_double_attn_correct_ds_correct_params" / "jigsaw_finetune_everyday_double_attn_correct_ds_correct_params_2026-04-13-21-37-45" / "version_0" / "metrics.csv"))),
+    # "Two Pieces Double Attention Incomplete Wrong Params": sorted(glob.glob(str(RESULTS_ROOT / "jigsaw_finetune_everyday_double_attn" / "jigsaw_finetune_everyday_new_arch_2026-03-06-22-04-25" / "version_0" / "metrics.csv"))),
+    # "Multi Pieces Baseline Complete": sorted(glob.glob(str(RESULTS_ROOT / "jigsaw_finetune_multi_everyday_correct_ds" / "jigsaw_finetune_multi_everyday_correct_ds_2026-03-26-07-28-12" / "version_0" / "metrics.csv"))),
+    # "Multi Pieces Pair Attention Complete": sorted(glob.glob(str(RESULTS_ROOT / "jigsaw_finetune_multi_everyday_pair_attn_correct_ds" / "jigsaw_finetune_multi_everyday_pair_attn_correct_ds_2026-03-28-04-04-22" / "version_0" / "metrics.csv"))),
+    # "Multi Pieces Double Attention Complete": sorted(glob.glob(str(RESULTS_ROOT / "jigsaw_finetune_multi_everyday_double_attn_correct_ds" / "jigsaw_finetune_multi_everyday_double_attn_correct_ds_2026-03-30-06-03-46" / "version_0" / "metrics.csv"))),
+    "Two Pieces Gabriel r=0 (no protection)": sorted(glob.glob(str(RESULTS_ROOT / "jigsaw_finetune_everyday_gabriel_two_piece_correct_ds" / "jigsaw_finetune_everyday_gabriel_two_piece_correct_ds_2026-05-17-21-37-24" / "version_0" / "metrics.csv"))),
+    "Two Pieces Gabriel r=0.5 (50%)": sorted(glob.glob(str(RESULTS_ROOT / "jigsaw_finetune_everyday_gabriel_two_piece_correct_ds" / "jigsaw_finetune_everyday_gabriel_two_piece_correct_ds_2026-05-18-11-54-01" / "version_0" / "metrics.csv"))),
+    "Two Pieces Gabriel r=0.75 (75%)": sorted(glob.glob(str(RESULTS_ROOT / "jigsaw_finetune_everyday_gabriel_two_piece_correct_ds" / "jigsaw_finetune_everyday_gabriel_two_piece_correct_ds_2026-05-20-07-53-44" / "version_0" / "metrics.csv"))),
 }
 
 EVAL_EXPERIMENTS = {}
