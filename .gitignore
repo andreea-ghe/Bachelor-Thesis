@@ -1,5 +1,4 @@
 .env
-application/web/core/static/core/precomputed_results.json
 *.sqlite3
 staticfiles/
 results/jigsaw_multi_4x4_128_512_250e_cosine_everyday/model_save
