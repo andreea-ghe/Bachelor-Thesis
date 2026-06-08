@@ -1,7 +1,7 @@
 \chapter{Methodology: Proposed Extensions to Jigsaw}
 \label{chap:ch5}
 
-This chapter presents the methodological foundation of this thesis: four targeted extensions to the Jigsaw framework for 3D fractured object reassembly. The original Jigsaw pipeline is first summarized to establish the baseline architecture and identify the insertion points of the proposed modifications. The chapter then describes the four contributions investigated in this work: a pair geometric attention bias for fragment-level relational information, a gated double attention module for controlled feature refinement, a Gabriel graph neighborhood filter for surface-faithful feature extraction, and an ICP refinement step for improving pairwise pose estimates before global synchronization.
+This chapter presents the methodological foundation of this thesis: four targeted extensions to the Jigsaw framework for 3D fractured object reassembly. The original Jigsaw pipeline is first summarized to establish the baseline architecture and identify the insertion points of the proposed modifications. The chapter then describes the four contributions investigated in this work: a pair geometric attention bias repurposed as a learned soft regularizer for cross-attention, a gated double attention module for controlled feature refinement, a Gabriel graph neighborhood filter for surface-faithful feature extraction, and an ICP refinement step for improving pairwise pose estimates before global synchronization.
 
 \section{Baseline Pipeline and Modification Points}
 
@@ -24,7 +24,7 @@ The proposed extensions target three specific points in this pipeline, summarize
 \toprule
 \textbf{Pipeline Stage} & \textbf{Original Component} & \textbf{Proposed Modification} \\
 \midrule
-Feature extraction & Cross-attention & Pair geometric attention bias (transfer experiment) \\
+Feature extraction & Cross-attention & Pair geometric attention bias (regularization) \\
 Feature refinement & Single attention pass & Gated double attention pass \\
 Neighborhood construction & kNN grouping & Gabriel graph filtering \\
 Pose recovery & RANSAC pairwise estimation & ICP refinement before synchronization \\
@@ -65,16 +65,30 @@ and
 
 Here, \(FFN(\cdot)\) consists of two linear layers with ReLU and LayerNorm. This cross-attention layer is the insertion point for the pair geometric attention bias (Section~\ref{par:pair_attn_limitations}), and the entire self-attention + cross-attention block is duplicated by the gated double attention extension.
 
-\subsection{Transfer Experiment: Pair Geometric Attention Bias}
+\subsection{Proposed Modification: Pair Geometric Attention as Soft Regularization}
 \label{par:pair_attn_limitations}
 
-The GPAT architecture \cite{Li2023GPAT} enriches cross-attention with fragment-level spatial information through a \textbf{Pair Attention} mechanism. The core idea is to add a bias $b_{ij}$ to the cross-attention logits for each fragment pair $(i,j)$, computed from geometric descriptors---centroid distances and triplet angles encoded via Gaussian Radial Basis Functions:
+\paragraph{Motivation.}
+Neural attention mechanisms for assembly are prone to producing overconfident, sharply peaked attention distributions, particularly when the model is finetuned with limited data or evaluated on out-of-distribution objects. A classical remedy is temperature scaling, where the softmax logits are divided by a constant $T > 1$ to flatten the distribution. However, a fixed temperature lacks adaptability: the optimal smoothing depends on the difficulty of the input and may differ between easy in-distribution fractures and challenging cross-domain ones.
+
+The GPAT architecture \cite{Li2023GPAT} introduces a \textbf{Pair Attention} mechanism that adds a learned geometric bias $b_{ij}$ to cross-attention logits for each fragment pair $(i, j)$. The bias is computed from spatial descriptors---centroid distances and triplet angles---encoded via Gaussian Radial Basis Functions (RBFs) and projected through a small MLP:
 \begin{equation}
 \label{eq:pair_bias_attn}
 \alpha_{pq} = \frac{\mathbf{q}_p^T \mathbf{k}_q}{\sqrt{d_k}} + b_{ij}, \qquad
-b_{ij} = \text{MLP}([\text{RBF}(d_{ij});\; \textstyle\sum_k \text{RBF}(\cos \angle_{ijk})]).
+b_{ij} = \text{MLP}\!\left([\text{RBF}(d_{ij});\; \textstyle\sum_k \text{RBF}(\cos \angle_{ijk})]\right).
 \end{equation}
-In GPAT, this is combined with iterative geometric recycling that progressively updates fragment poses, so the descriptors improve after each refinement step. We adapted this idea into Jigsaw's single-pass cross-attention to test whether the geometric bias contributes independently of the iterative refinement. However, Jigsaw's preprocessing independently centers and randomly rotates each fragment, limiting the spatial variation available to the pair encoder. The results (Section~\ref{sec:complete}) confirm that the bias does not transfer effectively without the iterative context it was designed for.
+In GPAT, these descriptors carry rich geometric information because the architecture maintains a globally consistent coordinate frame and iteratively refines fragment poses via geometric recycling, so that $d_{ij}$ and $\angle_{ijk}$ become progressively more informative. In Jigsaw, each fragment is independently centered at the origin and randomly rotated during preprocessing. This normalization reduces the variance of the geometric descriptors: pairwise centroid distances are close to zero and triplet angles follow a near-uniform distribution.
+
+Under these conditions, the pair encoder takes on a different role than in GPAT. The low-variance RBF output causes the MLP to learn an approximately \textit{uniform additive bias} across all fragment pairs---equivalent to a learned increase of the softmax temperature. Unlike a fixed temperature hyperparameter, however, this bias is \textit{data-dependent}: the MLP adjusts its magnitude based on the training signal, acting as a \textbf{soft attention regularizer}.
+
+\paragraph{Architecture.}
+The pair encoder has two stages. First, the pairwise centroid distances and triplet angles are mapped to continuous feature vectors through Gaussian RBF layers whose centers are fixed and do not change during training. Second, a two-layer MLP (\texttt{bias\_proj}) projects the concatenated RBF features to the scalar bias $b_{ij}$ that is added to the cross-attention logits (Equation~\ref{eq:pair_bias_attn}). Only the MLP parameters are learned; the RBF encoding remains identical to its pretrained GPAT initialization. The encoder is connected to the cross-attention layer through the same zero-initialized gating strategy as the double attention module (Section~\ref{sec:double_attn_method}), so the bias starts at zero and grows only if the training objective benefits from it.
+
+\paragraph{Expected Benefits.}
+The smoothing is expected to primarily benefit out-of-distribution generalization, where attention distributions are less reliable and prone to overconfident mismatches. On in-distribution data, the base cross-attention is already well-calibrated, so the additional smoothing may provide little benefit.
+
+\paragraph{Limitations.}
+In Jigsaw's preprocessing context, the pair encoder operates as a regularizer rather than as the discriminative spatial module it was designed to be in GPAT. In multi-piece settings, the uniform bias is spread across a larger attention matrix and its regularization effect may be diluted.
 
 \subsection{Proposed Improvement: Gated Double Attention}
 \label{sec:double_attn_method}

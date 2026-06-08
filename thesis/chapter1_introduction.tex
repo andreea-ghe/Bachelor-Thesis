@@ -35,7 +35,7 @@ The objective of this thesis is to investigate whether targeted, modular modific
 The main contributions of this thesis are:
 
 \begin{enumerate}
-    \item \textbf{Geometric pair attention transfer experiment.} We adapt the pair attention mechanism from GPAT and integrate it into Jigsaw's cross-attention layers. The experiment reveals that the effectiveness of geometric pair descriptors depends on the surrounding architectural context, identifying specific conditions under which this type of spatial bias provides a benefit.
+    \item \textbf{Geometric pair attention as learned soft regularization.} We integrate the pair attention mechanism from GPAT into Jigsaw's cross-attention layers, where it learns a data-dependent additive bias that softens the attention distribution. This acts as a learned regularizer that consistently improves out-of-distribution generalization on the artifact subset while remaining neutral on in-distribution performance---a pattern that holds across data regimes and piece counts.
 
     \item \textbf{Gated double attention with training dynamics analysis.} We extend the feature extractor with a second attention pass using zero-initialized ReZero gates. On a reduced dataset the additional capacity acts as an implicit regularizer, providing +2--5 percentage points. On the full dataset, the baseline already captures these patterns, confirming that data and architecture address the same representational bottleneck from complementary directions. We further analyze the learned gate values and demonstrate the sensitivity of gated finetuning to loss scheduling.
 

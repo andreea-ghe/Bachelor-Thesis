@@ -95,7 +95,7 @@ Rigidity loss ($\gamma$) & 1.0 from epoch 30 \\
 \end{table}
 
 \paragraph{Finetuning strategy.}
-We employ full finetuning with gated residual integration of new modules. All pretrained parameters remain trainable but receive a $10\times$ lower learning rate ($10^{-4}$) than the original training, limiting how far they can drift from the pretrained solution. New modules (pair geometric encoder, second attention layers) are connected to the pretrained pathway through zero-initialized gates (Section~\ref{sec:double_attn_method}), which ensure that at initialization the network produces exactly the same output as the pretrained model. This provides the same protection against catastrophic forgetting as parameter-efficient methods such as LoRA \cite{hu2022lora}, with the added benefit that the learned gate values are directly interpretable (Section~\ref{sec:gate_introspection}).
+We employ full finetuning with gated residual integration of new modules. All pretrained parameters remain trainable but receive a $10\times$ lower learning rate ($10^{-4}$) than the original training, limiting how far they can drift from the pretrained solution. New modules (pair geometric encoder, second attention layers) are connected to the pretrained pathway through zero-initialized gates (Section~\ref{sec:double_attn_method}), ensuring that at initialization the network produces exactly the same output as the pretrained model. This provides the same protection against catastrophic forgetting as parameter-efficient methods such as LoRA \cite{hu2022lora}, with the added benefit that the learned gate values are directly interpretable (Section~\ref{sec:gate_introspection}).
 
 \paragraph{Environment migration.}
 The original Jigsaw codebase was developed for Python~3.8, PyTorch~1.10, and CUDA~11.3. We migrated the entire software stack to Python~3.10, PyTorch~2.7, and CUDA~12.8, resolving breaking changes across the PyTorch Geometric ecosystem, Open3D, GTSAM, and PyTorch Lightning~(1.9$\to$2.5). The migration also resolved out-of-memory failures that occurred with the original environment, likely due to improved memory management in newer PyTorch releases (e.g., refined CUDA caching allocator and reduced fragmentation). All experiments were conducted on a single NVIDIA RTX~4090 (24\,GB). The migrated environment reproduces the original pretrained checkpoint's evaluation metrics, confirming that the port does not affect numerical results.
@@ -174,11 +174,11 @@ Baseline & \textbf{86.4} & \textbf{16.8} & \textbf{2.48} & \textbf{2.68} & 72.7 
 \end{tabular}
 \end{table}
 
-Pair attention remained neutral on everyday, consistent with its known limitation (Section~\ref{par:pair_attn_limitations}): Jigsaw's preprocessing independently centers and rotates each fragment, leaving the pair encoder with minimal geometric variation to exploit.
+The pair attention results align with the soft regularization hypothesis (Section~\ref{par:pair_attn_limitations}). On everyday---where the baseline already achieves well-calibrated attention---the uniform smoothing provides no benefit ($-$0.6 PA). On the artifact subset, however, pair attention produces the strongest improvements in part accuracy (+1.3) and rotation MAE ($-$3\%), consistent with the expectation that attention smoothing helps most when the model faces unfamiliar geometry and is prone to overconfident mismatches.
 
 \subsection{Multi-Piece Assembly (2--4 Pieces)}
 
-To test whether the proposed modifications would prove more valuable in the multi-piece setting---where the combinatorial complexity of matching grows and pair attention can exploit richer geometric relationships---we extended our experiments to fragments with 2--4 pieces (Table~\ref{tab:multi_piece}).
+To test whether the proposed modifications scale to higher complexity, we extended our experiments to fragments with 2--4 pieces (Table~\ref{tab:multi_piece}).
 
 \begin{table}[H]
 \centering
@@ -197,11 +197,11 @@ Baseline & \textbf{70.5} & \textbf{27.2} & \textbf{5.17} & \textbf{11.0} & \text
 \end{tabular}
 \end{table}
 
-In the multi-piece setting, the baseline remains strong and the modifications yield marginal changes. Double attention continues to show the best cross-domain improvements (CD $-$4\%, T-MAE $-$2\%). Pair attention remained neutral even with 3--4 pieces; the weight evolution of its encoder (Table~\ref{tab:weight_evolution}) confirms limited adaptation, consistent with the preprocessing constraint discussed in Section~\ref{par:pair_attn_limitations}.
+In the multi-piece setting, the baseline remains strong overall. Double attention continues to show the best cross-domain improvements (CD $-$4\%, T-MAE $-$2\%). Pair attention shows a different pattern than in the two-piece case: it improves chamfer distance on both subsets (everyday CD 10.7 vs.\ 11.0, artifact CD 17.1 vs.\ 17.2), indicating that the attention smoothing still benefits dense pose alignment, but does not improve part accuracy or angular errors.
 
 \begin{table}[h]
 \centering
-\caption{Weight evolution of the pair geometric encoder across training, measured as mean absolute difference between first and last checkpoint. The RBF centers are registered buffers (non-learnable), while the MLP projection layers show varying degrees of adaptation.}
+\caption{Weight evolution of the pair geometric encoder across training, measured as mean absolute difference between first and last checkpoint. The RBF centers are frozen buffers; the MLP projection layers adapt slowly, consistent with learning a low-variance bias from near-constant geometric input (Section~\ref{par:pair_attn_limitations}).}
 \label{tab:weight_evolution}
 \begin{tabular}{lccc}
 \toprule
@@ -236,7 +236,7 @@ Artifact (unchanged) & 3,651 patterns & 3,651 patterns \\
 \end{tabular}
 \end{table}
 
-Table~\ref{tab:two_piece_incomplete} shows the results. Under data scarcity, both modifications produce clear and consistent improvements. Double attention gains +2.1 points on everyday (75.9\% $\to$ 78.0\%) and +4.7 points on artifact (63.8\% $\to$ 68.5\%), demonstrating that the second attention pass provides meaningful additional capacity when the single-pass model cannot fully capture the distribution of fracture geometries from limited training examples. Pair attention improves artifact performance by +3 points.
+Table~\ref{tab:two_piece_incomplete} shows the results. Under data scarcity, both modifications produce clear and consistent improvements. Double attention gains +2.1 points on everyday (75.9\% $\to$ 78.0\%) and +4.7 points on artifact (63.8\% $\to$ 68.5\%), demonstrating that the second attention pass provides meaningful additional capacity when the single-pass model cannot fully capture the distribution of fracture geometries from limited training examples. Pair attention shows its strongest regularization effect: +2.2 points on artifact part accuracy (64.6\% $\to$ 66.8\%) and substantial improvements in all pose metrics (R-MAE $-$2\%, T-MAE $-$11\%, CD $-$13\%). On everyday, the effect is neutral ($-$0.6 PA), further confirming the pattern that the learned attention smoothing selectively benefits out-of-distribution generalization while leaving in-distribution performance largely unaffected.
 
 \begin{table}[H]
 \centering
@@ -256,7 +256,7 @@ Baseline & 75.9 & 23.5 & 4.83 & 7.26 & 63.8 & 32.6 & 7.18 & 9.82 \\
 \end{tabular}
 \end{table}
 
-Since the artifact subset is identical across both data regimes, the artifact improvements are not an artifact of data variation---they reflect a genuine benefit of the proposed modifications when the model operates beyond its training distribution. Comparing the two regimes reveals that data quantity is the dominant factor: the full-dataset baseline (86.4\%) exceeds the best reduced-subset configuration (78.0\%) by over 8 points. However, when data is limited, the proposed attention extensions act as \textit{implicit regularizers}, extracting patterns that the single-pass model cannot recover from sparse training examples.
+Since the artifact subset is identical across both data regimes, the artifact improvements are not an artifact of data variation---they reflect a genuine benefit of the proposed modifications when the model operates beyond its training distribution. Comparing the two regimes reveals that data quantity is the dominant factor: the full-dataset baseline (86.4\%) exceeds the best reduced-subset configuration (78.0\%) by over 8 points. However, when data is limited, the proposed attention extensions act as \textit{implicit regularizers}: double attention provides additional representational capacity, while pair attention provides learned attention smoothing (Section~\ref{par:pair_attn_limitations}).
 
 \section{The Effect of Loss Scheduling}
 \label{sec:loss_scheduling}
