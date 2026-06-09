@@ -97,7 +97,14 @@ The original Jigsaw architecture applies a single self-attention layer followed 
 
 Recent work suggests that relational reasoning benefits from multiple iterative passes. For example, PHFormer repeatedly applies intra-fragment and inter-fragment attention to progressively refine proxy-level features \cite{cui2024phformer}, while PMTR stacks multiple matching layers that first establish coarse correspondences and then refine them into precise alignments \cite{lee20243d}. These observations motivate extending Jigsaw with an additional attention pass, allowing the model to revisit and refine its feature representations.
 
-However, unlike these approaches, which are trained from scratch, our setting starts from a pretrained Jigsaw model. Directly adding a second attention block with randomly initialized weights may disrupt the learned feature distribution during finetuning. To address this, we introduce the second attention pass using \textbf{zero-initialized gated residual connections}, inspired by the ReZero mechanism \cite{bachlechner_rezero}. This design allows the model to initially behave identically to the pretrained network, while gradually incorporating additional capacity during training.
+However, unlike these approaches, which are trained from scratch, our setting starts from a pretrained Jigsaw model. Directly adding a second attention block with randomly initialized weights may disrupt the learned feature distribution during finetuning. To address this, we introduce the second attention pass using \textbf{zero-initialized gated residual connections}, inspired by the ReZero mechanism \cite{bachlechner_rezero} (Figure~\ref{fig:double_attn_diagram}). This design allows the model to initially behave identically to the pretrained network, while gradually incorporating additional capacity during training.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{figures/double_attn_diagram.png}
+    \caption{Gated double attention architecture. The baseline Jigsaw attention (left) applies a single pass of self-attention and cross-attention. The proposed extension (right) adds a second pass with independently initialized weights, connected via zero-initialized ReZero gates ($g_s$, $g_c$) that allow the network to gradually incorporate the second pass during training.}
+    \label{fig:double_attn_diagram}
+\end{figure}
 
 \paragraph{Architecture.}
 Let $\mathbf{f}^{(1)}$ denote the feature representation produced by the original attention block. We introduce a second self-attention layer followed by a second cross-attention layer, whose contributions are modulated by learnable scalar gates:
@@ -134,7 +141,14 @@ The Gabriel graph \cite{gabriel1969new}, originally introduced for geographic co
 \label{eq:gabriel_criterion}
 (A, B) \in \mathcal{G} \iff \forall\, C \neq A, B: \; \|C - \tfrac{A+B}{2}\|^2 > \tfrac{\|A-B\|^2}{4}
 \end{equation}
-Intuitively, if a third point falls inside this ball, it lies ``between'' $A$ and $B$, indicating that the edge $\overline{AB}$ likely crosses interior space rather than following the surface. By filtering kNN neighborhoods through this criterion, we retain only edges that respect the local surface geometry. As a side effect, reducing the number of neighbors that participate in feature aggregation lowers the computational cost of the shared MLP and max-pooling operations at each Set Abstraction level.
+Intuitively, if a third point falls inside this ball, it lies ``between'' $A$ and $B$, indicating that the edge $\overline{AB}$ likely crosses interior space rather than following the surface. By filtering kNN neighborhoods through this criterion, we retain only edges that respect the local surface geometry (Figure~\ref{fig:gabriel_filtering}). As a side effect, reducing the number of neighbors that participate in feature aggregation lowers the computational cost of the shared MLP and max-pooling operations at each Set Abstraction level.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{figures/gabriel_graph.png}
+    \caption{Gabriel graph filtering applied to a fractured bowl (1000 points, FPS ratio = 0.15, $K{=}32$). From left to right: standard kNN (4800 edges, $\sim$32 per centroid), Gabriel $r{=}0$ with no protection (865 edges, $\sim$5.8 per centroid), Gabriel $r{=}0.50$ (2419 edges, $\sim$16.1 per centroid), and Gabriel $r{=}0.75$ (3600 edges, $\sim$24.0 per centroid). The filter progressively removes edges that cross interior space while preserving surface-faithful connectivity.}
+    \label{fig:gabriel_filtering}
+\end{figure}
 
 \paragraph{Integration into PointNet++.}
 The Gabriel filter is applied after kNN grouping and before the shared MLP at each Set Abstraction level. For each centroid, every neighbor is tested against the Gabriel criterion using the remaining neighbors as potential witnesses. Neighbors that fail the test are excluded from the feature aggregation.
@@ -265,7 +279,14 @@ T_{\text{refined}} = \text{ICP}(P_{\text{source}}, P_{\text{target}}, T_{\text{r
 The resulting refined transformations replace the RANSAC estimates as input edges in the factor graph optimized by Shonan Averaging.
 
 \paragraph{Motivation.}
-RANSAC and ICP address complementary aspects of the alignment problem. RANSAC handles outlier correspondences but relies on small random subsets (3 points per hypothesis) without optimizing over the full surface geometry. ICP performs local refinement by iteratively minimizing distances between nearby points, but requires a sufficiently accurate initialization. By initializing ICP with the RANSAC estimate, the method combines robustness to outliers with dense geometric refinement.
+RANSAC and ICP address complementary aspects of the alignment problem (Figure~\ref{fig:icp_mechanism}). RANSAC handles outlier correspondences but relies on small random subsets (3 points per hypothesis) without optimizing over the full surface geometry. ICP performs local refinement by iteratively minimizing distances between nearby points, but requires a sufficiently accurate initialization. By initializing ICP with the RANSAC estimate, the method combines robustness to outliers with dense geometric refinement.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{figures/icp_mechanism.png}
+    \caption{Iterative Closest Point (ICP) refinement. At each iteration, points on the moving fragment (blue) are matched to their nearest neighbors on the reference fragment (red), and the rigid transformation that minimizes the sum of squared distances is applied. The process converges as the two point sets progressively align.}
+    \label{fig:icp_mechanism}
+\end{figure}
 
 \paragraph{Implementation Details.}
 We use the \texttt{registration\_icp} implementation from Open3D \cite{Zhou2018open3d}. The specific configuration is as follows:

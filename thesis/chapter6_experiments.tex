@@ -166,10 +166,10 @@ On the full dataset, the baseline already achieves 86.4\% PA on everyday objects
 \textbf{Model} & PA$\uparrow$ & R-MAE$\downarrow$ & \shortstack{T-MAE$\downarrow$\\($\times 10^{-2}$)} & CD$\downarrow$
                & PA$\uparrow$ & R-MAE$\downarrow$ & \shortstack{T-MAE$\downarrow$\\($\times 10^{-2}$)} & CD$\downarrow$ \\
 \midrule
-Baseline & \textbf{86.4} & 16.8 & \textbf{2.48} & \textbf{2.68} & 72.7 & 26.7 & 6.47 & 11.6 \\
-+ Pair Attn & 85.8 & \textbf{16.7} & 2.58 & 2.96 & \textbf{74.0} & \textbf{25.9} & 6.33 & 11.2 \\
+Baseline      & \textbf{86.4} & 16.8 & \textbf{2.48} & \textbf{2.68} & 72.7 & 26.7 & 6.47 & 11.6 \\
++ Pair Attn   & 85.8 & \textbf{16.7} & 2.58 & 2.96 & \textbf{74.0} & \textbf{25.9} & 6.33 & 11.2 \\
 + Double Attn & 86.0 & 17.8 & 2.60 & 2.87 & 72.9 & 26.3 & 6.29 & 10.6 \\
-+ Gabriel & 85.9 & 17.6 & 2.63 & 3.18 & 73.4 & 26.6 & \textbf{6.16} & \textbf{10.4} \\
++ Gabriel     & 85.9 & 17.6 & 2.63 & 3.18 & 73.4 & 26.6 & \textbf{6.16} & \textbf{10.4} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -190,9 +190,9 @@ To test whether the proposed modifications scale to higher complexity, we extend
 \textbf{Model} & PA$\uparrow$ & R-MAE$\downarrow$ & T-MAE$\downarrow$ & CD$\downarrow$
                & PA$\uparrow$ & R-MAE$\downarrow$ & T-MAE$\downarrow$ & CD$\downarrow$ \\
 \midrule
-Baseline & \textbf{70.5} & \textbf{27.2} & \textbf{5.17} & \textbf{11.0} & \textbf{61.8} & \textbf{35.1} & \textbf{8.23} & \textbf{17.2} \\
+Baseline & \textbf{70.5} & \textbf{27.2} & 5.17 & 11.0 & \textbf{61.8} & 35.1 & 8.23 & 17.2 \\
 + Pair Attn & 70.2 & 28.2 & 5.23 & 10.7 & 61.3 & 36.0 & 8.34 & 17.1 \\
-+ Double Attn & 70.3 & 27.9 & 5.08 & \textbf{10.3} & 61.3 & 34.7 & \textbf{8.05} & \textbf{16.5} \\
++ Double Attn & 70.3 & 27.9 & \textbf{5.08} & \textbf{10.3} & 61.3 & \textbf{34.7} & \textbf{8.05} & \textbf{16.5} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -249,9 +249,9 @@ Table~\ref{tab:two_piece_incomplete} shows the results. Under data scarcity, bot
                & PA$\uparrow$ & R-MAE$\downarrow$ & \shortstack{T-MAE$\downarrow$\\($\times 10^{-2}$)} & CD$\downarrow$ \\
 \midrule
 Baseline & 75.9 & 23.5 & 4.83 & 7.26 & 63.8 & 32.6 & 7.18 & 9.82 \\
-+ ICP & 76.8 & 22.1 & 4.55 & 6.77 & 64.6 & 31.4 & 7.13 & 9.74 \\
++ ICP & 76.8 & \textbf{22.1} & \textbf{4.55} & \textbf{6.77} & 64.6 & 31.4 & 7.13 & 9.74 \\
 + Pair Attn & 76.2 & 23.4 & 4.62 & 6.83 & 66.8 & 30.8 & 6.38 & 8.44 \\
-+ Double Attn & \textbf{78.0} & \textbf{22.6} & \textbf{4.79} & \textbf{7.33} & \textbf{68.5} & \textbf{28.5} & \textbf{7.56} & \textbf{10.6} \\
++ Double Attn & \textbf{78.0} & 22.6 & 4.79 & 7.33 & \textbf{68.5} & \textbf{28.5} & \textbf{7.56} & \textbf{10.6} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -329,13 +329,13 @@ Three patterns emerge:
 \section{Gabriel Graph: Retention Ratio Analysis}
 \label{sec:gabriel_tuning}
 
-The Gabriel filter's aggressiveness is controlled by the minimum keep ratio $r$ (Section~\ref{sec:gabriel_method}). We evaluated three configurations on the full everyday two-piece dataset to determine the optimal setting before reporting the test results in Table~\ref{tab:two_piece_complete}.
+The Gabriel filter's aggressiveness is controlled by the minimum keep ratio $r$ (Section~\ref{sec:gabriel_method}). We evaluated three configurations on the full everyday two-piece dataset to determine the optimal setting before reporting the test results in Table~\ref{tab:two_piece_complete} (Figure~\ref{fig:gabriel_tuning}).
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=1\linewidth]{figures/validation_loss_gabriel.png}
     \caption{Gabriel filter retention and validation performance across configurations. All models trained for 100 epochs on the full everyday two-piece dataset.}
-    \label{fig:enter-label}
+    \label{fig:gabriel_tuning}
 \end{figure}
 
 The progression is clear: aggressive pruning ($r{=}0$) leaves max-pooling with almost no diversity and collapses performance. As more neighbors are preserved, performance improves monotonically. The 75\% configuration achieved the highest validation mat\_f1 (0.143), substantially above the baseline's $\sim$0.10, confirming that conservative filtering preserves sufficient neighborhood diversity while removing the most topologically distant neighbors.

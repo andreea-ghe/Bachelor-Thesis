@@ -3,9 +3,9 @@
 
 The ability to look at a collection of broken fragments and reason about how they once fit together is a form of spatial intelligence that humans have practiced for millennia. In archaeology, researchers reassemble eroded pottery, shattered frescoes, and fragmented statues to preserve the material record of ancient civilizations \cite{huang2006reassembling, toler2010multi, funkhouser2011learning}. In paleontology, fractured bones and lithic artifacts are pieced together to reconstruct tools and skeletal remains. In medicine, surgeons mentally reconstruct comminuted bone fractures before planning an operation.
 
-Despite the importance of these tasks, they remain overwhelmingly manual. An experimental study on lithic refitting reported a success rate of only 30\%, with experts performing only marginally better than novices \cite{laughlin2010lithic}. Museum storerooms around the world hold thousands of unassembled fragments, waiting to be pieced together by specialists whose time is limited and whose accuracy, even with expertise, is modest. The sheer scale of the problem, combined with the risk of further damaging fragile artifacts through physical handling, has long motivated the search for computational alternatives.
+Yet these tasks are still carried out almost entirely by hand. Laughlin and Kelly \cite{laughlin2010lithic} found that human accuracy in lithic refitting reaches roughly 30\%, with trained specialists offering little advantage over untrained participants. Archaeological collections worldwide contain vast numbers of fragments that remain unassembled because the manual effort required far exceeds available expert time. Physical manipulation also risks further damage to already fragile objects. Together, these practical constraints have driven a sustained interest in automating the reassembly process.
 
-With the advent of high-resolution 3D scanning, the physical pieces of a broken object can now be digitized into point clouds: unordered sets of 3D coordinates that capture the geometry of each fragment. Given a set of such point clouds, the goal is to predict the rigid transformation (a rotation and a translation) that maps each fragment back to its original position. The problem is known as 6-Degree-of-Freedom (6-DoF) pose estimation and sits at the intersection of computer vision, computational geometry, and deep learning.
+With the advent of high-resolution 3D scanning (Figure~\ref{fig:case_study}), the physical pieces of a broken object can now be digitized into point clouds: unordered sets of 3D coordinates that capture the geometry of each fragment. Given a set of such point clouds, the goal is to predict the rigid transformation (a rotation and a translation) that maps each fragment back to its original position. The problem is known as 6-Degree-of-Freedom (6-DoF) pose estimation and sits at the intersection of computer vision, computational geometry, and deep learning.
 
 Automating 3D reassembly is far from trivial. Unlike 2D jigsaw puzzles, where flat edges and printed patterns constrain the solution, 3D fracture fragments feature irregular, continuous surfaces with no discrete boundary markers. The search space grows combinatorially with the number of pieces, and small errors in local pairwise alignments propagate and accumulate when assembling multi-part objects, a phenomenon known as drift.
 
@@ -16,6 +16,25 @@ The landscape shifted with two key developments. First, specialized neural archi
 Since Jigsaw, the field has evolved rapidly along several directions. To address the computational cost of dense point matching, PMTR \cite{lee20243d} introduced sub-quadratic proxy tensors, while PHFormer \cite{cui2024phformer} decomposed pose estimation into adjacency prediction and transformation regression using proxy-level attention. To enrich attention with spatial reasoning, the Geometric Point Attention Transformer (GPAT) \cite{Li2023GPAT} demonstrated that encoding pairwise distances and angles between fragments directly into the attention scores can improve assembly quality. To introduce global shape awareness, Jigsaw++ \cite{lu2024jigsawpp} incorporated a shape prior through latent space reconstruction using Rectified Flow. To bridge the gap between synthetic training data and real-world fractures, GARF \cite{Li2025GARF} recast the problem as learning continuous velocity fields on the Lie group $SE(3)$, achieving state-of-the-art performance by moving fragments along geodesic paths.
 
 Despite this rapid progress, several open questions remain within the Jigsaw pipeline, which continues to serve as the foundational baseline for fracture assembly on Breaking Bad. Its cross-attention mechanism can produce overconfident correspondence distributions, particularly on out-of-distribution objects, and may benefit from regularization techniques that smooth the attention weights. The feature extractor uses a single round of attention, while recent work (PHFormer, GARF) suggests that iterative refinement of self-attention and cross-attention improves geometric representations. The PointNet++ backbone constructs local neighborhoods via $k$-nearest neighbors without regard for surface topology, potentially including spatially close but topologically distant points in each centroid's neighborhood. And pairwise pose estimates are recovered from sparse RANSAC correspondences without fully exploiting the dense geometry available on fracture surfaces.
+
+\begin{figure}[h]
+    \centering
+    \begin{subfigure}[t]{0.48\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/case_study_part1.png}
+        \caption{Digital reconstruction of a primate statue: raw 3D scan, point cloud, and textured mesh.}
+        \label{fig:case_study_reconstruction}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.48\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/case_study_part2.png}
+        \caption{High-resolution structured-light 3D scanning of a cultural heritage artifact.}
+        \label{fig:case_study_scanning}
+    \end{subfigure}
+    \caption{The digitization pipeline for cultural heritage preservation. (a)~A fractured artifact is scanned to produce point clouds and 3D meshes suitable for computational reassembly. (b)~The physical scanning process using structured-light technology.}
+    \label{fig:case_study}
+\end{figure}
 
 \section{Objectives}
 
