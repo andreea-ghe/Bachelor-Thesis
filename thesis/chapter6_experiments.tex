@@ -1,13 +1,13 @@
 \chapter{Experiments and Results}
 \label{chap:ch6}
 
-This chapter presents the experimental evaluation of the proposed modifications to the Jigsaw framework. We first evaluate all modifications on the full Breaking Bad dataset, then conduct a data scaling analysis by training on a reduced subset ($\sim$63\% of the everyday training patterns) to study how the proposed extensions behave under data scarcity. The proposed modifications---particularly gated double attention---provide consistent improvements when data is limited, acting as implicit regularizers that extract geometric patterns a single-pass model cannot recover from sparse examples. The data scaling analysis additionally reveals that \textbf{data quantity has a large compounding effect}, with the full dataset yielding over 10 percentage points more than the reduced subset. A further finding is that loss scheduling during finetuning has a surprisingly large effect on the gated double attention layers.
+This chapter presents the experimental evaluation of the proposed modifications to the Jigsaw framework. We first evaluate all modifications on the full Breaking Bad dataset, then conduct a data scaling analysis by training on a reduced subset ($\sim$63\% of the everyday training patterns) to study how the proposed extensions behave under data scarcity. The proposed modifications, particularly gated double attention, provide consistent improvements when data is limited, acting as implicit regularizers that extract geometric patterns a single-pass model cannot recover from sparse examples. The data scaling analysis additionally reveals that \textbf{data quantity has a large compounding effect}, with the full dataset yielding over 10 percentage points more than the reduced subset. A further finding is that loss scheduling during finetuning has a surprisingly large effect on the gated double attention layers.
 
 \section{Experimental Setup}
 
 \subsection{The Breaking Bad Dataset}
 
-All experiments are conducted on the Breaking Bad dataset \cite{sellan2022breaking}, a large-scale benchmark for 3D fracture assembly containing over one million fractured objects simulated from approximately 10,000 base models. Unlike earlier shape assembly datasets such as PartNet \cite{mo2019partnet} or AutoMate \cite{jones2021automate}, which decompose objects along semantically meaningful boundaries (effectively modeling \emph{construction}), Breaking Bad models the \emph{destruction} process---how geometric objects naturally break into fragments under physical impact.
+All experiments are conducted on the Breaking Bad dataset \cite{sellan2022breaking}, a large-scale benchmark for 3D fracture assembly containing over one million fractured objects simulated from approximately 10,000 base models. Unlike earlier shape assembly datasets such as PartNet \cite{mo2019partnet} or AutoMate \cite{jones2021automate}, which decompose objects along semantically meaningful boundaries (effectively modeling \emph{construction}), Breaking Bad models the \emph{destruction} process: how geometric objects naturally break into fragments under physical impact.
 
 \paragraph{Dataset construction.}
 The base shapes are collected from PartNet (20 daily object categories) and Thingi10K \cite{zhou2016thingi10k} (sculptures and archaeological-style artifacts). Each mesh is rescaled to a unit bounding box and fractured using the physically-based simulation of Sell\'{a}n et al.\ \cite{sellan2022breaking}, producing 100 unique fracture patterns per base model (20 fracture modes + 80 random impacts). Patterns with fewer than 2 or more than 100 pieces are discarded.
@@ -66,7 +66,7 @@ All results are reported as the mean $\pm$ standard deviation over three indepen
 \subsection{Implementation Details}
 \label{sec:impl_details}
 
-All models are fine-tuned from the official pretrained Jigsaw checkpoint, which was originally trained for 250 epochs on the full everyday subset (2--20 pieces) using Adam with a learning rate of $10^{-3}$ and cosine annealing. Table~\ref{tab:hyperparams} summarizes the shared hyperparameters used across all finetuning experiments. The only differences between configurations are the architectural modifications (pair attention, double attention) and the loss scheduling, which are noted explicitly in each experiment.
+All models are fine-tuned from the official pretrained Jigsaw checkpoint, which was originally trained for 250 epochs on the full everyday subset (2 to 20 pieces) using Adam with a learning rate of $10^{-3}$ and cosine annealing. Table~\ref{tab:hyperparams} summarizes the shared hyperparameters used across all finetuning experiments. The only differences between configurations are the architectural modifications (pair attention, double attention) and the loss scheduling, which are noted explicitly in each experiment.
 
 \begin{table}[h]
 \centering
@@ -100,7 +100,7 @@ We employ full finetuning with gated residual integration of new modules. All pr
 \paragraph{Environment migration.}
 The original Jigsaw codebase was developed for Python~3.8, PyTorch~1.10, and CUDA~11.3. We migrated the entire software stack to Python~3.10, PyTorch~2.7, and CUDA~12.8, resolving breaking changes across the PyTorch Geometric ecosystem, Open3D, GTSAM, and PyTorch Lightning~(1.9$\to$2.5). The migration also resolved out-of-memory failures that occurred with the original environment, likely due to improved memory management in newer PyTorch releases (e.g., refined CUDA caching allocator and reduced fragmentation). All experiments were conducted on a single NVIDIA RTX~4090 (24\,GB). The migrated environment reproduces the original pretrained checkpoint's evaluation metrics, confirming that the port does not affect numerical results.
 
-New modules receive a $10\times$ higher learning rate than pretrained parameters, since they are initialized from scratch and must learn faster to catch up with the already-converged backbone. Figure~\ref{fig:lr_schedule} shows the resulting learning rate trajectories for all parameter groups across our experiments: the baseline uses a single parameter group with cosine annealing from $10^{-4}$, while pair attention and double attention configurations use two groups---one at $10^{-4}$ for pretrained weights and one at $10^{-3}$ for new layers.
+New modules receive a $10\times$ higher learning rate than pretrained parameters, since they are initialized from scratch and must learn faster to catch up with the already-converged backbone. Figure~\ref{fig:lr_schedule} shows the resulting learning rate trajectories for all parameter groups across our experiments: the baseline uses a single parameter group with cosine annealing from $10^{-4}$, while pair attention and double attention configurations use two groups: one at $10^{-4}$ for pretrained weights and one at $10^{-3}$ for new layers.
 
 \begin{figure}[H]
     \centering
@@ -120,15 +120,15 @@ To verify that finetuning did not degrade the pretrained segmentation backbone, 
 
 \subsection{Scope and Limitations}
 
-It is important to note that our experiments focus on a restricted setting compared to the full Breaking Bad benchmark. Due to computational constraints, we fine-tune and evaluate on subsets of 2 pieces (pairwise assembly) and 2--4 pieces (limited multi-piece assembly), rather than the full 2--20 piece range used in the original Jigsaw evaluation. As a result, our absolute numbers are not directly comparable to published results that evaluate on the complete piece range. However, all comparisons between our proposed modifications and the baseline are conducted under identical conditions, ensuring internal validity.
+It is important to note that our experiments focus on a restricted setting compared to the full Breaking Bad benchmark. Due to computational constraints, we fine-tune and evaluate on subsets of 2 pieces (pairwise assembly) and 2 to 4 pieces (limited multi-piece assembly), rather than the full 2 to 20 piece range used in the original Jigsaw evaluation. As a result, our absolute numbers are not directly comparable to published results that evaluate on the complete piece range. However, all comparisons between our proposed modifications and the baseline are conducted under identical conditions, ensuring internal validity.
 
 \section{Context: Published Results on Breaking Bad}
 
-Before presenting our experiments, we situate the Jigsaw baseline within the broader landscape. Table~\ref{tab:literature} reports published results from recent methods on the full Breaking Bad benchmark (2--20 pieces). These numbers serve as context but are \textit{not} directly comparable to our results, which operate on restricted piece-count subsets.
+Before presenting our experiments, we situate the Jigsaw baseline within the broader landscape. Table~\ref{tab:literature} reports published results from recent methods on the full Breaking Bad benchmark (2 to 20 pieces). These numbers serve as context but are \textit{not} directly comparable to our results, which operate on restricted piece-count subsets.
 
 \begin{table}[h]
 \centering
-\caption{Published results on the volume-constrained Breaking Bad dataset. Everyday values for multi-piece assembly (2--20 pieces) are from GARF's unified comparison \cite{Li2025GARF}. Artifact values for Global, DGL, and PMTR are from PMTR's pairwise evaluation \cite{lee20243d}.}
+\caption{Published results on the volume-constrained Breaking Bad dataset. Everyday values for multi-piece assembly (2 to 20 pieces) are from GARF's unified comparison \cite{Li2025GARF}. Artifact values for Global, DGL, and PMTR are from PMTR's pairwise evaluation \cite{lee20243d}.}
 \label{tab:literature}
 \begin{tabular}{lcccc|cccc}
 \toprule
@@ -154,7 +154,7 @@ GARF \cite{Li2025GARF} & \textbf{6.10} & \textbf{1.22} & \textbf{95.33} & \textb
 
 As a first step, we fine-tuned the pretrained Jigsaw model exclusively on 2-piece fracture patterns from the full everyday training set using the standard loss schedule. Adding an ICP refinement step between RANSAC and Shonan averaging (Section~\ref{sec:icp_methodology}) yielded a consistent improvement of approximately 1 percentage point on both subsets. Since ICP introduces no learnable parameters, this improvement is entirely orthogonal to the other modifications. We retain ICP in all subsequent experiments.
 
-On the full dataset, the baseline already achieves 86.4\% PA on everyday objects, leaving limited headroom for architectural improvements on in-distribution data (Table~\ref{tab:two_piece_complete}). All four modifications were evaluated: pair attention (Section~\ref{par:pair_attn_limitations}), double attention (Section~\ref{sec:double_attn_method}), and Gabriel graph filtering (Section~\ref{sec:gabriel_method}) at the best retention ratio ($r{=}0.75$; see Section~\ref{sec:gabriel_tuning} for the tuning analysis). On everyday, the baseline remains the strongest. On the \textit{artifact} subset---which serves as a cross-domain generalization benchmark---all modifications show improvements in pose metrics, with Gabriel producing the best chamfer distance ($-$10\%) and double attention the best translation error.
+On the full dataset, the baseline already achieves 86.4\% PA on everyday objects, leaving limited headroom for architectural improvements on in-distribution data (Table~\ref{tab:two_piece_complete}). All four modifications were evaluated: pair attention (Section~\ref{par:pair_attn_limitations}), double attention (Section~\ref{sec:double_attn_method}), and Gabriel graph filtering (Section~\ref{sec:gabriel_method}) at the best retention ratio ($r{=}0.75$; see Section~\ref{sec:gabriel_tuning} for the tuning analysis). On everyday, the baseline remains the strongest. On the \textit{artifact} subset, which serves as a cross-domain generalization benchmark, all modifications show improvements in pose metrics, with Gabriel producing the best chamfer distance ($-$10\%) and double attention the best translation error.
 
 \begin{table}[H]
 \centering
@@ -166,23 +166,23 @@ On the full dataset, the baseline already achieves 86.4\% PA on everyday objects
 \textbf{Model} & PA$\uparrow$ & R-MAE$\downarrow$ & \shortstack{T-MAE$\downarrow$\\($\times 10^{-2}$)} & CD$\downarrow$
                & PA$\uparrow$ & R-MAE$\downarrow$ & \shortstack{T-MAE$\downarrow$\\($\times 10^{-2}$)} & CD$\downarrow$ \\
 \midrule
-Baseline & \textbf{86.4} & \textbf{16.8} & \textbf{2.48} & \textbf{2.68} & 72.7 & 26.7 & 6.47 & 11.6 \\
-+ Pair Attn & 85.8 & 16.7 & 2.58 & 2.96 & \textbf{74.0} & \textbf{25.9} & 6.33 & 11.2 \\
+Baseline & \textbf{86.4} & 16.8 & \textbf{2.48} & \textbf{2.68} & 72.7 & 26.7 & 6.47 & 11.6 \\
++ Pair Attn & 85.8 & \textbf{16.7} & 2.58 & 2.96 & \textbf{74.0} & \textbf{25.9} & 6.33 & 11.2 \\
 + Double Attn & 86.0 & 17.8 & 2.60 & 2.87 & 72.9 & 26.3 & 6.29 & 10.6 \\
 + Gabriel & 85.9 & 17.6 & 2.63 & 3.18 & 73.4 & 26.6 & \textbf{6.16} & \textbf{10.4} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The pair attention results align with the soft regularization hypothesis (Section~\ref{par:pair_attn_limitations}). On everyday---where the baseline already achieves well-calibrated attention---the uniform smoothing provides no benefit ($-$0.6 PA). On the artifact subset, however, pair attention produces the strongest improvements in part accuracy (+1.3) and rotation MAE ($-$3\%), consistent with the expectation that attention smoothing helps most when the model faces unfamiliar geometry and is prone to overconfident mismatches.
+The pair attention results align with the soft regularization hypothesis (Section~\ref{par:pair_attn_limitations}). On everyday, where the baseline already achieves well-calibrated attention, the uniform smoothing provides no benefit ($-$0.6 PA). On the artifact subset, however, pair attention produces the strongest improvements in part accuracy (+1.3) and rotation MAE ($-$3\%), consistent with the expectation that attention smoothing helps most when the model faces unfamiliar geometry and is prone to overconfident mismatches.
 
-\subsection{Multi-Piece Assembly (2--4 Pieces)}
+\subsection{Multi-Piece Assembly (2 to 4 Pieces)}
 
-To test whether the proposed modifications scale to higher complexity, we extended our experiments to fragments with 2--4 pieces (Table~\ref{tab:multi_piece}).
+To test whether the proposed modifications scale to higher complexity, we extended our experiments to fragments with 2 to 4 pieces (Table~\ref{tab:multi_piece}).
 
 \begin{table}[H]
 \centering
-\caption{Multi-piece assembly results (2--4 pieces) on the \textbf{complete} dataset. All models include ICP refinement. Results averaged over 3 runs.}
+\caption{Multi-piece assembly results (2 to 4 pieces) on the \textbf{complete} dataset. All models include ICP refinement. Results averaged over 3 runs.}
 \label{tab:multi_piece}
 \begin{tabular}{l|cccc|cccc}
 \toprule
@@ -256,12 +256,12 @@ Baseline & 75.9 & 23.5 & 4.83 & 7.26 & 63.8 & 32.6 & 7.18 & 9.82 \\
 \end{tabular}
 \end{table}
 
-Since the artifact subset is identical across both data regimes, the artifact improvements are not an artifact of data variation---they reflect a genuine benefit of the proposed modifications when the model operates beyond its training distribution. Comparing the two regimes reveals that data quantity is the dominant factor: the full-dataset baseline (86.4\%) exceeds the best reduced-subset configuration (78.0\%) by over 8 points. However, when data is limited, the proposed attention extensions act as \textit{implicit regularizers}: double attention provides additional representational capacity, while pair attention provides learned attention smoothing (Section~\ref{par:pair_attn_limitations}).
+Since the artifact subset is identical across both data regimes, the artifact improvements are not an artifact of data variation; they reflect a genuine benefit of the proposed modifications when the model operates beyond its training distribution. Comparing the two regimes reveals that data quantity is the dominant factor: the full-dataset baseline (86.4\%) exceeds the best reduced-subset configuration (78.0\%) by over 8 points. However, when data is limited, the proposed attention extensions act as \textit{implicit regularizers}: double attention provides additional representational capacity, while pair attention provides learned attention smoothing (Section~\ref{par:pair_attn_limitations}).
 
 \section{The Effect of Loss Scheduling}
 \label{sec:loss_scheduling}
 
-During the reduced-subset experiments, one configuration was run with a non-standard loss schedule: the matching loss was delayed to epoch 9 (instead of activating immediately), and the rigidity loss was set to activate at epoch 199---effectively disabling it entirely for the 100-epoch finetuning run. This ``gentle'' schedule produced the best results of any configuration: 80.4\% part accuracy on everyday and 69.4\% on artifact, outperforming the standard-schedule double attention (78.0\% and 68.5\%).
+During the reduced-subset experiments, one configuration was run with a non-standard loss schedule: the matching loss was delayed to epoch 9 (instead of activating immediately), and the rigidity loss was set to activate at epoch 199, effectively disabling it entirely for the 100-epoch finetuning run. This ``gentle'' schedule produced the best results of any configuration: 80.4\% part accuracy on everyday and 69.4\% on artifact, outperforming the standard-schedule double attention (78.0\% and 68.5\%).
 
 The difference in training dynamics is visible in the loss curves. Under the standard schedule (Figure~\ref{fig:loss_standard}), all three loss terms are active early and the rigidity loss spikes at epoch 30 before decaying. Under the gentle schedule (Figure~\ref{fig:loss_gentle}), the matching loss remains near zero until epoch 9, when it jumps sharply as it activates; the rigidity loss never appears, since its activation epoch exceeds the training duration. This delayed activation allows the segmentation and matching pathways to stabilize independently before interacting.
 
@@ -324,7 +324,7 @@ Three patterns emerge:
 
 \paragraph{The cross-attention gate opens significantly.} The gate $g_c$ learns to take negative values (up to $-0.22$), and the second cross-attention layer diverges substantially (up to 101.6\%) from its initialization. This indicates that the model is actively using the second cross-attention layer, but in a \textit{subtractive} manner: the negative gate suppresses certain inter-fragment attention patterns established by the first pass, effectively acting as a learned correction rather than an additive refinement.
 
-\paragraph{Greater adaptation does not imply greater marginal gain.} On the full dataset, the gates open wider and the layers diverge more than on the reduced subset, yet the marginal improvement is small. This is consistent with the data scaling finding: with sufficient data, the single-pass model already captures the patterns that the second pass provided under scarcity. The two mechanisms---additional attention capacity and additional data---address the same representational bottleneck from complementary directions.
+\paragraph{Greater adaptation does not imply greater marginal gain.} On the full dataset, the gates open wider and the layers diverge more than on the reduced subset, yet the marginal improvement is small. This is consistent with the data scaling finding: with sufficient data, the single-pass model already captures the patterns that the second pass provided under scarcity. The two mechanisms, additional attention capacity and additional data, address the same representational bottleneck from complementary directions.
 
 \section{Gabriel Graph: Retention Ratio Analysis}
 \label{sec:gabriel_tuning}
@@ -340,11 +340,11 @@ The Gabriel filter's aggressiveness is controlled by the minimum keep ratio $r$ 
 
 The progression is clear: aggressive pruning ($r{=}0$) leaves max-pooling with almost no diversity and collapses performance. As more neighbors are preserved, performance improves monotonically. The 75\% configuration achieved the highest validation mat\_f1 (0.143), substantially above the baseline's $\sim$0.10, confirming that conservative filtering preserves sufficient neighborhood diversity while removing the most topologically distant neighbors.
 
-The validation gains did not fully transfer to test (val mat\_f1 0.143 vs.\ test PA 85.9\%, compared to baseline 86.4\%). On cross-domain data (artifact), Gabriel produced the best chamfer distance ($-$10\%) and translation error ($-$5\%) of any modification (Table~\ref{tab:two_piece_complete}), suggesting that surface-faithful neighborhoods yield more geometrically precise features---the matches found are of higher quality, but fewer in total. The validation-to-test gap is likely caused by sensitivity to point density variations across objects: denser regions trigger more aggressive pruning, and the distribution of object densities differs between splits. Training from scratch with Gabriel-filtered neighborhoods would allow the encoder to learn features adapted to the reduced neighborhoods from the start.
+The validation gains did not fully transfer to test (val mat\_f1 0.143 vs.\ test PA 85.9\%, compared to baseline 86.4\%). On cross-domain data (artifact), Gabriel produced the best chamfer distance ($-$10\%) and translation error ($-$5\%) of any modification (Table~\ref{tab:two_piece_complete}), suggesting that surface-faithful neighborhoods yield more geometrically precise features: the matches found are of higher quality, but fewer in total. The validation-to-test gap is likely caused by sensitivity to point density variations across objects: denser regions trigger more aggressive pruning, and the distribution of object densities differs between splits. Training from scratch with Gabriel-filtered neighborhoods would allow the encoder to learn features adapted to the reduced neighborhoods from the start.
 
 \section{Discussion}
 
-The experiments yield several conclusions. \textbf{Architectural modifications provide targeted improvements:} double attention yielded +2--5 points under data scarcity and consistent cross-domain gains on the artifact subset. \textbf{Data scaling has a compounding effect:} the full dataset yields over 10 points more than the reduced subset, confirming that data quantity amplifies the base architecture's capacity; on the full dataset, the baseline already captures the patterns that the extensions provided under scarcity. \textbf{ICP refinement is reliable and orthogonal:} a consistent $\sim$1 point improvement across all configurations, with no risk of overfitting. \textbf{Loss scheduling matters for gated finetuning:} a gentler activation schedule outperformed the standard one, indicating that the interaction between new gated components and pretrained representations is sensitive to optimization dynamics. \textbf{Geometric pair attention acts as a learned regularizer:} as hypothesized, Jigsaw's preprocessing converts the pair encoder from a discriminative spatial module into a data-dependent attention smoother, consistently improving out-of-distribution generalization while remaining neutral on in-distribution performance. \textbf{Gabriel graph filtering improves cross-domain pose quality but reduces in-domain matching count:} surface-faithful neighborhoods produce higher-quality matches on out-of-distribution data (artifact), but the pruning reduces the total number of correspondences, slightly lowering the primary matching metric on in-domain data.
+The experiments yield several conclusions. \textbf{Architectural modifications provide targeted improvements:} double attention yielded +2 to 5 points under data scarcity and consistent cross-domain gains on the artifact subset. \textbf{Data scaling has a compounding effect:} the full dataset yields over 10 points more than the reduced subset, confirming that data quantity amplifies the base architecture's capacity; on the full dataset, the baseline already captures the patterns that the extensions provided under scarcity. \textbf{ICP refinement is reliable and orthogonal:} a consistent $\sim$1 point improvement across all configurations, with no risk of overfitting. \textbf{Loss scheduling matters for gated finetuning:} a gentler activation schedule outperformed the standard one, indicating that the interaction between new gated components and pretrained representations is sensitive to optimization dynamics. \textbf{Geometric pair attention acts as a learned regularizer:} as hypothesized, Jigsaw's preprocessing converts the pair encoder from a discriminative spatial module into a data-dependent attention smoother, consistently improving out-of-distribution generalization while remaining neutral on in-distribution performance. \textbf{Gabriel graph filtering improves cross-domain pose quality but reduces in-domain matching count:} surface-faithful neighborhoods produce higher-quality matches on out-of-distribution data (artifact), but the pruning reduces the total number of correspondences, slightly lowering the primary matching metric on in-domain data.
 
 Figure~\ref{fig:val_losses} provides an overview of validation loss trajectories across all experiments. The most visible pattern is the separation between two-piece configurations (lower losses) and multi-piece configurations (higher losses), reflecting the increased difficulty of assembling more fragments. Within each group, the different architectural variants follow similar trajectories, consistent with the finding that the proposed modifications do not substantially alter the model's learning dynamics when sufficient data is available.
 

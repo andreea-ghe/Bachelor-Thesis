@@ -22,17 +22,17 @@ At startup, the Django application automatically discovers all valid fractures b
 The Django server exposes three endpoints:
 
 \begin{itemize}
-    \item \texttt{GET /} --- Renders the main page with fracture lists injected into the template context.
-    \item \texttt{GET /api/fracture/<id>/} --- Returns JSON metadata and static OBJ URLs for a specific fracture.
-    \item \texttt{POST /api/predict/} --- Accepts a fracture ID and model variant, proxies to the GPU server or returns cached results.
+    \item \texttt{GET /}: Renders the main page with fracture lists injected into the template context.
+    \item \texttt{GET /api/fracture/<id>/}: Returns JSON metadata and static OBJ URLs for a specific fracture.
+    \item \texttt{POST /api/predict/}: Accepts a fracture ID and model variant, proxies to the GPU server or returns cached results.
 \end{itemize}
 
 The FastAPI inference server exposes:
 
 \begin{itemize}
-    \item \texttt{GET /health} --- Returns server status and CUDA availability.
-    \item \texttt{GET /models} --- Lists all eleven available model variants with descriptions and maximum piece counts.
-    \item \texttt{POST /predict} --- Accepts OBJ files as multipart uploads, runs the full Jigsaw inference pipeline (preprocessing, forward pass, global alignment), and returns the assembled meshes as OBJ text.
+    \item \texttt{GET /health}: Returns server status and CUDA availability.
+    \item \texttt{GET /models}: Lists all eleven available model variants with descriptions and maximum piece counts.
+    \item \texttt{POST /predict}: Accepts OBJ files as multipart uploads, runs the full Jigsaw inference pipeline (preprocessing, forward pass, global alignment), and returns the assembled meshes as OBJ text.
 \end{itemize}
 
 The server validates all inputs: it rejects requests with fewer than 2 pieces, more pieces than the selected model supports (2 for two-piece models, 4 for multi-piece), and files that are not valid UTF-8 text.

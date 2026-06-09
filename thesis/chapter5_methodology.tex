@@ -37,7 +37,7 @@ Pose recovery & RANSAC pairwise estimation & ICP refinement before synchronizati
 \section{Front-End Feature Extractor}
 \paragraph{Baseline component.}
 
-Jigsaw uses a PointNet++ backbone (see Section~\ref{sec:pointnet}) to extract per-point geometric features at multiple scales, followed by attention layers that model relationships both within and across fragments. PointNet++ is chosen over PointNet because its hierarchical architecture---using Farthest Point Sampling, local neighborhood grouping, and recursive PointNet applications---preserves the fine-grained local geometry of fracture surfaces, which is critical for matching complementary fragments.
+Jigsaw uses a PointNet++ backbone (see Section~\ref{sec:pointnet}) to extract per-point geometric features at multiple scales, followed by attention layers that model relationships both within and across fragments. PointNet++ is chosen over PointNet because its hierarchical architecture (Farthest Point Sampling, local neighborhood grouping, and recursive PointNet applications) preserves the fine-grained local geometry of fracture surfaces, which is critical for matching complementary fragments.
 
 While PointNet++ provides strong static embeddings for local geometric regions, fractured object reassembly also requires modeling how these features relate to one another, both within the same fragment and across different fragments. This relational context is captured through two attention layers.
 
@@ -126,7 +126,7 @@ The proposed modification increases computational cost and model complexity. In 
 \label{sec:gabriel_method}
 
 \paragraph{Motivation.}
-The PointNet++ backbone constructs local neighborhoods using $k$-nearest neighbors (kNN), which groups the $K$ spatially closest points around each centroid regardless of surface topology. On dense point clouds, kNN can include spatially close points that are not surface-connected to the centroid---for example, points on a nearby but distinct surface region, or points reachable only by passing through the object's interior. These topologically distant neighbors introduce geometrically misleading information into the shared MLP and max-pooling aggregation, potentially degrading the quality of the learned local features.
+The PointNet++ backbone constructs local neighborhoods using $k$-nearest neighbors (kNN), which groups the $K$ spatially closest points around each centroid regardless of surface topology. On dense point clouds, kNN can include spatially close points that are not surface-connected to the centroid, for example points on a nearby but distinct surface region, or points reachable only by passing through the object's interior. These topologically distant neighbors introduce geometrically misleading information into the shared MLP and max-pooling aggregation, potentially degrading the quality of the learned local features.
 
 \paragraph{Gabriel Graph Criterion.}
 The Gabriel graph \cite{gabriel1969new}, originally introduced for geographic contiguity analysis, provides a parameter-free geometric test for surface-faithful connectivity. Two points $A$ and $B$ are connected in the Gabriel graph if and only if no other point $C$ lies inside the open ball whose diameter is the segment $\overline{AB}$:
@@ -134,7 +134,7 @@ The Gabriel graph \cite{gabriel1969new}, originally introduced for geographic co
 \label{eq:gabriel_criterion}
 (A, B) \in \mathcal{G} \iff \forall\, C \neq A, B: \; \|C - \tfrac{A+B}{2}\|^2 > \tfrac{\|A-B\|^2}{4}
 \end{equation}
-Intuitively, if a third point falls inside this ball, it lies ``between'' $A$ and $B$, indicating that the edge $\overline{AB}$ likely crosses interior space rather than following the surface. By filtering kNN neighborhoods through this criterion, we retain only edges that respect the local surface geometry.
+Intuitively, if a third point falls inside this ball, it lies ``between'' $A$ and $B$, indicating that the edge $\overline{AB}$ likely crosses interior space rather than following the surface. By filtering kNN neighborhoods through this criterion, we retain only edges that respect the local surface geometry. As a side effect, reducing the number of neighbors that participate in feature aggregation lowers the computational cost of the shared MLP and max-pooling operations at each Set Abstraction level.
 
 \paragraph{Integration into PointNet++.}
 The Gabriel filter is applied after kNN grouping and before the shared MLP at each Set Abstraction level. For each centroid, every neighbor is tested against the Gabriel criterion using the remaining neighbors as potential witnesses. Neighbors that fail the test are excluded from the feature aggregation.
@@ -147,7 +147,7 @@ Preliminary experiments revealed that the Gabriel criterion is highly aggressive
 \text{Gabriel test} & \text{otherwise}
 \end{cases}
 \end{equation}
-where $r \in [0, 1]$ is the minimum keep ratio. The filter introduces no learnable parameters---it is a purely geometric operation that does not change the model's parameter count.
+where $r \in [0, 1]$ is the minimum keep ratio. The filter introduces no learnable parameters; it is a purely geometric operation that does not change the model's parameter count.
 
 \paragraph{Expected Benefits.}
 By removing topologically distant neighbors, the local features computed via max-pooling should more faithfully represent the surface geometry around each centroid, potentially improving the quality of downstream point correspondences and pose estimation.

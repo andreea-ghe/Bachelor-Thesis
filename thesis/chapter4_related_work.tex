@@ -101,14 +101,7 @@ Based on these enriched representations, PHFormer decomposes pose estimation int
 \paragraph{3D Geometric Shape Assembly via Efficient Point Cloud Matching} \mbox{} \\
 A complementary approach to the efficiency problem is the Proxy Match Transformer (PMTR) \cite{lee20243d}, which replaces dense point-to-point comparisons with a sub-quadratic matching paradigm based on a shared proxy space (Figure~\ref{fig:pmtr}).
 
-The pipeline begins with \textbf{multi-scale feature extraction}. A U-Net-style \cite{ronneberger2015u} backbone processes the raw point clouds of two fragments $X$ and $Y$ and produces feature maps at three spatial resolutions: coarse, medium, and fine. This allows the network to capture both the macro-structure of the fragments and the fine-grained details of the fracture edges.
-
-The next stage is \textbf{coarse matching}. In standard geometric matching, evaluating the compatibility of two fragments requires computing a dense pairwise correlation matrix $F_X F_Y^\top$, which has $O(N \times M)$ quadratic memory complexity. Instead of this direct computation, PMTR introduces the Proxy Match Transform (PMT) layer. The key idea is to introduce a small, learnable Proxy Tensor $P$---effectively a virtual set of points whose dimensionality is much smaller than $F_X$ or $F_Y$. Each fragment independently projects its features onto this shared proxy. For a single attention head, the transform applies a second-order convolution (which, by the authors' lemma, is equivalent to a head of self-attention):
-\begin{equation}
-\label{eq:pmt}
-PMT(F_X) = \sum_{h=1}^{N_h} A_X^{(h)} F_X P^{(h)\top} w_X^{(h)}
-\end{equation}
-where $A_X$ is a local attention matrix containing binary values that restricts computation to spatial neighborhoods, $w_X$ is a learnable scalar weight, and $P^\top$ contains the proxy features. This operation refines the initial features of each fragment while capturing the essence of their interaction, because the dot-product of the two independent outputs approximates the full pairwise convolution: $PMT(F_X) \cdot PMT(F_Y)^\top \approx \text{Conv}(F_X, F_Y)$---but without ever computing the quadratic correlation matrix. From these refined coarse features, PMTR computes a score matrix that identifies candidate mating regions, laying the foundation for more granular alignment.
+The key idea is to introduce a small, learnable \textbf{Proxy Tensor} $P$ whose dimensionality is much smaller than either fragment's feature map. Each fragment independently projects its features onto this shared proxy, and the dot-product of the two projections approximates the full pairwise correlation, but without ever computing the $O(N \times M)$ quadratic matrix. A U-Net-style \cite{ronneberger2015u} backbone produces multi-scale feature maps (coarse, medium, fine), and the proxy matching is applied hierarchically: coarse matches identify candidate mating regions, which are refined at finer resolutions. The final correspondences are normalized via Sinkhorn Optimal Transport \cite{cuturi2013sinkhorn} and used to compute the rigid transformation via Singular Value Decomposition \cite{golub2013matrix}.
 
 \begin{figure}[H]
     \centering
@@ -116,10 +109,6 @@ where $A_X$ is a local attention matrix containing binary values that restricts 
     \caption{The PMTR architecture \cite{lee20243d}. A coarse-to-fine matching hierarchy uses learned Proxy Tensors to establish sub-quadratic correspondences across multiple spatial resolutions, culminating in SVD-based rigid pose estimation.}
     \label{fig:pmtr}
 \end{figure}
-
-The pipeline then proceeds to \textbf{fine matching}. The same PMT layers are applied at medium and fine resolutions, with skip connections from the U-Net backbone progressively refining spatial precision. Fine-level features are grouped around their spatially proximate coarse matches, ensuring that the hierarchical refinement is guided by the coarse structure.
-
-Finally, the resulting score matrix is transformed by a Sinkhorn Optimal Transport layer \cite{cuturi2013sinkhorn}, which enforces a doubly-stochastic constraint to produce a confidence matrix of one-to-one point correspondences. From these refined correspondences, a Singular Value Decomposition \cite{golub2013matrix} step computes the rigid 6-DoF transformation (rotation and translation) that assembles the fragments.
 
 While PHFormer and PMTR address the matching cost, a related but distinct efficiency concern lies in the PointNet++ backbone itself: the $k$-nearest neighbors grouping is topology-unaware and can include spatially close but surface-disconnected points. Inspired by the proxy-level locality of PHFormer, we investigate Gabriel graph filtering \cite{gabriel1969new} as a complementary approach that targets the neighborhood construction stage, pruning kNN edges that cross interior space to produce surface-faithful local regions.
 
@@ -130,7 +119,7 @@ Jigsaw's feature extractor applies a single round of self-attention and cross-at
 \paragraph{Geometric Point Attention Transformer for 3D Shape Reassembly} \mbox{} \\
 The Geometric Point Attention Transformer (GPAT) \cite{Li2023GPAT} addresses the attention bottleneck by explicitly encoding geometric relationships into the attention computation.
 
-The architecture begins with a PointNet backbone that extracts local geometric features ($h_i^{local}$) from each fragment. These are pooled across all parts to form a global context feature ($h^{global}$), providing a structural shape prior. The local and global features are concatenated with recycled geometric embeddings---initialized to zero on the first pass---and processed through an MLP to produce node features ($h_i$). Simultaneously, pairwise cross-part features ($z_{ij}$) are constructed by concatenating the local features of fragments $i$ and $j$ together with recycled geometric pair features.
+The architecture begins with a PointNet backbone that extracts local geometric features ($h_i^{local}$) from each fragment. These are pooled across all parts to form a global context feature ($h^{global}$), providing a structural shape prior. The local and global features are concatenated with recycled geometric embeddings (initialized to zero on the first pass) and processed through an MLP to produce node features ($h_i$). Simultaneously, pairwise cross-part features ($z_{ij}$) are constructed by concatenating the local features of fragments $i$ and $j$ together with recycled geometric pair features.
 
 To iteratively refine these features, GPAT introduces a specialized attention mechanism composed of three branches:
 
@@ -142,7 +131,7 @@ To iteratively refine these features, GPAT introduces a specialized attention me
 
 The outputs of the three branches are fused into a single attention score: $a_{ij} = \text{softmax}(n_{ij} + e_{ij} - p_{ij})$. The Point Attention term ($p_{ij}$) is subtracted because it represents a spatial distance error: larger misalignment penalizes the attention score.
 
-Rather than predicting absolute poses, the network outputs a relative update ($\delta R_i, \delta t_i$) at each iteration. GPAT then employs \textbf{Geometric Recycling}: the updated poses are physically applied to the point clouds, which are passed back through the PointNet backbone to re-extract spatially aware features for the next iteration. This progressive refinement is central to the architecture's effectiveness---the geometric descriptors become increasingly informative as the fragments approach their correct positions (Figure~\ref{fig:gpat}).
+Rather than predicting absolute poses, the network outputs a relative update ($\delta R_i, \delta t_i$) at each iteration. GPAT then employs \textbf{Geometric Recycling}: the updated poses are physically applied to the point clouds, which are passed back through the PointNet backbone to re-extract spatially aware features for the next iteration. This progressive refinement is central to the architecture's effectiveness: the geometric descriptors become increasingly informative as the fragments approach their correct positions (Figure~\ref{fig:gpat}).
 
 \begin{figure}[H]
     \centering
@@ -151,7 +140,7 @@ Rather than predicting absolute poses, the network outputs a relative update ($\
     \label{fig:gpat}
 \end{figure}
 
-Tgus, the pair attention descriptors in GPAT are informative \textit{because} of geometric recycling: the iterative pose updates progressively increase the variance of the centroid distances and triplet angles. In a single-pass pipeline like Jigsaw, where each fragment is independently centered and randomly rotated, these descriptors would have low variance. This observation motivated our investigation of what role the pair attention mechanism takes on when transferred into such a context (Section~\ref{par:pair_attn_limitations}).
+Thus, the pair attention descriptors in GPAT are informative \textit{because} of geometric recycling: the iterative pose updates progressively increase the variance of the centroid distances and triplet angles. In a single-pass pipeline like Jigsaw, where each fragment is independently centered and randomly rotated, these descriptors would have low variance. This observation motivated our investigation of what role the pair attention mechanism takes on when transferred into such a context (Section~\ref{par:pair_attn_limitations}).
 
 Additionally, both PHFormer and GARF employ an \textit{alternating} strategy of self-attention followed by cross-attention, repeated over multiple rounds (2 in PHFormer, 6 in GARF), allowing each fragment to progressively refine its representation based on global context. This motivated our gated double attention extension, which adds a second round of self- and cross-attention to Jigsaw's feature extractor (Section~\ref{sec:double_attn_method}).
 
@@ -160,12 +149,7 @@ Additionally, both PHFormer and GARF employ an \textit{alternating} strategy of 
 Classical reassembly methods rely primarily on local geometric cues, such as matching fracture surfaces. While effective in controlled settings, these approaches often fail when fragments are incomplete, eroded, or misaligned, as they lack an explicit representation of the global object structure.
 
 \paragraph{Jigsaw++: Learning Global Shape Priors for Robust Reassembly} \mbox{} \\
-
-Jigsaw++ \cite{lu2024jigsawpp} addresses this limitation by introducing a generative global shape prior. Rather than directly estimating fragment poses, the method first hallucinates a plausible complete object from a partial assembly, which then serves as a structural guide for the final geometric alignment.
-
-The architecture operates in two phases (Figure~\ref{fig:jigsawpp}). In the first phase, the network is trained exclusively on intact, unbroken objects to learn what complete shapes look like. The 3D geometry is projected into multi-view 2D images and passed through LEAP \cite{jiang2024leap}, a pre-trained image-to-3D encoder built on DINOv2 vision features. This produces latent representations of perfect objects, forming the target distribution $\pi_1$. A \textbf{Rectified Flow} model then learns an Ordinary Differential Equation that transports samples from a standard Gaussian noise distribution $\pi_0$ along straight-line trajectories in latent space until they match $\pi_1$. At the end of this phase, the generative model can create complete 3D shapes from noise.
-
-In the second phase, the actual broken object is introduced. The partial assembly is rendered and encoded through LEAP, producing a biased, incomplete latent representation $\hat{x}_0$. Because this represents a broken shape, it sits in a low-likelihood region of $\pi_0$. To initiate repair, Jigsaw++ applies a controlled perturbation via Langevin dynamics, pushing the broken latent into a better starting position $x_0$. The Rectified Flow model then performs a \textbf{retargeting} step: it fine-tunes the generative flow to transport this perturbed broken latent directly onto the corresponding complete latent $x_1$.
+Jigsaw++ \cite{lu2024jigsawpp} addresses this limitation by introducing a generative global shape prior (Figure~\ref{fig:jigsawpp}). The architecture operates in two phases. First, a \textbf{Rectified Flow} model is trained on intact objects: their 3D geometry is projected into multi-view images, encoded via LEAP \cite{jiang2024leap} (a DINOv2-based image-to-3D encoder), and the flow learns to transport Gaussian noise to the latent distribution of complete shapes. Second, the broken object is encoded through the same pipeline, producing an incomplete latent representation. A controlled perturbation via Langevin dynamics pushes this latent into a better starting position, and the Rectified Flow transports it toward the manifold of valid complete shapes.
 
 \begin{figure}[H]
     \centering
@@ -174,43 +158,37 @@ In the second phase, the actual broken object is introduced. The partial assembl
     \label{fig:jigsawpp}
 \end{figure}
 
-The output of this process is not a final alignment but a coherent global shape reconstruction. This reconstructed shape provides strong geometric guidance for subsequent matching methods, effectively enabling the pipeline to reason about what the assembled object \emph{should} look like even when fragments are incomplete or severely misaligned.
+The output is not a final alignment but a coherent global shape reconstruction that provides geometric guidance for subsequent matching, enabling the pipeline to reason about what the assembled object \emph{should} look like even when fragments are incomplete.
 
 \subsection{The Synthetic-to-Real Gap}
 
 The majority of the previous models were trained and tested on the synthetic Breaking Bad dataset. Synthetic fractures lack the complex deterioration, erosion, and extraneous missing parts found in the real world archaeological or medical fractures.
 
 \paragraph{GARF: Flow-Based 3D Reassembly on SE(3)} \mbox{} \\
-Unlike prior methods such as PHFormer and PMTR, which formulate reassembly as a discrete matching or regression problem, GARF \cite{Li2025GARF} recasts the task as a \emph{continuous dynamical system} defined on the Lie group \(SE(3)\). Instead of directly predicting final poses, the model learns how fragments move over time from an initial noisy configuration to a coherent assembly.
-
-The pipeline begins by extracting local geometric features from each fragment using a Point Transformer V3 (PTv3) backbone---a substantially more powerful feature extractor than the PointNet++ used in Jigsaw. A segmentation head identifies fracture surfaces, and Poisson disk sampling is applied to uniformly resample input point clouds, preventing the network from memorizing training-specific point density distributions. From these features, the network constructs two complementary embeddings: a \emph{shape embedding}, formed by concatenating the PTv3 features with positional encodings of point coordinates, surface normals, and fragment scale; and a \emph{pose embedding} that encodes the fragment's current spatial configuration. These two embeddings are summed and positionally encoded to produce the final representation.
-
-This representation is processed through a deep Transformer. Intra-fragment self-attention, implemented via FlashAttention, refines each fragment's internal geometric understanding. Global cross-attention enables all fragments to exchange spatial context. A Feed-Forward Network processes the resulting features and predicts the rotational and translational velocities for the next integration step.
-
-Each fragment pose \(T^i = (r^i, a^i) \in SE(3)\), consisting of a rotation \(r^i \in SO(3)\) and a translation \(a^i \in \mathbb{R}^3\), evolves according to a learned velocity field:
+Unlike prior methods that formulate reassembly as discrete matching or regression, GARF \cite{Li2025GARF} recasts the task as a \emph{continuous dynamical system} on the Lie group $SE(3)$ (Figure~\ref{fig:garf}). Instead of predicting final poses directly, the model learns a velocity field that moves fragments from a random initial configuration toward the ground-truth assembly. Each fragment pose $T^i = (r^i, a^i) \in SE(3)$ evolves according to:
 \begin{equation}
 \label{eq:garf_flow}
 \frac{d}{dt}\psi_t(T) = v_t(\psi_t(T)), \quad v_t \in \mathfrak{se}(3),
 \end{equation}
-where \(\mathfrak{se}(3)\) is the tangent space encoding instantaneous rigid motion. The initial configuration at \(t=0\) consists of uniformly random rotations and Gaussian-distributed translations; the target at \(t=1\) is the ground-truth assembly. The rotation and translation components are decoupled and updated independently. Given predicted angular velocity \(\hat{\omega}^i_t\) and translational velocity \(\hat{v}^i_t\), the pose evolves from time \(t\) to \(t + \Delta t\) as:
+where $\mathfrak{se}(3)$ is the tangent space encoding instantaneous rigid motion. The rotation and translation components are decoupled and updated independently via the exponential map:
 \begin{align}
 \label{eq:garf_rot_update}
 r^i_{t+\Delta t} &= \exp\bigl(\Delta t \cdot \hat{\omega}^i_t\bigr) \cdot r^i_t, \\
 \label{eq:garf_trans_update}
 a^i_{t+\Delta t} &= a^i_t + \Delta t \cdot \hat{v}^i_t,
 \end{align}
-where \(\exp(\cdot)\) denotes the exponential map from \(\mathfrak{so}(3)\) to \(SO(3)\). The network is trained via a flow-matching objective that aligns the predicted velocities with the ground-truth geodesic velocities connecting the noisy and target poses on \(SE(3)\).
+where $\exp(\cdot)$ maps from $\mathfrak{so}(3)$ to $SO(3)$. The network is trained via a flow-matching objective that aligns predicted velocities with ground-truth geodesics on $SE(3)$.
 
-A key challenge in this formulation is global ambiguity: the entire assembly can drift rigidly in space, making the learning signal ill-posed. GARF resolves this by randomly selecting a subset of \(k\) fragments as \emph{anchors} at each training iteration. Anchor fragments are frozen with zero velocity, and the network must assemble the remaining pieces relative to them. Because the anchor set changes every iteration, the model learns consistent relative geometric relationships rather than memorizing absolute positions.
+Feature extraction uses a Point Transformer V3 (PTv3) backbone with Poisson disk resampling to prevent density memorization. The features are processed through a deep Transformer that alternates \textbf{intra-fragment self-attention} (implemented via FlashAttention) with \textbf{global cross-attention} over 6 rounds, progressively refining each fragment's representation. To resolve global ambiguity, a random subset of fragments is frozen as \emph{anchors} at each training iteration, forcing the network to learn relative rather than absolute positions. At inference, a one-step coarse alignment collapses the search space, followed by multi-step ODE integration for refinement.
 
-At inference time, GARF employs a two-stage strategy (Figure~\ref{fig:garf}). A one-step pre-assembly forces the model to predict a coarse alignment in a single large step from \(t=0\) to \(t=1\), collapsing the search space. A multi-step ODE solver then refines this estimate through iterative integration. To bridge the gap to real-world fragments, GARF uses few-shot domain adaptation via LoRA (Low-Rank Adaptation): trainable adapters are injected only into the attention layers, allowing the model to adapt with as few as 5--10 real-world objects. The authors introduce the FRACTURA dataset---containing real-world fractures from ceramics, bones, eggshells, and lithics---as the first systematic benchmark for real-world fracture assembly.
+To bridge the synthetic-to-real gap, GARF uses few-shot domain adaptation via LoRA \cite{hu2022lora}: trainable low-rank adapters are injected only into the attention layers, allowing the model to adapt with as few as 5 to 10 real-world objects. The authors introduce the FRACTURA dataset, containing real-world fractures from ceramics, bones, eggshells, and lithics, as the first systematic benchmark for real-world fracture assembly. GARF achieves state-of-the-art performance on both Breaking Bad and FRACTURA.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=1\linewidth]{figures/garf.png}
     \caption{Overview of the GARF pipeline \cite{Li2025GARF}. Fragment poses evolve along learned velocity fields on $SE(3)$, from an initial noisy configuration (left) to a coherent assembly (right) through a two-stage coarse-to-fine integration scheme.}
     \label{fig:garf}
-\end{figure}
+\end{figure}\
 
 \subsection{Summary and Research Gap}
 

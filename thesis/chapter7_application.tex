@@ -16,7 +16,7 @@ The system follows a two-server architecture with a clear separation between pre
     \label{fig:app_architecture}
 \end{figure}
 
-The \textbf{Django web server} (Django 6.0) serves as the main entry point: it renders the user interface, hosts the 3D mesh files (Wavefront OBJ format), and exposes a REST-style JSON API for fracture metadata retrieval and inference orchestration. The \textbf{FastAPI inference server} runs on a separate GPU-equipped machine and performs the full Jigsaw inference pipeline---preprocessing, forward pass, and global alignment---returning the assembled meshes as OBJ text. Input validation rejects requests with invalid piece counts or malformed files.
+The \textbf{Django web server} (Django 6.0) serves as the main entry point: it renders the user interface, hosts the 3D mesh files (Wavefront OBJ format), and exposes a REST-style JSON API for fracture metadata retrieval and inference orchestration. The \textbf{FastAPI inference server} runs on a separate GPU-equipped machine and performs the full Jigsaw inference pipeline (preprocessing, forward pass, and global alignment), returning the assembled meshes as OBJ text. Input validation rejects requests with invalid piece counts or malformed files.
 
 To ensure the demo functions reliably during presentations without requiring dedicated hardware, the predict endpoint implements a three-tier fallback: live GPU inference when available, precomputed results from a static cache when the GPU is unreachable, and an informative error response otherwise.
 
@@ -75,7 +75,7 @@ Upon opening the application, the user is presented with a landing page introduc
     \label{fig:app_hero}
 \end{figure}
 
-The user selects a model variant from a dropdown (e.g., ``Baseline (2 pieces)'' or ``Double attention (2--4 pieces)''), filters by object category, and browses examples using navigation controls or a fullscreen grid (Figure~\ref{fig:app_select}). The input viewer displays the fragment meshes in a scattered arrangement for inspection.
+The user selects a model variant from a dropdown (e.g., ``Baseline (2 pieces)'' or ``Double attention (2 to 4 pieces)''), filters by object category, and browses examples using navigation controls or a fullscreen grid (Figure~\ref{fig:app_select}). The input viewer displays the fragment meshes in a scattered arrangement for inspection.
 
 \begin{figure}[H]
     \centering
@@ -124,12 +124,12 @@ An \textbf{Expand Demo} button opens a fullscreen overlay with a larger viewer a
 The application satisfies the following functional requirements:
 
 \begin{itemize}
-    \item \textbf{F1 -- Fracture visualization:} Display broken 3D fragments in an interactive viewer with rotation, zoom, and pan controls.
-    \item \textbf{F2 -- Model selection:} Allow the user to choose between eleven model variants covering different architectural configurations, dataset sizes, and piece counts.
-    \item \textbf{F3 -- Inference execution:} Perform end-to-end fracture assembly inference (feature extraction, segmentation, matching, and global alignment) given a set of OBJ fragments.
-    \item \textbf{F4 -- Result visualization:} Display the assembled object in a separate 3D viewer for inspection.
-    \item \textbf{F5 -- Graceful degradation:} Operate without a GPU server by serving precomputed results from a static cache.
-    \item \textbf{F6 -- Example browsing:} Provide navigation controls and a fullscreen grid for browsing the complete set of available examples.
+    \item \textbf{F1: Fracture visualization.} Display broken 3D fragments in an interactive viewer with rotation, zoom, and pan controls.
+    \item \textbf{F2: Model selection.} Allow the user to choose between eleven model variants covering different architectural configurations, dataset sizes, and piece counts.
+    \item \textbf{F3: Inference execution.} Perform end-to-end fracture assembly inference (feature extraction, segmentation, matching, and global alignment) given a set of OBJ fragments.
+    \item \textbf{F4: Result visualization.} Display the assembled object in a separate 3D viewer for inspection.
+    \item \textbf{F5: Graceful degradation.} Operate without a GPU server by serving precomputed results from a static cache.
+    \item \textbf{F6: Example browsing.} Provide navigation controls and a fullscreen grid for browsing the complete set of available examples.
 \end{itemize}
 
 \section{Software Quality Considerations}
