@@ -144,7 +144,7 @@ Although the application is a local research demo rather than a production syste
 
 \section{Testing}
 
-The application is covered by 27 automated tests across both the Django web layer and the FastAPI inference server, summarized in Table~\ref{tab:test_summary}. All tests run without GPU access by mocking heavy dependencies (PyTorch, model inference), ensuring they can be executed in any development environment. The Django tests cover data models, view rendering, JSON API responses, and the GPU proxy/fallback logic. The FastAPI tests cover health checks, input validation, and end-to-end inference with mocked models.
+The application is covered by multiple automated tests across both the Django web layer and the FastAPI inference server, summarized in Table~\ref{tab:test_summary}. All tests run without GPU access by mocking heavy dependencies (PyTorch, model inference), ensuring they can be executed in any development environment. The Django tests cover data models, view rendering, JSON API responses, and the GPU proxy/fallback logic. The FastAPI tests cover health checks, input validation, and end-to-end inference with mocked models.
 
 \begin{table}[H]
 \centering

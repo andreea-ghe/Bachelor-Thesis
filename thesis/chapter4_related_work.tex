@@ -78,7 +78,7 @@ Consequently, Jigsaw established the standard baseline for subsequent research i
 
 \section{New generation of SOTA}
 
-In the following section we examine the Jigsaw framework, which, despite establishing a strong baseline for multi-fragment reassembly, introduces several structural and computational inefficiencies within its matching and alignment pipeline. These shortcomings reveal important bottlenecks related to scalability, geometric reasoning, and pose estimation accuracy. Based on this analysis, we then review how newer methods address these limitations through more efficient matching strategies and improved alignment mechanisms.
+The following section examines the structural bottlenecks in the Jigsaw pipeline and reviews how newer architectures address them. Each subsection concludes by connecting the reviewed ideas to our proposed modifications, establishing the motivation for the extensions presented in Chapter~\ref{chap:ch5}.
 
 \subsection{The Efficiency Bottleneck}
 
@@ -121,9 +121,11 @@ The pipeline then proceeds to \textbf{fine matching}. The same PMT layers are ap
 
 Finally, the resulting score matrix is transformed by a Sinkhorn Optimal Transport layer \cite{cuturi2013sinkhorn}, which enforces a doubly-stochastic constraint to produce a confidence matrix of one-to-one point correspondences. From these refined correspondences, a Singular Value Decomposition \cite{golub2013matrix} step computes the rigid 6-DoF transformation (rotation and translation) that assembles the fragments.
 
+While PHFormer and PMTR address the matching cost, a related but distinct efficiency concern lies in the PointNet++ backbone itself: the $k$-nearest neighbors grouping is topology-unaware and can include spatially close but surface-disconnected points. Inspired by the proxy-level locality of PHFormer, we investigate Gabriel graph filtering \cite{gabriel1969new} as a complementary approach that targets the neighborhood construction stage, pruning kNN edges that cross interior space to produce surface-faithful local regions.
+
 \subsection{The Attention Bottleneck}
 
-Standard attention mechanisms are limited in assembly tasks because they rely mainly on feature similarity, without explicitly considering spatial constraints such as distances, angles, or relative orientations between fragments. These geometric relationships are essential for determining how parts fit together, yet vanilla cross-attention ignores them entirely. To address this limitation, recent methods aim to incorporate geometric information directly into the attention process.
+Jigsaw's feature extractor applies a single round of self-attention and cross-attention, which limits both \textit{what} information enters the attention computation and \textit{how many} refinement passes the features undergo. On the first aspect, cross-attention relies purely on learned feature similarity and can produce overconfident correspondence distributions, particularly on out-of-distribution geometry. On the second, a single pass may not suffice for the features to fully capture both intra-fragment structure and inter-fragment relationships. Recent architectures address both aspects.
 
 \paragraph{Geometric Point Attention Transformer for 3D Shape Reassembly} \mbox{} \\
 The Geometric Point Attention Transformer (GPAT) \cite{Li2023GPAT} addresses the attention bottleneck by explicitly encoding geometric relationships into the attention computation.
@@ -148,6 +150,10 @@ Rather than predicting absolute poses, the network outputs a relative update ($\
     \caption{Overview of the GPAT architecture \cite{Li2023GPAT}. The attention mechanism integrates feature similarity (Part Attention), geometric pair descriptors (Pair Attention), and point-level pose alignment (Point Attention). Geometric Recycling feeds updated poses back through the feature extractor for iterative refinement.}
     \label{fig:gpat}
 \end{figure}
+
+Tgus, the pair attention descriptors in GPAT are informative \textit{because} of geometric recycling: the iterative pose updates progressively increase the variance of the centroid distances and triplet angles. In a single-pass pipeline like Jigsaw, where each fragment is independently centered and randomly rotated, these descriptors would have low variance. This observation motivated our investigation of what role the pair attention mechanism takes on when transferred into such a context (Section~\ref{par:pair_attn_limitations}).
+
+Additionally, both PHFormer and GARF employ an \textit{alternating} strategy of self-attention followed by cross-attention, repeated over multiple rounds (2 in PHFormer, 6 in GARF), allowing each fragment to progressively refine its representation based on global context. This motivated our gated double attention extension, which adds a second round of self- and cross-attention to Jigsaw's feature extractor (Section~\ref{sec:double_attn_method}).
 
 \subsection{The Blindness Bottleneck}
 
@@ -208,10 +214,16 @@ At inference time, GARF employs a two-stage strategy (Figure~\ref{fig:garf}). A 
 
 \subsection{Summary and Research Gap}
 
-Recent deep learning methods have significantly improved the problem of 3D fractured object reassembly, especially with the introduction of frameworks such as Jigsaw, which combine attention mechanisms with global matching strategies. However, despite these advances, several limitations remain, particularly when dealing with ambiguous or incomplete fragments.
+Each of the reviewed architectures introduces ideas that address specific bottlenecks in the Jigsaw pipeline. Rather than proposing an entirely new architecture, this thesis asks which of these ideas can be extracted, adapted, and integrated into Jigsaw as modular extensions. The specific connections are:
 
-First, standard cross-attention relies mainly on learned feature similarity and does not explicitly consider geometric relationships between fragments, which can reduce robustness in complex multi-piece scenarios. Second, most architectures use relatively shallow attention, limiting their ability to iteratively refine feature representations. Third, the PointNet++ backbone constructs local neighborhoods via $k$-nearest neighbors without regard for surface topology, potentially including spatially close but topologically distant points. Finally, pairwise transformations are typically recovered using sparse correspondences through RANSAC, which does not fully utilize the dense geometric information available on fracture surfaces, potentially limiting alignment precision.
+\begin{itemize}
+    \item \textbf{Pair attention as learned regularization} (inspired by GPAT). We studied the pair attention mechanism from GPAT and recognized that, without geometric recycling, the spatial descriptors would have low variance in Jigsaw's preprocessing context. We hypothesized that the mechanism would act as a learned attention regularizer rather than as a discriminative spatial bias, and designed the experiment to test this.
 
-This thesis addresses these limitations by exploring targeted improvements within the Jigsaw pipeline. Instead of proposing a completely new architecture, we focus on understanding how specific modifications can influence the reconstruction process. In particular, we introduce a geometric bias into the attention mechanism, extend the model with a gated second attention pass for controlled refinement, apply Gabriel graph filtering \cite{gabriel1969new} to construct surface-faithful neighborhoods in the feature extractor, and incorporate an ICP-based step to refine pairwise transformations before global alignment.
+    \item \textbf{Gated double attention} (inspired by PHFormer and GARF). Both PHFormer and GARF employ alternating rounds of self-attention and cross-attention, progressively refining fragment representations. We adopt this principle by adding a second gated attention pass to Jigsaw's feature extractor.
+
+    \item \textbf{Gabriel graph filtering} (inspired by PHFormer and PMTR). While PHFormer and PMTR address the matching cost through proxy-level representations, a related bottleneck lies in PointNet++'s topology-unaware kNN grouping. We apply Gabriel graph filtering \cite{gabriel1969new} to prune edges that cross interior space, producing surface-faithful neighborhoods.
+
+    \item \textbf{ICP refinement.} Jigsaw recovers pairwise poses from sparse RANSAC correspondences, while GARF bypasses discrete matching entirely through continuous pose estimation. We take a simpler, non-learned approach: dense point-to-point ICP refinement of the RANSAC estimates before global synchronization via Shonan averaging.
+\end{itemize}
 
 In the next chapter, we present the extended methodology and analyze how these modifications affect the overall reconstruction, with a focus on challenging scenarios such as incomplete or ambiguous fragment configurations.

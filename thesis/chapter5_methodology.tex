@@ -20,16 +20,18 @@ The proposed extensions target three specific points in this pipeline, summarize
 \centering
 \caption{Overview of the proposed modifications and their integration points in the Jigsaw pipeline.}
 \label{tab:method_contributions}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{lll}
 \toprule
 \textbf{Pipeline Stage} & \textbf{Original Component} & \textbf{Proposed Modification} \\
 \midrule
-Feature extraction & Cross-attention & Pair geometric attention bias (regularization) \\
+Feature extraction & Cross-attention & Pair attention bias (soft regularization) \\
 Feature refinement & Single attention pass & Gated double attention pass \\
 Neighborhood construction & kNN grouping & Gabriel graph filtering \\
 Pose recovery & RANSAC pairwise estimation & ICP refinement before synchronization \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
 \section{Front-End Feature Extractor}
@@ -69,17 +71,15 @@ Here, \(FFN(\cdot)\) consists of two linear layers with ReLU and LayerNorm. This
 \label{par:pair_attn_limitations}
 
 \paragraph{Motivation.}
-Neural attention mechanisms for assembly are prone to producing overconfident, sharply peaked attention distributions, particularly when the model is finetuned with limited data or evaluated on out-of-distribution objects. A classical remedy is temperature scaling, where the softmax logits are divided by a constant $T > 1$ to flatten the distribution. However, a fixed temperature lacks adaptability: the optimal smoothing depends on the difficulty of the input and may differ between easy in-distribution fractures and challenging cross-domain ones.
-
-The GPAT architecture \cite{Li2023GPAT} introduces a \textbf{Pair Attention} mechanism that adds a learned geometric bias $b_{ij}$ to cross-attention logits for each fragment pair $(i, j)$. The bias is computed from spatial descriptors---centroid distances and triplet angles---encoded via Gaussian Radial Basis Functions (RBFs) and projected through a small MLP:
+The GPAT architecture \cite{Li2023GPAT} introduces a \textbf{Pair Attention} mechanism that adds a learned geometric bias $b_{ij}$ to cross-attention logits for each fragment pair $(i, j)$. The bias is computed from spatial descriptors (centroid distances and triplet angles) encoded via Gaussian Radial Basis Functions (RBFs) and projected through a small MLP:
 \begin{equation}
 \label{eq:pair_bias_attn}
 \alpha_{pq} = \frac{\mathbf{q}_p^T \mathbf{k}_q}{\sqrt{d_k}} + b_{ij}, \qquad
 b_{ij} = \text{MLP}\!\left([\text{RBF}(d_{ij});\; \textstyle\sum_k \text{RBF}(\cos \angle_{ijk})]\right).
 \end{equation}
-In GPAT, these descriptors carry rich geometric information because the architecture maintains a globally consistent coordinate frame and iteratively refines fragment poses via geometric recycling, so that $d_{ij}$ and $\angle_{ijk}$ become progressively more informative. In Jigsaw, each fragment is independently centered at the origin and randomly rotated during preprocessing. This normalization reduces the variance of the geometric descriptors: pairwise centroid distances are close to zero and triplet angles follow a near-uniform distribution.
+In GPAT, these descriptors carry rich geometric information because the architecture maintains a globally consistent coordinate frame and iteratively refines fragment poses via geometric recycling, so that $d_{ij}$ and $\angle_{ijk}$ become progressively more informative with each iteration.
 
-Under these conditions, the pair encoder takes on a different role than in GPAT. The low-variance RBF output causes the MLP to learn an approximately \textit{uniform additive bias} across all fragment pairs---equivalent to a learned increase of the softmax temperature. Unlike a fixed temperature hyperparameter, however, this bias is \textit{data-dependent}: the MLP adjusts its magnitude based on the training signal, acting as a \textbf{soft attention regularizer}.
+When studying this mechanism, we recognized that Jigsaw's preprocessing would fundamentally alter its behavior. In Jigsaw, each fragment is independently centered at the origin and randomly rotated, which reduces the variance of the geometric descriptors: pairwise centroid distances are close to zero and triplet angles follow a near-uniform distribution. We hypothesized that rather than providing discriminative spatial guidance, the pair encoder would learn an approximately \textit{uniform additive bias} across all fragment pairs, equivalent to a learned increase of the softmax temperature. Unlike a fixed temperature hyperparameter, however, this bias would be \textit{data-dependent}: the MLP would adjust its magnitude based on the training signal, acting as a \textbf{soft attention regularizer} that prevents overconfident correspondences, particularly on out-of-distribution geometry where the base attention is poorly calibrated.
 
 \paragraph{Architecture.}
 The pair encoder has two stages. First, the pairwise centroid distances and triplet angles are mapped to continuous feature vectors through Gaussian RBF layers whose centers are fixed and do not change during training. Second, a two-layer MLP (\texttt{bias\_proj}) projects the concatenated RBF features to the scalar bias $b_{ij}$ that is added to the cross-attention logits (Equation~\ref{eq:pair_bias_attn}). Only the MLP parameters are learned; the RBF encoding remains identical to its pretrained GPAT initialization. The encoder is connected to the cross-attention layer through the same zero-initialized gating strategy as the double attention module (Section~\ref{sec:double_attn_method}), so the bias starts at zero and grows only if the training objective benefits from it.
