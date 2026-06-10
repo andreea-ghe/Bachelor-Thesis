@@ -27,7 +27,7 @@
             <div class="flex flex-col items-center gap-3 pt-4">
                 <a href="#content" class="hero-cta">Explore the Demo</a>
                 <a href="#" class="hero-cta text-txt-secondary">Read the Thesis</a>
-                <a href="#" class="hero-cta text-txt-secondary">Access the Code</a>
+                <a href="https://github.com/andreea-ghe/Bachelor-Thesis" target="_blank" rel="noopener" class="hero-cta text-txt-secondary">Access the Code</a>
                 <a href="#" class="hero-cta text-txt-secondary">Download Model Weights</a>
             </div>
         </div>
@@ -82,6 +82,7 @@
 
     const PIECE_COLORS = [0x00c850, 0xc80000, 0x0000c8, 0xc8c800];
     const csrfToken = '{{ csrf_token }}';
+    const STATIC_PREFIX = '{% get_static_prefix %}';
 
     // ── Fracture data from Django context ──────────────────
     const allFractures = [
@@ -195,12 +196,24 @@
     });
 
     // ── Fullscreen: tab switching ──────────────────────────
+    const fsBrowseViewer = document.getElementById('fs-browse-viewer');
+    const fsCompareViewers = document.getElementById('fs-compare-viewers');
+    const fsModelSelect = document.getElementById('fs-model-select');
+
     document.querySelectorAll('[data-tab]').forEach(tab => {
         tab.addEventListener('click', () => {
             document.querySelectorAll('[data-tab]').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.fs-tab-content').forEach(c => c.classList.add('hidden'));
             tab.classList.add('active');
             document.getElementById(`tab-${tab.dataset.tab}`).classList.remove('hidden');
+
+            const isCompare = tab.dataset.tab === 'compare';
+            compareMode = isCompare;
+            fsBrowseViewer.classList.toggle('hidden', isCompare);
+            fsCompareViewers.classList.toggle('hidden', !isCompare);
+            fsModelSelect.classList.toggle('hidden', isCompare);
+
+            if (isCompare) populateCompareGrid();
         });
     });
 
@@ -213,9 +226,15 @@
             const card = document.createElement('div');
             card.className = 'example-card';
             card.dataset.fractureId = f.id;
+            const thumbUrl = `${STATIC_PREFIX}core/thumbnails/${f.id}.png`;
             card.innerHTML = `
-                <div class="text-sm font-medium truncate">${f.category}</div>
-                <div class="text-xs text-txt-muted mt-1">${f.pieces} pieces</div>
+                <div class="thumb-container">
+                    <img class="thumb-img" src="${thumbUrl}"
+                         alt="${f.category} preview"
+                         onerror="this.style.display='none'" />
+                </div>
+                <div class="text-sm font-medium truncate mt-1.5">${f.category}</div>
+                <div class="text-xs text-txt-muted">${f.pieces} pieces</div>
                 <div class="text-xs text-txt-muted truncate">${f.name}</div>
             `;
             card.addEventListener('click', () => {
@@ -235,14 +254,63 @@
         });
     }
 
+    function populateCompareGrid() {
+        const grid = document.getElementById('cmp-examples-grid');
+        if (grid.children.length > 0) return;
+
+        allFractures.forEach((f) => {
+            const card = document.createElement('div');
+            card.className = 'example-card';
+            card.dataset.fractureId = f.id;
+            const thumbUrl = `${STATIC_PREFIX}core/thumbnails/${f.id}.png`;
+            card.innerHTML = `
+                <div class="thumb-container">
+                    <img class="thumb-img" src="${thumbUrl}"
+                         alt="${f.category} preview"
+                         onerror="this.style.display='none'" />
+                </div>
+                <div class="text-sm font-medium truncate mt-1.5">${f.category}</div>
+                <div class="text-xs text-txt-muted">${f.pieces} pieces</div>
+                <div class="text-xs text-txt-muted truncate">${f.name}</div>
+            `;
+            card.addEventListener('click', () => {
+                const idx = filteredFractures.findIndex(ff => ff.id === f.id);
+                if (idx >= 0) selectExample(idx);
+                else {
+                    catSelect.value = 'all';
+                    filteredFractures = [...allFractures];
+                    const newIdx = filteredFractures.findIndex(ff => ff.id === f.id);
+                    selectExample(newIdx);
+                }
+                highlightCompareCard(f.id);
+                loadCompareExample(f);
+            });
+            grid.appendChild(card);
+        });
+    }
+
     function highlightGridCard(fractureId) {
-        document.querySelectorAll('.example-card').forEach(c => {
+        document.querySelectorAll('#fs-examples-grid .example-card').forEach(c => {
+            c.classList.toggle('selected', c.dataset.fractureId === fractureId);
+        });
+    }
+
+    function highlightCompareCard(fractureId) {
+        document.querySelectorAll('#cmp-examples-grid .example-card').forEach(c => {
             c.classList.toggle('selected', c.dataset.fractureId === fractureId);
         });
     }
 
     // ── Fullscreen: run inference ──────────────────────────
-    document.getElementById('fs-run-btn').addEventListener('click', () => runInference('fullscreen'));
+    let compareMode = false;
+
+    document.getElementById('fs-run-btn').addEventListener('click', () => {
+        if (compareMode && currentIndex >= 0) {
+            runCompareInference(filteredFractures[currentIndex]);
+        } else {
+            runInference('fullscreen');
+        }
+    });
 
     // ── Three.js viewer factory ────────────────────────────
     function createViewer(containerId, clearColor = 0x000000) {
@@ -462,27 +530,28 @@
         if (!cmpViewerB) cmpViewerB = createViewer('cmp-viewer-b');
     }
 
-    // Enable compare button when an example is selected
-    function updateCompareButton() {
-        const btn = document.getElementById('cmp-run-btn');
-        if (btn) btn.disabled = currentIndex < 0;
+    function loadCompareExample(fracture) {
+        ensureCompareViewers();
+        const labelA = document.getElementById('cmp-model-a').selectedOptions[0].text;
+        const labelB = document.getElementById('cmp-model-b').selectedOptions[0].text;
+        document.getElementById('cmp-label-a').textContent = labelA;
+        document.getElementById('cmp-label-b').textContent = labelB;
+
+        loadPiecesIntoViewer(cmpViewerA, fracture.id, 'cmp-placeholder-a', true);
+        loadPiecesIntoViewer(cmpViewerB, fracture.id, 'cmp-placeholder-b', true);
+
+        document.getElementById('cmp-run-btn').disabled = false;
+        const statusEl = document.getElementById('cmp-status');
+        statusEl.textContent = `Loaded: ${fracture.category} — ${fracture.name}`;
+        statusEl.className = 'text-xs text-txt-muted mb-4 min-h-[1rem]';
     }
 
-    // Patch selectExample to also enable compare button
-    const _origSelectExample = selectExample;
-    selectExample = function(idx) {
-        _origSelectExample(idx);
-        updateCompareButton();
-    };
-
-    document.getElementById('cmp-run-btn').addEventListener('click', async () => {
-        if (currentIndex < 0) return;
+    async function runCompareInference(fracture) {
         ensureCompareViewers();
 
-        const fracture = filteredFractures[currentIndex];
         const modelA = document.getElementById('cmp-model-a').value;
         const modelB = document.getElementById('cmp-model-b').value;
-        const btn = document.getElementById('cmp-run-btn');
+        const btn = document.getElementById('fs-run-btn');
         const statusEl = document.getElementById('cmp-status');
 
         if (modelA === modelB) {
@@ -494,12 +563,6 @@
         btn.disabled = true;
         statusEl.textContent = 'Running inference on both models...';
         statusEl.className = 'text-xs text-txt-muted mb-4 min-h-[1rem]';
-
-        // Update labels
-        const labelA = document.getElementById('cmp-model-a').selectedOptions[0].text;
-        const labelB = document.getElementById('cmp-model-b').selectedOptions[0].text;
-        document.getElementById('cmp-label-a').textContent = labelA;
-        document.getElementById('cmp-label-b').textContent = labelB;
 
         async function runOne(model) {
             const fd = new FormData();
@@ -533,6 +596,11 @@
             });
             fitCamera(cmpViewerB);
 
+            const labelA = document.getElementById('cmp-model-a').selectedOptions[0].text;
+            const labelB = document.getElementById('cmp-model-b').selectedOptions[0].text;
+            document.getElementById('cmp-label-a').textContent = labelA;
+            document.getElementById('cmp-label-b').textContent = labelB;
+
             const srcA = resultA.source === 'precomputed' ? ' (cached)' : '';
             const srcB = resultB.source === 'precomputed' ? ' (cached)' : '';
             statusEl.textContent = `Done — A${srcA} vs B${srcB}`;
@@ -543,7 +611,7 @@
         } finally {
             btn.disabled = false;
         }
-    });
+    }
 
     </script>
 </body>

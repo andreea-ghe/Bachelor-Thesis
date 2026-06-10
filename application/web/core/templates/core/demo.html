@@ -41,28 +41,31 @@
         </div>
     </div>
 
-    {# 3D viewer: broken pieces #}
-    <div class="flex-1 flex items-center justify-center px-5 py-4">
-        <div class="viewer-box w-full max-w-[280px] aspect-square" id="viewer-canvas">
-            <div id="viewer-placeholder"
-                 class="absolute inset-0 flex items-center justify-center text-txt-muted text-xs pointer-events-none">
-                Select an example above
+    {# 3D viewers: input (broken) + output (assembled) #}
+    <div class="flex-1 flex flex-col min-h-0 px-5 py-3 gap-2">
+        <p class="text-[10px] text-txt-muted text-center uppercase tracking-wider">Input</p>
+        <div class="flex-1 min-h-0">
+            <div class="viewer-box w-full h-full" id="viewer-canvas">
+                <div id="viewer-placeholder"
+                     class="absolute inset-0 flex items-center justify-center text-txt-muted text-xs pointer-events-none">
+                    Select an example above
+                </div>
             </div>
         </div>
-    </div>
 
-    {# Fix button + status #}
-    <div class="px-5 py-3 border-t border-brd-soft">
-        <button id="run-btn" class="btn w-full" disabled>Fix Object</button>
-        <div id="status" class="text-xs text-txt-muted mt-2 min-h-[1rem]"></div>
-    </div>
+        {# Fix button + status #}
+        <div class="py-1 shrink-0">
+            <button id="run-btn" class="btn w-full" disabled>Fix Object</button>
+            <div id="status" class="text-xs text-txt-muted mt-1 min-h-[1rem]"></div>
+        </div>
 
-    {# 3D viewer: assembled result #}
-    <div class="flex-1 flex items-center justify-center px-5 py-4 border-t border-brd-soft">
-        <div class="viewer-box w-full max-w-[280px] aspect-square" id="result-canvas">
-            <div id="result-placeholder"
-                 class="absolute inset-0 flex items-center justify-center text-txt-muted text-xs pointer-events-none">
-                Assembled result appears here
+        <p class="text-[10px] text-txt-muted text-center uppercase tracking-wider">Output</p>
+        <div class="flex-1 min-h-0">
+            <div class="viewer-box w-full h-full" id="result-canvas">
+                <div id="result-placeholder"
+                     class="absolute inset-0 flex items-center justify-center text-txt-muted text-xs pointer-events-none">
+                    Assembled result appears here
+                </div>
             </div>
         </div>
     </div>
@@ -72,7 +75,7 @@
     <div class="flex h-full">
 
         {# LEFT: 3D viewer + controls #}
-        <div class="w-1/2 flex flex-col h-full p-6">
+        <div id="fs-left-panel" class="w-1/2 flex flex-col h-full p-6">
             <div class="flex items-center justify-between mb-4">
                 <button onclick="closeFullscreen()" class="btn text-xs">
                     {% include "components/icons/close_full_screen.html" %}
@@ -85,11 +88,35 @@
                 </select>
             </div>
 
-            {# Large 3D viewer #}
-            <div class="flex-1 viewer-box" id="fs-viewer-canvas">
-                <div id="fs-viewer-placeholder"
-                     class="absolute inset-0 flex items-center justify-center text-txt-muted text-sm pointer-events-none">
-                    Pick an example from the grid
+            {# Single viewer (Browse mode) #}
+            <div id="fs-browse-viewer" class="flex-1 flex flex-col">
+                <div class="flex-1 viewer-box" id="fs-viewer-canvas">
+                    <div id="fs-viewer-placeholder"
+                         class="absolute inset-0 flex items-center justify-center text-txt-muted text-sm pointer-events-none">
+                        Pick an example from the grid
+                    </div>
+                </div>
+            </div>
+
+            {# Stacked viewers (Compare mode) #}
+            <div id="fs-compare-viewers" class="flex-1 flex flex-col gap-3 hidden">
+                <div class="flex-1 flex flex-col space-y-1">
+                    <span id="cmp-label-a" class="text-xs text-txt-muted block text-center">Model A</span>
+                    <div class="viewer-box flex-1" id="cmp-viewer-a">
+                        <div id="cmp-placeholder-a"
+                             class="absolute inset-0 flex items-center justify-center text-txt-muted text-xs pointer-events-none">
+                            Result A
+                        </div>
+                    </div>
+                </div>
+                <div class="flex-1 flex flex-col space-y-1">
+                    <span id="cmp-label-b" class="text-xs text-txt-muted block text-center">Model B</span>
+                    <div class="viewer-box flex-1" id="cmp-viewer-b">
+                        <div id="cmp-placeholder-b"
+                             class="absolute inset-0 flex items-center justify-center text-txt-muted text-xs pointer-events-none">
+                            Result B
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -111,7 +138,7 @@
         </div>
 
         {# RIGHT: Tabs + content #}
-        <div class="w-1/2 flex flex-col h-full p-6 pl-0">
+        <div id="fs-right-panel" class="w-1/2 flex flex-col h-full p-6 pl-0">
 
             {# Tab bar #}
             <div class="flex gap-2 mb-4">
@@ -132,7 +159,7 @@
             {# Tab: Compare two models side-by-side #}
             <div id="tab-compare" class="fs-tab-content flex-1 overflow-y-auto pr-2 hidden">
                 <p class="text-txt-secondary text-sm mb-4">
-                    Run two models on the same fracture and compare results side by side.
+                    Pick an example from the grid, then compare two models side by side.
                 </p>
 
                 {# Model selectors #}
@@ -155,29 +182,11 @@
                     </div>
                 </div>
 
-                <button id="cmp-run-btn" class="btn w-full mb-3" disabled>Compare Models</button>
                 <div id="cmp-status" class="text-xs text-txt-muted mb-4 min-h-[1rem]"></div>
 
-                {# Side-by-side viewers #}
-                <div class="flex gap-3">
-                    <div class="flex-1 space-y-2">
-                        <span id="cmp-label-a" class="text-xs text-txt-muted block text-center">Model A</span>
-                        <div class="viewer-box aspect-square" id="cmp-viewer-a">
-                            <div id="cmp-placeholder-a"
-                                 class="absolute inset-0 flex items-center justify-center text-txt-muted text-xs pointer-events-none">
-                                Result A
-                            </div>
-                        </div>
-                    </div>
-                    <div class="flex-1 space-y-2">
-                        <span id="cmp-label-b" class="text-xs text-txt-muted block text-center">Model B</span>
-                        <div class="viewer-box aspect-square" id="cmp-viewer-b">
-                            <div id="cmp-placeholder-b"
-                                 class="absolute inset-0 flex items-center justify-center text-txt-muted text-xs pointer-events-none">
-                                Result B
-                            </div>
-                        </div>
-                    </div>
+                {# Example grid reused for picking in compare mode #}
+                <div id="cmp-examples-grid" class="grid grid-cols-3 gap-3">
+                    {# Populated by JS #}
                 </div>
             </div>
         </div>

@@ -1,5 +1,6 @@
 {# Slide 2: Architecture / Pipeline #}
-<section id="slide-arch" class="slide-section flex flex-col justify-center px-10 py-20 space-y-6">
+{% load static %}
+<section id="slide-arch" class="slide-section flex flex-col px-10 space-y-6">
     <div class="flex items-center justify-between">
         <h2 class="text-3xl font-semibold">Jigsaw Pipeline</h2>
         <div class="flex gap-1">
@@ -44,28 +45,35 @@
             </div>
         </div>
 
+        {# Attention diagram #}
+        <div class="slide-diagram">
+            <img src="{% static 'core/images/attention_diagram.png' %}"
+                 alt="Attention mechanism: self-attention refines per-fragment features, cross-attention establishes inter-fragment correspondences">
+        </div>
+
         <div class="grid grid-cols-2 gap-3 text-sm">
             <div class="border border-brd-soft rounded-xl p-4">
                 <p class="font-medium mb-1">Feature Extraction</p>
                 <p class="text-txt-secondary text-xs leading-relaxed">
-                    PointNet++ encodes local geometry at multiple scales.
-                    Self-attention refines per-point features using k-NN neighborhoods
-                    with positional encodings from 3D distances.
+                    PointNet++ encodes local geometry at multiple scales using
+                    Set Abstraction layers with kNN grouping, shared MLPs, and
+                    max-pooling over local neighborhoods.
                 </p>
             </div>
             <div class="border border-brd-soft rounded-xl p-4">
-                <p class="font-medium mb-1">Cross-Attention</p>
+                <p class="font-medium mb-1">Attention Layers</p>
                 <p class="text-txt-secondary text-xs leading-relaxed">
-                    Multi-head attention between fragments establishes inter-piece
-                    correspondences, bridging the geometric gap across fracture surfaces.
+                    Self-attention captures relationships between points within
+                    each fragment. Cross-attention lets all points from all
+                    fragments attend to each other, enabling matching of fracture surfaces.
                 </p>
             </div>
             <div class="border border-brd-soft rounded-xl p-4">
                 <p class="font-medium mb-1">Primal-Dual Matching</p>
                 <p class="text-txt-secondary text-xs leading-relaxed">
-                    Features split into primal (convex) and dual (concave) spaces.
+                    Features split into primal (convex) and dual (concave) descriptors.
                     Sinkhorn optimal transport produces soft assignments;
-                    Hungarian algorithm extracts discrete one-to-one matches.
+                    the Hungarian algorithm extracts discrete one-to-one matches.
                 </p>
             </div>
             <div class="border border-brd-soft rounded-xl p-4">

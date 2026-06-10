@@ -1,7 +1,7 @@
-{# Slide 5: Future research directions #}
-<section id="slide-future" class="slide-section flex flex-col justify-center px-10 py-20 space-y-6">
+{# Slide 5: Conclusions & Future Directions #}
+<section id="slide-future" class="slide-section flex flex-col px-10 space-y-6">
     <div class="flex items-center justify-between">
-        <h2 class="text-3xl font-semibold">Future Directions</h2>
+        <h2 class="text-3xl font-semibold">Conclusions &amp; Future Work</h2>
         <div class="flex gap-1">
             <button onclick="scrollToSlide('slide-results')" class="btn-icon">
                 {% include "components/icons/arrow_narrow_up.html" %}
@@ -13,44 +13,62 @@
         </div>
     </div>
     <div class="space-y-4">
+        <div class="border border-brd-soft rounded-xl p-5 space-y-3">
+            <p class="text-sm font-medium">Conclusions</p>
+            <p class="text-txt-secondary text-sm leading-relaxed">
+                Data quantity is the dominant factor for reconstruction quality. But when
+                data is scarce, architectural extensions act as implicit regularizers in
+                multiple directions: architecture and data address the same representational
+                bottleneck from complementary angles.
+            </p>
+            <ul class="text-txt-secondary text-xs leading-relaxed space-y-1 list-disc list-inside">
+                <li>Gated double attention: +2.6 pp PA on cross-domain data, consistent across piece counts</li>
+                <li>Gabriel filtering: higher-quality matches, ~10% CD reduction on artifact, with lower computational cost</li>
+                <li>ICP: stable +1 pp chamfer improvement with no new parameters</li>
+                <li>Pair attention: learned temperature scaling that regularizes attention distributions</li>
+            </ul>
+        </div>
+
         <div class="grid grid-cols-2 gap-3">
             <div class="border border-brd-soft rounded-xl p-4 space-y-2">
-                <p class="text-sm font-medium">Scale to 2&ndash;20 pieces</p>
+                <p class="text-sm font-medium">Backbone Upgrade</p>
                 <p class="text-txt-secondary text-xs leading-relaxed">
-                    The current evaluation covers 2&ndash;4 pieces. Testing pair
-                    geometric bias on richer combinatorial diversity may reveal
-                    benefits invisible in the small-piece regime.
+                    Replace PointNet++ with Point Transformer V3 (PTv3) for stronger
+                    geometric representations and native attention over point clouds.
                 </p>
             </div>
             <div class="border border-brd-soft rounded-xl p-4 space-y-2">
-                <p class="text-sm font-medium">Loss schedule search</p>
+                <p class="text-sm font-medium">Scale to 2 to 20 Pieces</p>
                 <p class="text-txt-secondary text-xs leading-relaxed">
-                    Experiments showed high sensitivity to when matching and
-                    rigidity losses activate. Systematic scheduling or curriculum
-                    learning could unlock further gains.
+                    The current evaluation covers 2 to 4 pieces. Testing on richer
+                    combinatorial diversity may reveal benefits invisible in the
+                    small-piece regime.
                 </p>
             </div>
             <div class="border border-brd-soft rounded-xl p-4 space-y-2">
-                <p class="text-sm font-medium">Synthetic &rarr; real transfer</p>
+                <p class="text-sm font-medium">Efficient Attention</p>
                 <p class="text-txt-secondary text-xs leading-relaxed">
-                    Breaking Bad fractures lack erosion, wear, and missing parts
-                    found in real archaeological or medical data. Bridging this
-                    domain gap is an open challenge.
+                    FlashAttention or PMTR's proxy-level matching could remove the
+                    quadratic bottleneck that limits scalability to larger piece counts.
                 </p>
             </div>
             <div class="border border-brd-soft rounded-xl p-4 space-y-2">
-                <p class="text-sm font-medium">Missing fragments</p>
+                <p class="text-sm font-medium">Synthetic &rarr; Real Transfer</p>
                 <p class="text-txt-secondary text-xs leading-relaxed">
-                    Current methods assume all pieces are present. Handling
-                    partial reconstructions where fragments are lost or
-                    unrecoverable remains unsolved.
+                    Breaking Bad lacks erosion and missing parts found in real
+                    archaeological data. Real-world evaluation on the FRACTURA
+                    dataset remains an open challenge.
                 </p>
             </div>
         </div>
-        <p class="text-txt-muted text-sm leading-relaxed">
-            The artifact split already serves as a cross-domain benchmark
-            (trained on everyday objects, evaluated on archaeological-style
-            artifacts), pointing toward broader transfer learning paradigms.
-        </p>
+
+        <div class="border border-brd-soft rounded-xl p-4 space-y-2">
+            <p class="text-sm font-medium">Threats to Validity</p>
+            <ul class="text-txt-secondary text-xs leading-relaxed space-y-1 list-disc list-inside">
+                <li>All experiments use synthetically fractured meshes</li>
+                <li>Gabriel filtering was not jointly trained from scratch</li>
+                <li>Pair attention's regularization depends on Jigsaw's preprocessing</li>
+            </ul>
+        </div>
     </div>
 </section>

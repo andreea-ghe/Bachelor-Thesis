@@ -8,13 +8,21 @@ html {
 
 /* ── Slides ──────────────────────────────────────────── */
 .slide-section {
-    min-height: 100vh;
+    min-height: auto;
+    padding-top: 5rem;
+    padding-bottom: 5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.slide-section:last-child {
+    border-bottom: none;
 }
 
 /* ── Three.js canvases ───────────────────────────────── */
 #viewer-canvas canvas,
 #result-canvas canvas,
-#fs-viewer-canvas canvas {
+#fs-viewer-canvas canvas,
+#cmp-viewer-a canvas,
+#cmp-viewer-b canvas {
     display: block;
     width: 100%;
     height: 100%;
@@ -129,9 +137,23 @@ html {
 .example-card {
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 0.75rem;
-    padding: 0.75rem;
+    padding: 0.5rem;
     cursor: pointer;
     transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.thumb-container {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.thumb-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
 }
 
 .example-card:hover {
@@ -142,6 +164,20 @@ html {
 .example-card.selected {
     border-color: rgba(255, 255, 255, 0.3);
     background-color: rgba(255, 255, 255, 0.04);
+}
+
+/* ── Slide diagrams (white-bg images on dark theme) ──── */
+.slide-diagram {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 0.75rem;
+    padding: 0.75rem;
+    width: 100%;
+}
+.slide-diagram img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 0.5rem;
 }
 
 /* ── 3D viewer containers ────────────────────────────── */

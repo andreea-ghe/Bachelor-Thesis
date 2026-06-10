@@ -131,4 +131,14 @@ def predict(request):
     if cached is not None:
         return JsonResponse(cached)
 
-    return JsonResponse({"error": "GPU is unavailable and no precomputed result exists for this combination"}, status=503,)
+    is_two_piece_model = model_variant.startswith("two_piece")
+    if is_two_piece_model and fracture.num_pieces > 2:
+        return JsonResponse({
+            "error": (
+                f"The selected model supports only 2 pieces, but this object "
+                f"has {fracture.num_pieces} fragments. Please select a multi-piece "
+                f"model (2-4 pieces) from the dropdown."
+            )
+        }, status=400)
+
+    return JsonResponse({"error": "GPU is unavailable and no precomputed result exists for this combination."}, status=503)
