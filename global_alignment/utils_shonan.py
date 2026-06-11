@@ -46,12 +46,12 @@ def shonan_averaging(edges, transformations, uncertainties, n_valids):
         pose_graph_factors.append(relative_pose_factor)
         new_uncertainties.append(uncertainties[i])
 
-    # we start randomly because we don't have any prior on the absolute poses
+    # start randomly because we don't have any prior on the absolute poses
     shonan = gtsam.ShonanAveraging3(gtsam.BetweenFactorPose3s(pose_graph_factors))
     initial = shonan.initializeRandomly()
 
     try:
-        rotations, _ = shonan.run(initial, 3, 10) # we ignore translations, lift rotations to higher dimensional 
+        rotations, _ = shonan.run(initial, 3, 10) # ignore translations; lift rotations to higher dimensional space
         # space and solve a non-convex rotation synchronization problem
         # once we have rotations, we can estimate translations using least squares
         poses = estimate_poses_from_rotations(pose_graph_factors, rotations, np.array(new_uncertainties), d=3)
@@ -63,8 +63,8 @@ def shonan_averaging(edges, transformations, uncertainties, n_valids):
 
         return np.stack(global_pose_results), 1  # Success
     except:
-        # Shonan failed - return identity poses and signal failure
-        # The caller should use spanning tree alignment as fallback
+        # shonan failed - return identity poses and signal failure
+        # caller should use spanning tree alignment as fallback
         print("Shonan Averaging didn't converge.")
 
         global_pose_results = []
@@ -72,7 +72,7 @@ def shonan_averaging(edges, transformations, uncertainties, n_valids):
             global_pose_result = np.eye(4)
             global_pose_results.append(global_pose_result)
         
-        return np.stack(global_pose_results), 0  # Failure - use fallback
+        return np.stack(global_pose_results), 0  # failure - use fallback
 
 
 def estimate_poses_from_rotations(factors, rotations, uncertainties, d=3):

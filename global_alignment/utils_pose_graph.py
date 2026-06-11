@@ -24,20 +24,20 @@ def connect_graph(n_valid, edges):
         auxiliary_edges: [C, 2] - new edges connecting hub to each component
             where C is the number of connected components
     """
-    # Build graph from existing edges
+    # build graph from existing edges
     G = nx.Graph()
     G.add_nodes_from(np.arange(n_valid))
     G.add_edges_from(edges)
 
-    # Find connected components (sorted by size, largest first)
+    # find connected components (sorted by size, largest first)
     components = [
         list(c) for c in sorted(nx.connected_components(G), key=len, reverse=True)
     ]
 
-    # Connect hub (node n_valid) to one representative from each component
+    # connect hub (node n_valid) to one representative from each component
     auxiliary_edges = []
     for component in components:
-        # Connect to first node in component (arbitrary choice)
+        # connect to first node in component (arbitrary choice)
         auxiliary_edges.append([n_valid, component[0]])
 
     return np.stack(auxiliary_edges)

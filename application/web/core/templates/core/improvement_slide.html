@@ -1,4 +1,3 @@
-{# Slide 3: Proposed modifications #}
 {% load static %}
 <section id="slide-improve" class="slide-section flex flex-col px-10 space-y-6">
     <div class="flex items-center justify-between">
@@ -20,7 +19,6 @@
         </p>
 
         <div class="grid grid-cols-2 gap-3">
-            {# Pair Attention #}
             <div class="border border-brd-soft rounded-xl p-4 space-y-2">
                 <h3 class="text-sm font-medium">Pair Geometric Attention</h3>
                 <p class="text-txt-secondary text-xs leading-relaxed">
@@ -35,8 +33,6 @@
                     more uniform attention distributions.
                 </p>
             </div>
-
-            {# Double Attention #}
             <div class="border border-brd-soft rounded-xl p-4 space-y-2">
                 <h3 class="text-sm font-medium">Gated Double Attention</h3>
                 <p class="text-txt-secondary text-xs leading-relaxed">
@@ -51,8 +47,6 @@
                     value</strong>, subtracting first-pass patterns rather than purely adding.
                 </p>
             </div>
-
-            {# Gabriel Graph #}
             <div class="border border-brd-soft rounded-xl p-4 space-y-2">
                 <h3 class="text-sm font-medium">Gabriel Graph Filtering</h3>
                 <p class="text-txt-secondary text-xs leading-relaxed">
@@ -65,8 +59,6 @@
                     A minimum retention ratio prevents over-pruning in sparse regions.
                 </p>
             </div>
-
-            {# ICP #}
             <div class="border border-brd-soft rounded-xl p-4 space-y-2">
                 <h3 class="text-sm font-medium">ICP Refinement</h3>
                 <p class="text-txt-secondary text-xs leading-relaxed">
@@ -80,14 +72,10 @@
                 </p>
             </div>
         </div>
-
-        {# Gabriel filtering diagram #}
         <div class="slide-diagram">
             <img src="{% static 'core/images/gabriel_filtering.png' %}"
                  alt="Gabriel graph filtering: kNN vs Gabriel r=0, r=0.50, r=0.75 on a Bowl fragment (1000 points, FPS ratio=0.15, K=32)">
         </div>
-
-        {# ICP iteration diagram #}
         <div class="slide-diagram">
             <img src="{% static 'core/images/icp_diagram.png' %}"
                  alt="ICP iterative refinement: moving point cloud progressively aligns to reference through closest-point correspondences">

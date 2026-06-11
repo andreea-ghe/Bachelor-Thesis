@@ -1,11 +1,4 @@
-"""
-Tests for the FastAPI inference server.
-
-Covers:
-  1. Health and model listing endpoints
-  2. Input validation on the /predict endpoint
-  3. Successful inference with mocked model
-"""
+"""Tests for the FastAPI inference server."""
 
 import sys
 from unittest.mock import MagicMock, patch
@@ -16,10 +9,6 @@ from .server import app
 
 client = TestClient(app)
 
-
-# ---------------------------------------------------------------------------
-# 1. Health and model listing
-# ---------------------------------------------------------------------------
 
 class TestHealthEndpoint:
     def _mock_torch(self):
@@ -75,10 +64,6 @@ class TestModelsEndpoint:
                 assert model["max_pieces"] == 4
 
 
-# ---------------------------------------------------------------------------
-# 2. Input validation on /predict
-# ---------------------------------------------------------------------------
-
 def _make_obj_file(name="piece_0.obj", content="v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3"):
     return (name, content.encode("utf-8"), "text/plain")
 
@@ -133,10 +118,6 @@ class TestPredictValidation:
         )
         assert response.status_code == 422
 
-
-# ---------------------------------------------------------------------------
-# 3. Successful inference (mocked)
-# ---------------------------------------------------------------------------
 
 class TestPredictSuccess:
     def test_successful_prediction(self):

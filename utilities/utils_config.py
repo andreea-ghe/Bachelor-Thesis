@@ -22,66 +22,34 @@ __C.MODEL_SAVE_PATH = ""  # auto generated
 #
 __C.DATASET = ""
 
-# Other dataset specific configs should be imported from dataset_config.py
-
 # wandb project name
 __C.PROJECT = ""
 
 #
-# Training options
+# training options
 #
-
 __C.TRAIN = edict()
 
-# Total epochs
-__C.TRAIN.NUM_EPOCHS = 200
-
-# Optimizer type
-__C.TRAIN.OPTIMIZER = "SGD"
-
-# Start learning rate
-__C.TRAIN.LR = 0.001
-
-# Learning rate multiplier for pair_geometric_encoder (trains from scratch, needs higher LR)
-__C.TRAIN.PAIR_LR_MULT = 10.0
-
-# LR Scheduler
-__C.TRAIN.LR_SCHEDULER = "cosine"
-
-# Learning rate decay
-__C.TRAIN.LR_DECAY = 100.0
-
-# Learning rate decay step (in epochs)
-__C.TRAIN.LR_STEP = [10, 20]
-
-# warmup_ratio for Adam Cosine
-__C.TRAIN.WARMUP_RATIO = 0.0
-
-# clip_grad
-__C.TRAIN.CLIP_GRAD = None
-
-# beta1, beta2 for Adam Optimizer
-__C.TRAIN.beta1 = 0
-__C.TRAIN.beta2 = 0.9
-
-# weight decay for Adam or SGD
-__C.TRAIN.WEIGHT_DECAY = 0.0
-
-# SGD momentum
-__C.TRAIN.MOMENTUM = 0.9
-
-# Check val every n epoch
-__C.TRAIN.VAL_EVERY = 5
-
-# Visualization during training
-__C.TRAIN.VIS = True
+__C.TRAIN.NUM_EPOCHS = 200          # total epochs
+__C.TRAIN.OPTIMIZER = "SGD"         # optimizer type
+__C.TRAIN.LR = 0.001               # start learning rate
+__C.TRAIN.PAIR_LR_MULT = 10.0      # LR multiplier for pair_geometric_encoder (trains from scratch)
+__C.TRAIN.LR_SCHEDULER = "cosine"   # LR scheduler
+__C.TRAIN.LR_DECAY = 100.0         # learning rate decay
+__C.TRAIN.LR_STEP = [10, 20]       # learning rate decay step (in epochs)
+__C.TRAIN.WARMUP_RATIO = 0.0       # warmup ratio for Adam Cosine
+__C.TRAIN.CLIP_GRAD = None         # gradient clipping
+__C.TRAIN.beta1 = 0                # beta1 for Adam optimizer
+__C.TRAIN.beta2 = 0.9              # beta2 for Adam optimizer
+__C.TRAIN.WEIGHT_DECAY = 0.0       # weight decay for Adam or SGD
+__C.TRAIN.MOMENTUM = 0.9           # SGD momentum
+__C.TRAIN.VAL_EVERY = 5            # check val every n epoch
+__C.TRAIN.VIS = True                # visualization during training
 __C.TRAIN.VAL_SAMPLE_VIS = 5
-
-# Loss function.
-__C.TRAIN.LOSS = ""
+__C.TRAIN.LOSS = ""                 # loss function
 
 #
-# Callback
+# callback
 #
 __C.CALLBACK = edict()
 __C.CALLBACK.MATCHING_TASK = ["trans"]
@@ -89,49 +57,32 @@ __C.CALLBACK.CHECKPOINT_MONITOR = "val/loss"
 __C.CALLBACK.CHECKPOINT_MODE = "min"
 
 #
-# Loss config
+# loss config
 #
 __C.LOSS = edict()
 
 #
-# Evaluation options
+# evaluation options
 #
 __C.EVAL = edict()
 
 #
-# MISC
+# misc
 #
-# Parallel GPU indices ([0] for single GPU)
-__C.GPUS = [0]
-# Parallel strategy for multiple gpus
-__C.PARALLEL_STRATEGY = "ddp"
-
-# Float Precision, 32 for False, 16 for True
-__C.FP16 = False
-
-# CUDNN benchmark
-__C.CUDNN = False
+__C.GPUS = [0]                      # parallel GPU indices ([0] for single GPU)
+__C.PARALLEL_STRATEGY = "ddp"       # parallel strategy for multiple GPUs
+__C.FP16 = False                    # float precision: 32 for False, 16 for True
+__C.CUDNN = False                   # cuDNN benchmark
 
 __C.WEIGHT_FILE = ""
-
-# Output path (for checkpoints, running logs)
-__C.OUTPUT_PATH = ""
-
-# The step of iteration to print running statistics.
-# The real step value will be the least common multiple of this value and batch_size
-__C.STATISTIC_STEP = 100
-
-# random seed used for data loading
-__C.RANDOM_SEED = 42
-
-# directory for collecting statistics of results
-__C.STATS = ""
+__C.OUTPUT_PATH = ""                # output path (for checkpoints, running logs)
+__C.STATISTIC_STEP = 100            # iteration step to print running statistics
+__C.RANDOM_SEED = 42                # random seed
+__C.STATS = ""                      # directory for collecting statistics of results
 
 
 def merge_configs(src, dest):
-    """
-    Merge source config into destination config recursively.
-    """
+    """Merge source config into destination config recursively."""
     for key, value in src.items():
         if key not in dest:
             raise KeyError(f'Key {key} not a valid config key.')
@@ -143,7 +94,6 @@ def merge_configs(src, dest):
                 if key not in ['CLASS']:
                     raise ValueError(f'Type mismatch ({type(dest[key])} vs. {type(value)}) for config key: {key}')
         
-        # Recursively merge dicts (handles both dict and edict)
         if isinstance(value, dict):
             try:
                 merge_configs(src[key], dest[key])
@@ -155,13 +105,11 @@ def merge_configs(src, dest):
 
 
 def config_from_file(filename):
-    """
-    Load configuration from a YAML file and merge it into the default config.
-    """
+    """Load configuration from a YAML file and merge into the default config."""
     with open(filename, 'r') as f:
         config = edict(yaml.full_load(f))
 
-    # dynamically import model and dataset config modules
+    # dynamically import model and dataset configs
     if 'MODULE' in config and 'MODEL' not in __C:
         # model_config_module = '.'.join(['model'] + [config.MODULE.split('.')[0]] + ['model_config'])
         # model_config_module = '.'.join([config.MODULE.split('.')[0]] + ['model_config'])
@@ -178,14 +126,11 @@ def config_from_file(filename):
     merge_configs(config, __C)
 
 def config_from_list(config_list):
-    """
-    It takes a flat list of strings, interprets them as key-value pairs, and overwrites 
-    values inside a nested configuration dictionary in a safe manner.
-    """
-    assert len(config_list) % 2 == 0 # even number of arguments 
+    """Override config values from a flat key-value list (e.g. ['TRAIN.LR', '0.01'])."""
+    assert len(config_list) % 2 == 0
     
-    for key, v in zip(config_list[0::2], config_list[1::2]): # even indices are keys, odd indices are values
-        key_list = key.split('.') # split by dot to get nested keys
+    for key, v in zip(config_list[0::2], config_list[1::2]):
+        key_list = key.split('.')
         d = __C
 
         for subkey in key_list[:-1]:

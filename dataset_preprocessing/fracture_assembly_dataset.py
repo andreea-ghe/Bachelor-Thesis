@@ -147,7 +147,7 @@ class FractureAssemblyDataset(Dataset):
         """
         if self.rot_range > 0: 
             # gradually increase rotation range during training
-            # in early epochs, we have limited rotation range for easier learning
+            # in early epochs: limited rotation range for easier learning
             rot_euler = (np.random.rand(3) - 0.5) * 2.0 * self.rot_range
             rot_mat = R.from_euler('xyz', rot_euler, degrees=True).as_matrix()
         else:
@@ -278,7 +278,7 @@ class FractureAssemblyDataset(Dataset):
                 nr_points_per_piece[k] -= delta
                 delta = 0
             else:
-                # we reduce the largest piece to min_num_points and try again with the next largest piece
+                # reduce the largest piece to min_num_points and try again with the next largest piece
                 delta -= nr_points_per_piece[k] - self.min_num_points 
                 nr_points_per_piece[k] = self.min_num_points
 

@@ -11,9 +11,7 @@
 </head>
 <body class="bg-bg-primary text-txt-primary font-sans">
 
-    <!-- ═══════════════════════════════════════════════════════
-         HERO SECTION
-         ═══════════════════════════════════════════════════════ -->
+    <!-- Hero section -->
     <section class="min-h-screen flex flex-col items-center justify-center px-6 relative">
         <div class="max-w-2xl text-center space-y-6">
             <p class="text-xs tracking-widest uppercase text-txt-muted">Bachelor Thesis</p>
@@ -39,9 +37,7 @@
         </div>
     </section>
 
-    <!-- ═══════════════════════════════════════════════════════
-         MAIN CONTENT: LEFT SLIDES + RIGHT STICKY DEMO
-         ═══════════════════════════════════════════════════════ -->
+    <!-- Main content: slides + demo -->
     <div id="content" class="flex max-w-[1400px] ml-[max(1rem,calc((100vw-1400px)*0.6))] mr-[max(1rem,calc((100vw-1400px)*0.4))]">
 
         <!-- LEFT: Scrollable slides -->
@@ -60,9 +56,7 @@
 
     </div>
 
-    <!-- ═══════════════════════════════════════════════════════
-         SCRIPTS
-         ═══════════════════════════════════════════════════════ -->
+    <!-- Scripts -->
     <script>
     function scrollToSlide(id) {
         document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
@@ -84,7 +78,7 @@
     const csrfToken = '{{ csrf_token }}';
     const STATIC_PREFIX = '{% get_static_prefix %}';
 
-    // ── Fracture data from Django context ──────────────────
+
     const allFractures = [
         {% for f in two_piece_fractures %}
         { id: "{{ f.id }}", name: "{{ f.display_name }}", category: "{{ f.category }}", pieces: {{ f.num_pieces }}, type: "{{ f.piece_type }}" },
@@ -99,7 +93,7 @@
     let isFullscreen = false;
     let fsViewer = null;
 
-    // ── Populate category dropdown ─────────────────────────
+
     const categories = [...new Set(allFractures.map(f => f.category))].sort();
     const catSelect = document.getElementById('category-select');
     categories.forEach(c => {
@@ -120,7 +114,7 @@
         }
     });
 
-    // ── Example navigation ─────────────────────────────────
+
     const prevBtn = document.getElementById('prev-btn');
     const nextBtn = document.getElementById('next-btn');
     const counter = document.getElementById('example-counter');
@@ -155,7 +149,7 @@
     document.getElementById('fs-prev-btn').addEventListener('click', () => { if (currentIndex > 0) selectExample(currentIndex - 1); });
     document.getElementById('fs-next-btn').addEventListener('click', () => { if (currentIndex < filteredFractures.length - 1) selectExample(currentIndex + 1); });
 
-    // ── Fullscreen: open / close ───────────────────────────
+
     const overlay = document.getElementById('fullscreen-overlay');
 
     window.openFullscreen = function() {
@@ -195,7 +189,7 @@
         if (e.key === 'Escape' && isFullscreen) closeFullscreen();
     });
 
-    // ── Fullscreen: tab switching ──────────────────────────
+
     const fsBrowseViewer = document.getElementById('fs-browse-viewer');
     const fsCompareViewers = document.getElementById('fs-compare-viewers');
     const fsModelSelect = document.getElementById('fs-model-select');
@@ -217,7 +211,7 @@
         });
     });
 
-    // ── Fullscreen: example grid ───────────────────────────
+
     function populateGrid() {
         const grid = document.getElementById('fs-examples-grid');
         if (grid.children.length > 0) return;
@@ -301,7 +295,7 @@
         });
     }
 
-    // ── Fullscreen: run inference ──────────────────────────
+
     let compareMode = false;
 
     document.getElementById('fs-run-btn').addEventListener('click', () => {
@@ -312,7 +306,7 @@
         }
     });
 
-    // ── Three.js viewer factory ────────────────────────────
+
     function createViewer(containerId, clearColor = 0x000000) {
         const container = document.getElementById(containerId);
         const scene = new THREE.Scene();
@@ -393,7 +387,7 @@
         return obj;
     }
 
-    // ── Load pieces into a specific viewer ─────────────────
+
     function scatterPieces(pieces) {
         const centroids = pieces.map(obj => {
             const box = new THREE.Box3().setFromObject(obj);
@@ -435,7 +429,7 @@
         fitCamera(viewer);
     }
 
-    // ── Load input pieces ─────────────────────────────────
+
     async function loadInputPieces(fractureId) {
         await loadPiecesIntoViewer(inputViewer, fractureId, 'viewer-placeholder', true);
         if (isFullscreen && fsViewer) {
@@ -443,7 +437,7 @@
         }
     }
 
-    // ── Run inference ────
+
     document.getElementById('run-btn').addEventListener('click', () => runInference('compact'));
 
     async function runInference(mode) {
@@ -521,7 +515,7 @@
         }
     }
 
-    // ── Compare tab: side-by-side model comparison ──────
+
     let cmpViewerA = null;
     let cmpViewerB = null;
 

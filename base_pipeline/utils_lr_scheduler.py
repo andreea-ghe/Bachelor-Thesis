@@ -48,22 +48,21 @@ class CosineAnnealingWarmupRestarts(_LRScheduler):
 
         super(CosineAnnealingWarmupRestarts, self).__init__(optimizer, last_epoch)
         
-        # now compute proper per-group ratios from the optimizer's initial_lr
+        # compute proper per-group ratios from the optimizer's initial_lr
         self.init_lr()
 
     def init_lr(self):
         """
         Initialize learning rates to min_lr, respecting per-group LR ratios.
 
-        Each param group may have a different initial LR (e.g. differential LR
-        for newly added modules).  We compute a per-group ratio so the cosine
-        schedule scales each group proportionally:
+        Each param group may have a different initial LR.
+        Compute a per-group ratio so the cosine schedule scales each group proportionally:
             ratio = initial_lr / global_max_lr
             pg_min_lr = global_min_lr * ratio
             pg_max_lr = global_max_lr * ratio  (applied in get_lr via self.max_lr * ratio)
         """
-        self.base_lrs = []  # per-group min learning rates
-        self.lr_ratios = []  # per-group scaling factors
+        self.base_lrs = [] # per-group min learning rates
+        self.lr_ratios = [] # per-group scaling factors
         for param_group in self.optimizer.param_groups:
             # initial_lr is saved by _LRScheduler.__init__ from the optimizer
             initial_lr = param_group.get('initial_lr', self.max_lr)
@@ -95,7 +94,7 @@ class CosineAnnealingWarmupRestarts(_LRScheduler):
         """
         Update learning rates and cycle information.
         """
-        if epoch is None: # if epoch is not provided, step by 1
+        if epoch is None: # if epoch is not provided: step by 1
             epoch = self.last_epoch + 1
             self.step_in_cycle += 1
 

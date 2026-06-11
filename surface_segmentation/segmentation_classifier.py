@@ -21,11 +21,10 @@ def compute_label(points, nr_points_piece, nr_valid_pieces, dist_thresholds):
     """
     B, N, _ = points.shape
 
-    # Compute pairwise distances between all points
+    # compute pairwise distances between all points
     distances = torch.sqrt(square_distance(points, points))  # [B, N, N]
 
-    # Mask out points from the same piece
-    # ensure that nearest neighbor comes from a different piece
+    # mask out same-piece distances so nearest neighbor comes from a different piece
     neg_mask = diagonal_square_matrix(
         shape=(B, N, N),
         nr_points_piece=nr_points_piece,
@@ -36,11 +35,11 @@ def compute_label(points, nr_points_piece, nr_valid_pieces, dist_thresholds):
     )
     distances = distances + neg_mask
 
-    # Find minimum distance to any point in a different piece
+    # find minimum distance to any point in a different piece
     min_distance, _ = torch.min(distances, dim=-1)  # [B, N]
     min_distance = min_distance.reshape(B, N)
 
-    # Label as fracture if distance < threshold
+    # label as fracture if distance < threshold
     labels = (min_distance < dist_thresholds).to(torch.int64)
     
     return labels
@@ -70,15 +69,15 @@ def get_critical_pcs_from_label(n_pcs, critical_labels):
     for b in range(B): # for each object in the batch
         for p in range(P): # for each piece
 
-            # we find the start and end indices of this piece in the concatenated point cloud
+            # find the start and end indices of this piece in the concatenated point cloud
             start_idx = 0 if p == 0 else n_pcs_cumsum[b, p - 1]
             end_idx = n_pcs_cumsum[b, p]
 
             piece_labels = critical_labels[b, start_idx:end_idx]  # get labels for this piece for each point 
-            fracture_point_indices = piece_labels.nonzero().reshape(-1)# indices of fracture points in this piece
+            fracture_point_indices = piece_labels.nonzero().reshape(-1) # indices of fracture points in this piece
 
             nr_fracture_points = fracture_point_indices.shape[0]
-            n_critical_pcs[b, p] = nr_fracture_points # number of fracture points in this piece
-            critical_pcs_idx[b, start_idx:start_idx + nr_fracture_points] = fracture_point_indices # store indices of fracture points
+            n_critical_pcs[b, p] = nr_fracture_points
+            critical_pcs_idx[b, start_idx:start_idx + nr_fracture_points] = fracture_point_indices
 
     return n_critical_pcs, critical_pcs_idx

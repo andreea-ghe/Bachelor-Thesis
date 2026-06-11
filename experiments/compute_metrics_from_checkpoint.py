@@ -1,7 +1,3 @@
-"""
-Compute evaluation metrics from a saved test checkpoint.
-Usage: python -m experiments.compute_metrics_from_checkpoint --checkpoint path/to/checkpoint.pt
-"""
 import argparse
 import torch
 
@@ -12,14 +8,14 @@ def compute_metrics(checkpoint_path):
     outputs = torch.load(checkpoint_path, weights_only=False)
     print(f"Loaded {len(outputs)} batch results")
     
-    # Find all keys that appear in any output
+    # find all keys that appear in any output
     all_keys = set()
     for out in outputs:
         all_keys.update(out.keys())
     
     print(f"\nAll keys found: {sorted(all_keys)}")
     
-    # Get batch sizes
+    # get batch sizes
     batch_sizes = []
     for out in outputs:
         bs = out.get('batch_size', 1)
@@ -29,7 +25,7 @@ def compute_metrics(checkpoint_path):
             batch_sizes.append(bs)
     batch_sizes = torch.tensor(batch_sizes, dtype=torch.float32)
     
-    # Compute metrics for each key
+    # compute metrics for each key
     print("\n" + "="*60)
     print("EVALUATION METRICS")
     print("="*60)
@@ -39,7 +35,7 @@ def compute_metrics(checkpoint_path):
         if key == 'batch_size':
             continue
             
-        # Collect values, using 0 for missing entries
+        # collect values, using 0 for missing entries
         values = []
         valid_mask = []
         for out in outputs:
@@ -57,7 +53,7 @@ def compute_metrics(checkpoint_path):
         values = torch.stack(values)
         valid_mask = torch.tensor(valid_mask)
         
-        # Weighted average (only over valid entries)
+        # weighted average (only over valid entries)
         if valid_mask.sum() > 0:
             weighted_sum = (values * batch_sizes * valid_mask).sum()
             total_weight = (batch_sizes * valid_mask).sum()
@@ -65,7 +61,7 @@ def compute_metrics(checkpoint_path):
             metrics[key] = avg_value.item()
             print(f"test/{key}: {avg_value.item():.6f}")
     
-    # Save metrics to file
+    # save metrics to file
     output_path = checkpoint_path.replace('.pt', '_metrics.txt')
     with open(output_path, 'w') as f:
         f.write("EVALUATION METRICS\n")
@@ -79,9 +75,7 @@ def compute_metrics(checkpoint_path):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--checkpoint', type=str, required=True,
-                        help='Path to test checkpoint file')
+    parser.add_argument('--checkpoint', type=str, required=True, help='Path to test checkpoint file')
     args = parser.parse_args()
     
     compute_metrics(args.checkpoint)
-

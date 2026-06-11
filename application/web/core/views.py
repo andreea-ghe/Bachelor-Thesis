@@ -104,7 +104,7 @@ def predict(request):
 
     gpu_url = getattr(settings, "GPU_POD_URL", None)
 
-    # Try live GPU first
+    # try live GPU first
     if gpu_url:
         files = []
         for obj_path in fracture.obj_paths:

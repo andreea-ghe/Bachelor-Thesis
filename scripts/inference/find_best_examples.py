@@ -1,19 +1,3 @@
-"""
-Batch-search for the best demo examples by randomly sampling objects from a
-metadata pickle, running inference, and ranking them by assembly error.
-
-Usage:
-    python -m scripts.inference.find_best_examples \
-        --cfg experiments/two_piece_scripts/everyday_eval.yaml \
-        --metafile scripts/data/new-metadata-ds/two_fracture_assembly_metadata_2_2_everyday.val.txt \
-        --sample_n 50 --seed 42
-
-    python -m scripts.inference.find_best_examples \
-        --cfg experiments/multi_piece_scripts/everyday_eval.yaml \
-        --metafile scripts/data/new-metadata-ds/multi_fracture_assembly_metadata_2_4_everyday.val.txt \
-        --sample_n 50 --seed 42
-"""
-
 import os
 import csv
 import pickle
@@ -48,7 +32,6 @@ def run_batch_search(args):
     all_paths = load_metafile(args.metafile)
     print(f"Metafile contains {len(all_paths)} entries")
 
-    # filter to existing directories
     existing = [p for p in all_paths if os.path.isdir(p)]
     print(f"Found {len(existing)} existing directories (skipped {len(all_paths) - len(existing)})")
 

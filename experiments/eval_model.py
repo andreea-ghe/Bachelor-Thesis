@@ -25,10 +25,9 @@ def test_model(config):
     - Rotation Error (RE): accuracy of predicted rotations
     - Translation Error (TE): accuracy of predicted translations
 
-    Notes:
-    It uses the predicted fracture segmentation, not the ground truth.
-    Applies Hungarian algorithm for discrete matching.
-    Perform global alignment to recover all poses.
+    Uses predicted fracture segmentation (not ground truth),
+    Hungarian algorithm for discrete matching, and
+    global alignment to recover all poses.
 
     Input:
         config: configuration object with test settings
@@ -36,12 +35,7 @@ def test_model(config):
     if len(config.STATS):
         os.makedirs(config.STATS, exist_ok=True) # create stats directory if needed
 
-    # Step 1: initialize test data loader
-    # Uses the test split file (e.g. everyday.test.txt)
     test_loader = build_test_loader(config)
-
-    # Step 2: initialize model architecture
-    # model will be populated with trained weights from checkpoint
     model = build_jigsaw_model(config)
 
 
@@ -59,7 +53,6 @@ def test_model(config):
 
     callbacks = []
 
-    # Step 3: setup PyTorch Lightning trainer for testing
     all_gpus = list(config.GPUS)
     trainer = pl.Trainer(
         logger=logger,
@@ -69,21 +62,16 @@ def test_model(config):
         callbacks=callbacks,
     )
 
-    # Step 4: load trained model checkpoint
-    # detects and loads the best trained model for evaluation
     ckp_files = os.listdir(model_save_path)
-    ckp_files = [
-        ckp for ckp in ckp_files if "model_" in ckp
-    ]
+    ckp_files = [ckp for ckp in ckp_files if "model_" in ckp]
 
     weights_already_loaded = False
 
-    if config.WEIGHT_FILE: # load specified weight file
+    if config.WEIGHT_FILE:
         ckp = torch.load(config.WEIGHT_FILE, map_location='cpu', weights_only=False)
 
-        if 'state_dict' in ckp: # full checkpoint provided
+        if 'state_dict' in ckp:
             ckp_path = config.WEIGHT_FILE
-            # Debug: compare model and checkpoint keys
             ckp_keys = set(ckp['state_dict'].keys())
             model_keys = set(model.state_dict().keys())
             missing_in_ckp = model_keys - ckp_keys
@@ -99,7 +87,6 @@ def test_model(config):
             if not missing_in_ckp and not missing_in_model:
                 print("All checkpoint keys match model keys!")
         else:
-            # weights-only file (.pt): load directly into model
             result = model.load_state_dict(ckp, strict=False)
             if result.missing_keys:
                 print(f"WARNING: {len(result.missing_keys)} missing keys when loading weights")
@@ -120,19 +107,12 @@ def test_model(config):
     else: # no checkpoint found
         ckp_path = None
 
-    # load model with trained weights (skip if already loaded from weights-only file)
+    
     if not weights_already_loaded and ckp_path is not None:
         model = JointSegmentationAlignmentModel.load_from_checkpoint(checkpoint_path=ckp_path, strict=False, config=config)
     elif not weights_already_loaded:
         print("WARNING: No checkpoint found — evaluating with random weights!")
     
-    # STEP 5: Run evaluation
-    # This will:
-    # 1. Run forward pass with predicted segmentation
-    # 2. Compute matching using Hungarian algorithm
-    # 3. Perform global alignment (Section 3.4)
-    # 4. Calculate all metrics (PA, RE, TE, CD)
-    # Reports these metrics for comparison
     print("Finish Setting -----")
     trainer.test(model, test_loader)
 
@@ -141,34 +121,20 @@ def test_model(config):
 
 if __name__ == "__main__":
     """
-    Main entry point for evaluating Jigsaw model.
-    
     Usage:
-        python eval_matching.py --cfg experiments/jigsaw_250e_cosine.yaml
-        python eval_matching.py --cfg experiments/jigsaw_250e_cosine.yaml --weight path/to/checkpoint.ckpt
-    
-    The evaluation process:
-    1. Load configuration and specify checkpoint
-    2. Build model and load trained weights
-    3. Run inference on test set
-    4. Compute metrics: PA, RE, TE, CD
-    5. Log results to WandB and file
+        python eval_model.py --cfg experiments/jigsaw_250e_cosine.yaml
+        python eval_model.py --cfg experiments/jigsaw_250e_cosine.yaml --weight path/to/checkpoint.ckpt
     """
-    # Parse command line arguments
     args = parse_args("Jigsaw")
-
-    # Set random seed for reproducibility
     torch.manual_seed(CONFIG.RANDOM_SEED)
 
-    # Setup evaluation log file
+    # setup evaluation log file
     file_end = NOW_TIME
     if CONFIG.LOG_FILE_NAME is not None and len(CONFIG.LOG_FILE_NAME) > 0:
         file_end += "_{}".format(CONFIG.LOG_FILE_NAME)
     full_log_name = f"eval_log_{file_end}"
 
-    # Duplicate stdout to log file
+    # duplicate stdout to log file
     with DuplicateStdoutFileManager(os.path.join(CONFIG.OUTPUT_PATH, f"{full_log_name}.log")) as _:
-        # Print configuration
         print_edict(CONFIG)  
-        # Run evaluation
         test_model(CONFIG)

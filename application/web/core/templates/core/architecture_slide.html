@@ -1,4 +1,3 @@
-{# Slide 2: Architecture / Pipeline #}
 {% load static %}
 <section id="slide-arch" class="slide-section flex flex-col px-10 space-y-6">
     <div class="flex items-center justify-between">
@@ -17,8 +16,6 @@
             The model processes fracture pieces through four stages, from raw point
             clouds to globally consistent poses.
         </p>
-
-        {# Pipeline diagram using CSS boxes #}
         <div class="flex items-center gap-2 overflow-x-auto py-2">
             <div class="border border-brd-soft rounded-xl px-4 py-3 text-center shrink-0">
                 <p class="text-xs text-txt-muted">Stage 1</p>
@@ -44,8 +41,6 @@
                 <p class="text-xs text-txt-muted mt-0.5">RANSAC &rarr; ICP &rarr; Shonan</p>
             </div>
         </div>
-
-        {# Attention diagram #}
         <div class="slide-diagram">
             <img src="{% static 'core/images/attention_diagram.png' %}"
                  alt="Attention mechanism: self-attention refines per-fragment features, cross-attention establishes inter-fragment correspondences">

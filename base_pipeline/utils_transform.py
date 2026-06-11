@@ -95,8 +95,8 @@ def rmat_rot(point_cloud, rotation_matrix):
     assert point_cloud.shape[-1] == 3
     assert rotation_matrix.shape[-1] == rotation_matrix.shape[-2] == 3
     
-    # Expand rotation matrix to match point cloud if shapes differ only by N dimension
-    # e.g., rotation_matrix [B, P, 3, 3] -> [B, P, N, 3, 3] for point_cloud [B, P, N, 3]
+    # expand rotation matrix to match point cloud if shapes differ only by N dimension
+    # e.g. rotation_matrix [B, P, 3, 3] -> [B, P, N, 3, 3] for point_cloud [B, P, N, 3]
     if len(rotation_matrix.shape) == len(point_cloud.shape):
         rotation_matrix = rotation_matrix.unsqueeze(-3).repeat_interleave(point_cloud.shape[-2], dim=-3)
 

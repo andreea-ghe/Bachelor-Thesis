@@ -18,32 +18,24 @@ NOW_TIME = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
 def train_model(config):
     """
-    Training function for the jigsaw model.
+    Training function for the Jigsaw model.
     Pipeline:
-    1. Initialize data loaders with dataset.
-    2. Build the jigsaw model.
-    3. Configure PyTorch Lightning trainer with callbacks.
-    4. Train with loss scheduling (seg -> match -> rigid).
+    1. initialize data loaders with dataset
+    2. build the Jigsaw model
+    3. configure PyTorch Lightning trainer with callbacks
+    4. train with loss scheduling (seg -> match -> rigid)
 
-    The training uses:
-    - Adam optimizer with lr=1e-4
-    - cosine annealing lr scheduler
-    - gradient clipping
-    - model checkpointing based on validation loss
+    Uses Adam optimizer with lr=1e-4, cosine annealing lr scheduler,
+    gradient clipping, and model checkpointing based on validation loss.
 
     Input:
         config: configuration object with training parameters
     """
-    # Step 1: Initialize data loaders
-    # build dataloaders for Breaking Bad dataset with area based sampling
     train_loader, val_loader = build_data_loaders(config)
-
-    # Step 2: Build the jigsaw model
     model = build_jigsaw_model(config)
 
-    # configure output directories
-    model_save_path = config.MODEL_SAVE_PATH # for model checkpoints
-    results_save_path = config.OUTPUT_PATH # for logs and results
+    model_save_path = config.MODEL_SAVE_PATH
+    results_save_path = config.OUTPUT_PATH
 
     if config.LOG_FILE_NAME is not None and len(config.LOG_FILE_NAME) > 0:
         logger_name = f"{config.MODEL_NAME}_{config.LOG_FILE_NAME}"
@@ -54,31 +46,28 @@ def train_model(config):
         name=logger_name,
     )
 
-    # Step 3: Configure PyTorch Lightning trainer with callbacks
-    # model checkpointing: save best models during training
     checkpoint_callback = ModelCheckpoint(
         dirpath=model_save_path,
         filename="model{epoch:03d}",
         monitor=config.CALLBACK.CHECKPOINT_MONITOR,
-        save_top_k=10, # keep top 10 best models
+        save_top_k=10, # save top 10 checkpoints
         mode=config.CALLBACK.CHECKPOINT_MODE,
         save_last=True, # always save last checkpoint
     )
     callbacks = [
-        LearningRateMonitor(logging_interval='epoch'), # track learning rate
+        LearningRateMonitor(logging_interval='epoch'),
         checkpoint_callback,
     ]
 
-    # configure lightning trainer
     training_log_dict = {
         'logger': logger,
         'accelerator': 'gpu',
         'devices': list(config.GPUS),
         'max_epochs': config.TRAIN.NUM_EPOCHS,
         'callbacks': callbacks,
-        'benchmark': config.CUDNN, # cudnn benchmark for speed
-        'gradient_clip_val': config.TRAIN.CLIP_GRAD, # gradient clipping
-        'check_val_every_n_epoch': config.TRAIN.VAL_EVERY, # validation frequency
+        'benchmark': config.CUDNN,
+        'gradient_clip_val': config.TRAIN.CLIP_GRAD,
+        'check_val_every_n_epoch': config.TRAIN.VAL_EVERY,
         'log_every_n_steps': 10,
         # 'profiler': 'simple',
         # 'detect_anomaly': True,
@@ -95,7 +84,7 @@ def train_model(config):
         ckp for ckp in ckp_files if ("model_" in ckp) or ("last" in ckp)
     ]
 
-    if config.WEIGHT_FILE: # load from specified checkpoint
+    if config.WEIGHT_FILE:
         ckp = torch.load(config.WEIGHT_FILE, map_location='cpu', weights_only=False)
 
         if 'state_dict' in ckp.keys():
@@ -113,7 +102,7 @@ def train_model(config):
             if not result.missing_keys and not result.unexpected_keys:
                 print("INFO: All weights loaded successfully for fine-tuning")
 
-            # Initialize new layers by cloning pretrained ones only if they weren't in the checkpoint
+            # clone pretrained attention layers into new double-attention layers if absent from checkpoint
             if hasattr(model, 'tf_self2') and hasattr(model, 'tf_self1'):
                 if any('tf_self2' in k for k in result.missing_keys):
                     model.tf_self2.load_state_dict(model.tf_self1.state_dict())
@@ -130,36 +119,20 @@ def train_model(config):
     else:
         ckp_path = None # start training from scratch
 
-    # Step 4: Train the model
     print("Starting training...")
     trainer.fit(model, train_loader, val_loader, ckpt_path=ckp_path)
     print("Done training.")
 
 
 if __name__ == "__main__":
-    """
-    Main entry point for training the jigsaw model.
-
-    The training process:
-    1. Load configuration from YAML file
-    2. Set random seeds for reproducibility
-    3. Adjust batch size for multi-GPU training
-    4. Initialize logging
-    5. Train model with scheduled losses
-    """
     args = parse_args("Jigsaw")
-
-    # set random seeds for reproducibility
     pl.seed_everything(CONFIG.RANDOM_SEED)
 
-    # setup logging file
     file_end = NOW_TIME
     if CONFIG.LOG_FILE_NAME is not None and len(CONFIG.LOG_FILE_NAME) > 0:
         file_end += "_{}".format(CONFIG.LOG_FILE_NAME)
     log_file = f"train_log_{file_end}"
 
     with DuplicateStdoutFileManager(os.path.join(CONFIG.OUTPUT_PATH, f"{log_file}.log")) as _:
-        # print configuration
         print_edict(CONFIG)
-
         train_model(CONFIG)

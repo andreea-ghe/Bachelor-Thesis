@@ -68,7 +68,6 @@ def main():
 
     ckpt_dir = sys.argv[1]
 
-    # find all checkpoints
     patterns = [os.path.join(ckpt_dir, '*.ckpt')]
     ckpt_files = []
     for pattern in patterns:
@@ -78,12 +77,10 @@ def main():
         print(f"No .ckpt files found in {ckpt_dir}")
         sys.exit(1)
 
-    # sort by epoch
     ckpt_files.sort(key=extract_epoch)
 
     print(f"Found {len(ckpt_files)} checkpoints in {ckpt_dir}\n")
 
-    # analyze first checkpoint as reference
     reference_sd = None
     first_results = None
 
@@ -111,9 +108,8 @@ def main():
             print(f"    mean={stats['mean']:+.6f}  std={stats['std']:.6f}  "
                   f"min={stats['min']:+.6f}  max={stats['max']:+.6f}  norm={stats['norm']:.6f}")
             if 'diff_mean' in stats:
-                print(f"    Δ from first ckpt:  mean_abs_diff={stats['diff_mean']:.8f}  max_diff={stats['diff_max']:.8f}")
+                print(f"    diff from first ckpt:  mean_abs_diff={stats['diff_mean']:.8f}  max_diff={stats['diff_max']:.8f}")
 
-        # print LR info
         if results['lr_info']:
             print(f"\n  LR info:")
             for k, v in results['lr_info'].items():

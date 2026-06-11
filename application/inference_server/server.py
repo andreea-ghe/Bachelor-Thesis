@@ -171,7 +171,7 @@ async def predict(
     })
 
 
-# Serve dataset files so they can be downloaded via wget/curl
+# serve dataset files so they can be downloaded via wget/curl
 EVERYDAY_DIR = "/workspace/everyday"
 if os.path.isdir(EVERYDAY_DIR):
     app.mount("/everyday", StaticFiles(directory=EVERYDAY_DIR), name="everyday")

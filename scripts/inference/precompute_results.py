@@ -1,10 +1,3 @@
-"""
-Pre-compute inference results for every fracture x model combination.
-
-Usage:
-    python -m scripts.inference.precompute_results --gpu_url http://<pod-ip>:8000 [--output application/web/core/static/core/precomputed_results.json] [--timeout 180]
-"""
-
 import argparse
 import json
 import sys

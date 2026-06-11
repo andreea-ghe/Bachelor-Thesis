@@ -1,13 +1,10 @@
-{# Sticky demo panel — included inside the right column of index.html #}
 <div id="demo-panel" class="border border-brd-soft rounded-xl flex-1 flex flex-col overflow-hidden">
 
-    {# Header bar #}
     <div class="flex items-center justify-between px-5 py-3 border-b border-brd-soft">
         <span class="text-xs text-txt-muted">Interactive Demo</span>
         <button onclick="openFullscreen()" class="btn text-xs">Expand Demo</button>
     </div>
 
-    {# Controls: model, category, example navigation #}
     <div id="compact-controls" class="px-5 py-4 space-y-3 border-b border-brd-soft">
         <div class="flex gap-3">
             <div class="flex-1">
@@ -41,7 +38,6 @@
         </div>
     </div>
 
-    {# 3D viewers: input (broken) + output (assembled) #}
     <div class="flex-1 flex flex-col min-h-0 px-5 py-3 gap-2">
         <p class="text-[10px] text-txt-muted text-center uppercase tracking-wider">Input</p>
         <div class="flex-1 min-h-0">
@@ -53,7 +49,6 @@
             </div>
         </div>
 
-        {# Fix button + status #}
         <div class="py-1 shrink-0">
             <button id="run-btn" class="btn w-full" disabled>Fix Object</button>
             <div id="status" class="text-xs text-txt-muted mt-1 min-h-[1rem]"></div>
@@ -74,7 +69,6 @@
 <div id="fullscreen-overlay" class="fullscreen-overlay">
     <div class="flex h-full">
 
-        {# LEFT: 3D viewer + controls #}
         <div id="fs-left-panel" class="w-1/2 flex flex-col h-full p-6">
             <div class="flex items-center justify-between mb-4">
                 <button onclick="closeFullscreen()" class="btn text-xs">
@@ -88,7 +82,6 @@
                 </select>
             </div>
 
-            {# Single viewer (Browse mode) #}
             <div id="fs-browse-viewer" class="flex-1 flex flex-col">
                 <div class="flex-1 viewer-box" id="fs-viewer-canvas">
                     <div id="fs-viewer-placeholder"
@@ -98,7 +91,6 @@
                 </div>
             </div>
 
-            {# Stacked viewers (Compare mode) #}
             <div id="fs-compare-viewers" class="flex-1 flex flex-col gap-3 hidden">
                 <div class="flex-1 flex flex-col space-y-1">
                     <span id="cmp-label-a" class="text-xs text-txt-muted block text-center">Model A</span>
@@ -120,7 +112,6 @@
                 </div>
             </div>
 
-            {# Bottom bar: Fix button + navigation #}
             <div class="flex items-center gap-4 mt-4">
                 <button id="fs-run-btn" class="btn" disabled>Fix Object</button>
                 <div id="fs-status" class="text-xs text-txt-muted flex-1"></div>
@@ -137,32 +128,25 @@
             </div>
         </div>
 
-        {# RIGHT: Tabs + content #}
         <div id="fs-right-panel" class="w-1/2 flex flex-col h-full p-6 pl-0">
 
-            {# Tab bar #}
             <div class="flex gap-2 mb-4">
                 <button class="btn active" data-tab="browse">Browse Examples</button>
                 <button class="btn" data-tab="compare">Compare Performance</button>
             </div>
 
-            {# Tab: Browse Examples #}
             <div id="tab-browse" class="fs-tab-content active flex-1 overflow-y-auto pr-2">
                 <p class="text-txt-secondary text-sm mb-4">
                     Pick a fracture from the grid to load it into the viewer.
                 </p>
-                <div id="fs-examples-grid" class="grid grid-cols-3 gap-3">
-                    {# Populated by JS #}
-                </div>
+                <div id="fs-examples-grid" class="grid grid-cols-3 gap-3"></div>
             </div>
 
-            {# Tab: Compare two models side-by-side #}
             <div id="tab-compare" class="fs-tab-content flex-1 overflow-y-auto pr-2 hidden">
                 <p class="text-txt-secondary text-sm mb-4">
                     Pick an example from the grid, then compare two models side by side.
                 </p>
 
-                {# Model selectors #}
                 <div class="flex gap-3 mb-4">
                     <div class="flex-1">
                         <label class="text-xs text-txt-muted block mb-1.5">Model A</label>
@@ -184,10 +168,7 @@
 
                 <div id="cmp-status" class="text-xs text-txt-muted mb-4 min-h-[1rem]"></div>
 
-                {# Example grid reused for picking in compare mode #}
-                <div id="cmp-examples-grid" class="grid grid-cols-3 gap-3">
-                    {# Populated by JS #}
-                </div>
+                <div id="cmp-examples-grid" class="grid grid-cols-3 gap-3"></div>
             </div>
         </div>
     </div>

@@ -32,13 +32,13 @@ def global_alignment(edges, transformations, uncertainties, n_valid):
         global_poses: [n_valid, 4, 4] - global pose for each piece,
             canonicalized so piece 0 has identity pose
     """
-    # Step 1: Add auxiliary edges to connect disconnected components
-    # The virtual hub node (index n_valid) connects to one node in each component
+    # add auxiliary edges to connect disconnected components
+    # the virtual hub node (index n_valid) connects to one node in each component
     auxiliary_edges = connect_graph(n_valid, edges)
     all_edges = np.concatenate([edges, auxiliary_edges], axis=0).astype(np.int32)
 
-    # Step 2: Create random transformations for auxiliary edges
-    # These have high uncertainty so they don't distort the solution
+    # create random transformations for auxiliary edges
+    # these have high uncertainty so they don't distort the solution
     auxiliary_transformations = []
     for i in range(auxiliary_edges.shape[0]):
         transformation = np.eye(4)
@@ -48,30 +48,29 @@ def global_alignment(edges, transformations, uncertainties, n_valid):
     auxiliary_transformations = np.stack(auxiliary_transformations)
     all_transformations = np.concatenate([transformations, auxiliary_transformations], axis=0)
 
-    # Step 3: Set high uncertainty for auxiliary edges
-    auxiliary_uncertainties = np.ones(auxiliary_edges.shape[0])  # High uncertainty
+    # set high uncertainty for auxiliary edges
+    auxiliary_uncertainties = np.ones(auxiliary_edges.shape[0])
     all_uncertainties = np.concatenate([uncertainties, auxiliary_uncertainties], axis=0)
 
-    # Step 4: Try Shonan Averaging first (optimal when it converges)
-    n_nodes = n_valid + 1  # Include virtual hub node
+    # try Shonan Averaging first (optimal when it converges)
+    n_nodes = n_valid + 1
     global_pose_results, success = shonan_averaging(
         all_edges, all_transformations, all_uncertainties, n_nodes
     )
 
-    # Step 5: Fall back to Spanning Tree if Shonan fails
+    # fall back to Spanning Tree if Shonan fails
     if success == 0:
         global_pose_results, _ = spanning_tree_alignment(
             n_nodes, all_edges, all_transformations, all_uncertainties
         )
 
-    # Step 6: Canonicalize poses relative to piece 0
-    # Transform all poses so piece 0 has identity pose
-    # This is done by left-multiplying all poses by inv(pose_0)
+    # canonicalize poses relative to piece 0
+    # transform all poses so piece 0 has identity pose
+    # done by left-multiplying all poses by inv(pose_0)
     pose_0_inv = np.linalg.inv(global_pose_results[0, :, :])
     for i in range(n_valid):
         # Process in reverse order to avoid overwriting pose_0 before we're done
         idx = n_valid - i - 1
         global_pose_results[idx, :, :] = pose_0_inv @ global_pose_results[idx, :, :]
 
-    # Return only the piece poses (exclude virtual hub node)
-    return global_pose_results[:n_valid, :, :]
+    return global_pose_results[:n_valid, :, :]  # exclude virtual hub

@@ -30,25 +30,25 @@ class DotProductAttention(nn.Module):
             head_output: attended values [B, n_head, len_q, d_v]
             attn: attention weights [B, n_head, len_q, len_k]
         """
-        # Compute attention scores: Q * K^T / sqrt(d_k)
+        # compute attention scores: Q * K^T / sqrt(d_k)
         # we multiply by transpose of K because we want to compute dot product between each query and all keys
         attn = torch.matmul(q / self.temperature, k.transpose(2, 3))
 
-        # Add pair attention bias: α_ij = n_ij + b_ij (Pair Attention)
+        # add pair attention bias: attn_ij = n_ij + b_ij
         if pair_bias is not None:
             attn = attn + pair_bias
 
-        # Apply mask if provided
+        # apply mask if provided
         if mask is not None:
             attn = attn.masked_fill(mask == 0, -1e9)
 
-        # Apply softmax to get attention weights
+        # apply softmax to get attention weights
         attn = F.softmax(attn, dim=-1)
 
-        # Apply dropout to attention weights
+        # apply dropout to attention weights
         attn = self.attn_dropout(attn)
 
-        # Compute attention weights * V
+        # compute attention weights * V
         head_output = torch.matmul(attn, v)
 
         return head_output, attn
@@ -64,14 +64,13 @@ class MultiHeadAttention(nn.Module):
         self.n_head = n_head  # number of attention heads
         self.d_head = d_model // n_head  # dimension per head
 
-        # Weights for queries, keys, values and output projection
-        # Names must match checkpoint: w_qs, w_ks, w_vs, fc
+        # weights for queries, keys, values and output projection
         self.w_qs = nn.Linear(d_model, n_head * self.d_head, bias=False)
         self.w_ks = nn.Linear(d_model, n_head * self.d_head, bias=False)
         self.w_vs = nn.Linear(d_model, n_head * self.d_head, bias=False)
         self.fc = nn.Linear(n_head * self.d_head, d_model, bias=False)
 
-        # Scaled dot-product attention
+        # scaled dot-product attention
         self.attention = DotProductAttention(temperature=self.d_head ** 0.5, attn_dropout=dropout)
         self.dropout = nn.Dropout(dropout)
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
@@ -94,7 +93,7 @@ class MultiHeadAttention(nn.Module):
         len_k = k.size(1)
         len_v = v.size(1)
 
-        residual = q  # we will add this back after attention; it's a residual connection
+        residual = q
 
         q = self.w_qs(q).view(sz_b, len_q, self.n_head, self.d_head).transpose(1, 2)  # [B, n_head, len_q, d_head]
         k = self.w_ks(k).view(sz_b, len_k, self.n_head, self.d_head).transpose(1, 2)  # [B, n_head, len_k, d_head]
@@ -127,7 +126,6 @@ class PositionalFeedForwardNetwork(nn.Module):
             dropout: dropout rate
         """
         super().__init__()
-        # Names must match checkpoint: w_1, w_2
         self.w_1 = nn.Linear(d_input, d_hidden)
         self.w_2 = nn.Linear(d_hidden, d_input)
         self.dropout = nn.Dropout(dropout)
@@ -141,12 +139,10 @@ class PositionalFeedForwardNetwork(nn.Module):
         Output:
             output: transformed tensor [B, len_seq, d_in]
         """
-        residual = x  # for residual connection
-
+        residual = x
         output = self.dropout(self.w_2(F.relu(self.w_1(x))))
-
-        output += residual  # add residual connection
-        output = self.layer_norm(output)  # normalize
+        output += residual
+        output = self.layer_norm(output)
 
         return output
 
@@ -157,7 +153,6 @@ class CrossAttention(nn.Module):
     """
     def __init__(self, n_head, d_input):
         super(CrossAttention, self).__init__()
-        # Names must match checkpoint: attn, pos_ffn
         self.attn = MultiHeadAttention(n_head=n_head, d_model=d_input, dropout=0.0)
         self.pos_ffn = PositionalFeedForwardNetwork(d_input=d_input, d_hidden=d_input * 2, dropout=0.0)
 
@@ -205,13 +200,12 @@ class PointTransformer(nn.Module):
         self.share_feat = n_heads
         self.k_neighbors = k_neighbors
 
-        # Linear layers to project input features to queries, keys, and values
+        # linear layers to project input features to queries, keys, and values
         self.linear_q = nn.Linear(self.in_features, self.mid_features)
         self.linear_k = nn.Linear(self.in_features, self.mid_features)
         self.linear_v = nn.Linear(self.in_features, self.mid_features)
 
-        # Positional encoding MLP: encodes relative 3D positions into features
-        # Name must match checkpoint: linear_p
+        # positional encoding MLP: encodes relative 3D positions into features
         self.linear_p = nn.Sequential(
             nn.Linear(3, 3),
             LayerNorm1d(3),
@@ -220,7 +214,6 @@ class PointTransformer(nn.Module):
         )
 
         # MLP that produces the attention weight vector
-        # Name must match checkpoint: linear_w
         self.linear_w = nn.Sequential(
             LayerNorm1d(self.mid_features),
             nn.ReLU(inplace=True),
@@ -239,14 +232,13 @@ class PointTransformer(nn.Module):
             x: point features [N, in_features]
             offset: number of points per batch [B]
         """
-        offset = offset.reshape(-1) # ensure offset is 1D tensor
+        offset = offset.reshape(-1)
         batch = torch.tensor(
             [b for b in range(len(offset)) for _ in range(offset[b])],
             dtype=torch.long,
             device=x.device
         )
 
-        # Project to Q, K, V
         W_q = self.linear_q(x)
         W_k = self.linear_k(x)
         W_v = self.linear_v(x)
@@ -268,14 +260,14 @@ class PointTransformer(nn.Module):
             include_relative_pos=False
         ) # [N, k, mid_features]
 
-        # Separate relative positions from W_k features
+        # separate relative positions from W_k features
         relative_pos = W_k[:, :, :3]  # [N, k, 3] 
         W_k = W_k[:, :, 3:]  # [N, k, mid_features]
 
-        # Compute positional encodings
+        # compute positional encodings
         pos_enc = self.linear_p(relative_pos)  # [N, k, out_features]
 
-        # Compute attention scores: (W_q - W_k + pos_enc)
+        # compute attention scores: (W_q - W_k + pos_enc)
         W_q_expanded = W_q.unsqueeze(1)  # [N, 1, mid_features]
         pos_enc = einops.reduce(pos_enc, "n ns (i j) -> n ns j", reduction="sum", j=self.mid_features)
         attn_scores = W_k - W_q_expanded + pos_enc  # [N, k, out_features]
@@ -284,7 +276,6 @@ class PointTransformer(nn.Module):
         weights = self.linear_w(attn_scores)  # [N, k, out_features // share_feat]
         weights = self.softmax(weights)  # [N, k, out_features // share_feat]
 
-        # Aggregate features
         x = torch.einsum(
             "n t s i, n t i -> n s i",
             einops.rearrange(
@@ -302,9 +293,6 @@ class PointTransformer(nn.Module):
         return x
 
 if __name__ == "__main__":
-    # Minimum test example to verify the attention layers work correctly
-    # Tests PointTransformer, CrossAttention without bias, and CrossAttention with pair bias
-    
     pos = torch.randn(12, 3)
     x = torch.randn(12, 6)
     b = torch.tensor([4, 3, 5], dtype=torch.long).reshape(3, 1)
@@ -318,11 +306,11 @@ if __name__ == "__main__":
     cross_attention_layer = CrossAttention(d_input=6, n_head=2)
     x = torch.randn(3, 4, 6)
 
-    # Without pair bias (original behavior)
+    # without pair bias
     x_ca = cross_attention_layer(x)
     print(f"CrossAttention (no bias): {x_ca.shape}")
 
-    # With pair bias (pair attention)
+    # with pair bias
     pair_bias = torch.randn(3, 1, 4, 4)  # [B, 1, N_SUM, N_SUM]
     x_ca_biased = cross_attention_layer(x, pair_bias=pair_bias)
     print(f"CrossAttention (with pair bias): {x_ca_biased.shape}")

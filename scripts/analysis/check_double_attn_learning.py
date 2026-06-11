@@ -1,6 +1,3 @@
-"""
-Check if the double attention layers learned anything meaningful.
-"""
 import sys
 import torch
 import numpy as np

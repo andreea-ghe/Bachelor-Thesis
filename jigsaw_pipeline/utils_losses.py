@@ -12,7 +12,7 @@ def permutation_loss(pred_matching, gt_matching, n_source, n_target):
     The loss encourages the predicted matching matrix to match the ground truth matching matrix,
     which is computed based on nearest neighbors in the original (untransformed) point clouds.
 
-    L_mat = -∑_{i,j} x_ij^gt log(x̂_ij) + (1-x_ij^gt)log(1-x̂_ij)
+    L_mat = -sum_{i,j} x_ij^gt log(x_hat_ij) + (1-x_ij^gt)log(1-x_hat_ij)
 
     This loss is applied starting from epoch 0, after the segmentation module has had time to learn.
     
@@ -60,8 +60,8 @@ def rigidity_loss(n_pcs, n_valid, gt_pcs, part_pcs, n_critical_pcs, critical_pcs
     RANSAC on matched points. We then measure how well the transformed points from Pi align with
     matched points in Pj. We penalize misalignment.
 
-    T̂_ij = argmin_{T_ij} ∑_p ||T_ij(p) - p̄||₂
-    L_rig = ∑_{i<j≤n} ℛ_ij, where ℛ_ij measures alignment error
+    T_hat_ij = argmin_{T_ij} sum_p ||T_ij(p) - p_bar||_2
+    L_rig = sum_{i<j<=n} R_ij, where R_ij measures alignment error
 
     This loss is applied starting from epoch 199.
 
@@ -111,9 +111,9 @@ def rigidity_loss(n_pcs, n_valid, gt_pcs, part_pcs, n_critical_pcs, critical_pcs
             if n1 == 0 or n2 == 0:
                 continue  # skip if no critical points in either piece
 
-            # Extract the soft matching probabilities between fracture points of piece i and piece j.
+            # extract the soft matching probabilities between fracture points of piece i and piece j.
             # ds_mat contains point-to-point matching probabilities (Sinkhorn output).
-            # We consider both directions:
+            # consider both directions:
             #   - i -> j  (piece i matching to piece j)
             #   - j -> i  (piece j matching to piece i)
             # and symmetrize them to enforce mutual agreement.
@@ -121,7 +121,7 @@ def rigidity_loss(n_pcs, n_valid, gt_pcs, part_pcs, n_critical_pcs, critical_pcs
             # measures how confident the model is that piece i and piece j belong together
             n_matches = torch.sum(match_submatrix)
 
-            # Convert the matching matrix to NumPy for geometric alignment.
+            # convert the matching matrix to NumPy for geometric alignment.
             ds_mat_d = ds_mat.detach().cpu().numpy()
             match_submatrix_d = ds_mat_d[b, critical_start1:critical_end1, critical_start2:critical_end2] + ds_mat_d[b, critical_start2:critical_end2, critical_start1:critical_end1].transpose(1, 0)
 

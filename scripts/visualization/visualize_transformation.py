@@ -1,6 +1,3 @@
-"""
-Visualize the predicted and ground truth transformations overlaps.
-"""
 import numpy as np
 import trimesh
 import matplotlib.pyplot as plt

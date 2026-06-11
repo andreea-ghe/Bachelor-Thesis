@@ -128,30 +128,19 @@ class PointNetEncoder(nn.Module):
         B, N, C = xyz.shape
         assert B == 1
 
-        # sample points using piece-aware farthest point sampling (it selects a subset of points that are as far apart from each other as possible)
-        # uniform spatial coverage
-        # avoids clustering in dense regions
-        # preserves global shape with fewer points
-        # xyz shape should be just [num_points, num_features]
-        # we only consider in a batch the points from the same piece
-        # this ensures every fragment gets its own centroids
-        # .unsqueeze(0) -> [1, S]
-        centroids = fps(xyz[0, :, :], batch=piece_id.reshape(B * N), ratio=self.ratio).unsqueeze(0) # [B, S, C]
-        S = centroids.shape[1] # number of sampled points
+        # piece-aware farthest point sampling ensures every fragment gets its own centroids
+        centroids = fps(xyz[0, :, :], batch=piece_id.reshape(B * N), ratio=self.ratio).unsqueeze(0)  # [1, S]
+        S = centroids.shape[1]
 
-        # select centrioids' xyz coordinates
-        centroids_xyz = select_points(xyz, centroids) # [B, S, C]
-        # select metadata for the sampled points: piece id
-        centroids_piece_id = select_points(piece_id, centroids) # [B, S, 1]
+        centroids_xyz = select_points(xyz, centroids)  # [B, S, C]
+        centroids_piece_id = select_points(piece_id, centroids)  # [B, S, 1]
 
         scale_features = []
         for i, radius in enumerate(self.radius_list):
-            K = self.nsample_list[i] # number of samples in each local region
-            # find neighboring points for each centroid within the specified radius on the same piece only
-            neighborhood_idx = knn(xyz[0, :, :], centroids_xyz[0, :, :], k=K, batch_x=piece_id.reshape(-1), batch_y=centroids_piece_id.reshape(-1)) # [S, K]
-            # groups neighbors by centroid
-            # fill missing neighbors with N
-            neighborhood_idx = to_dense_batch(neighborhood_idx[1], neighborhood_idx[0], fill_value=-1, max_num_nodes=K)[0].unsqueeze(0) # [B, S, K]
+            K = self.nsample_list[i]
+            # kNN restricted to same piece
+            neighborhood_idx = knn(xyz[0, :, :], centroids_xyz[0, :, :], k=K, batch_x=piece_id.reshape(-1), batch_y=centroids_piece_id.reshape(-1))
+            neighborhood_idx = to_dense_batch(neighborhood_idx[1], neighborhood_idx[0], fill_value=-1, max_num_nodes=K)[0].unsqueeze(0)  # [B, S, K]
 
             if self.use_gabriel:
                 # get absolute positions of neighbors for Gabriel test
@@ -166,20 +155,15 @@ class PointNetEncoder(nn.Module):
             mask = neighborhood_idx == -1
             neighborhood_idx[mask] = neighborhood_first[mask]
 
-            neighborhood_xyz = select_points(xyz, neighborhood_idx) # [B, S, K, C]
-            # removes global position
-            # convert to relative coordinates
-            # enforces translation invariance
-            # encodes local geometry
-            neighborhood_xyz -= centroids_xyz.view(B, S, 1, C) # translate to local coordinates
+            neighborhood_xyz = select_points(xyz, neighborhood_idx)  # [B, S, K, C]
+            neighborhood_xyz -= centroids_xyz.view(B, S, 1, C)  # remove global position and convert to relative coordinates
             if points is not None:
                 neighborhood_points = select_points(points, neighborhood_idx) # [B, S, K, D]
-                # concatenate point features with relative coordinates
-                neighborhood_points = torch.cat([neighborhood_points, neighborhood_xyz], dim=-1) # [B, S, K, D + C]
+                neighborhood_points = torch.cat([neighborhood_points, neighborhood_xyz], dim=-1) # [B, S, K, D+C]
             else:
                 neighborhood_points = neighborhood_xyz # [B, S, K, C]
 
-            neighborhood_points = neighborhood_points.permute(0, 3, 2, 1) # [B, D + C, K, S]
+            neighborhood_points = neighborhood_points.permute(0, 3, 2, 1)  # [B, D+C, K, S]
             for j in range(len(self.conv_blocks[i])):
                 convolution = self.conv_blocks[i][j]
                 batch_norm = self.bn_blocks[i][j]
@@ -210,7 +194,7 @@ class PointNetDecoder(nn.Module):
 
     def forward(self, fine_xyz, coarse_xyz, fine_piece_id, coarse_piece_id, fine_features, coarse_features):
         """
-        Decoder upsamples points' features by interpolating from centroid points.
+        Interpolate coarse centroid features back to fine points via inverse-distance weighting.
         Input:
             fine_xyz: input points position data, [B, C, N]
             coarse_xyz: centroid points position data, [B, C, S]
@@ -254,8 +238,8 @@ class PointNetDecoder(nn.Module):
             weight = dist_inverse / norm
             interpolated_points = torch.sum(select_points(coarse_features, idx) * weight.view(B, N, 3, 1), dim=2)
 
-        if fine_features is not None: # refine already existing features with skip connections
-            interpolated_points = torch.cat([fine_features, interpolated_points], dim=-1) # [B, N, D + D']
+        if fine_features is not None:  # skip connection
+            interpolated_points = torch.cat([fine_features, interpolated_points], dim=-1)  # [B, N, D + D']
 
         interpolated_points = interpolated_points.permute(0, 2, 1) # [B, D'', N]
         for i in range(len(self.mlp_convs)):

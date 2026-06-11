@@ -56,7 +56,7 @@ class AffinityDual(nn.Module):
                 Y[:, :, :hd] = primal descriptor (not used here)
                 Y[:, :, hd:] = dual descriptor
         """
-        assert X.shape[-1] == Y.shape[-1] == self.feature_dim # we expect same feature dimension for consistent splitting
+        assert X.shape[-1] == Y.shape[-1] == self.feature_dim
 
         X_primal = X[:, :, :self.half_dim]  # extract primal descriptor from X (first half) [B, N1, F/2]
         Y_dual = Y[:, :, self.half_dim:]    # extract dual descriptor from Y (second half) [B, N2, F/2]

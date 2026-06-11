@@ -51,11 +51,11 @@ class FracturePairsDataset(Dataset):
         self.overfit = overfit
         self.fracture_label_threshold = fracture_label_threshold
         
-        # Always 2 pieces for this dataset format
+        # always 2 pieces for this dataset format
         self.max_parts = 2
         self.min_num_points = 30  # minimum points per piece
         
-        # Load pairs from the split file
+        # load pairs from the split file
         self.pairs = self._load_from_split_file(split_file)
         print(f"[{split}] Loaded {len(self.pairs)} pairs from {split_file}")
         
@@ -104,7 +104,7 @@ class FracturePairsDataset(Dataset):
         
         point_cloud = (rot_mat @ point_cloud.T).T
         
-        # Inverse rotation as ground truth (scalar-first quaternion: w, x, y, z)
+        # inverse rotation as ground truth (scalar-first quaternion: w, x, y, z)
         quat_gt = R.from_matrix(rot_mat.T).as_quat()
         quat_gt = quat_gt[[3, 0, 1, 2]]
         
@@ -122,16 +122,16 @@ class FracturePairsDataset(Dataset):
         total_area = np.sum(areas)
         nr_points = np.ceil(areas * self.num_points / total_area).astype(np.int32)
         
-        # Adjust to exact total
+        # adjust to exact total
         diff = np.sum(nr_points) - self.num_points
         nr_points[np.argmax(nr_points)] -= diff
         
-        # Ensure minimum points per piece
+        # ensure minimum points per piece
         for i in range(len(nr_points)):
             if nr_points[i] < self.min_num_points:
                 delta = self.min_num_points - nr_points[i]
                 nr_points[i] = self.min_num_points
-                # Take from largest piece
+                # take from largest piece
                 largest = np.argmax(nr_points)
                 if largest != i:
                     nr_points[largest] -= delta
@@ -166,7 +166,7 @@ class FracturePairsDataset(Dataset):
         mesh2 = self._load_mesh(pc2_file)
         meshes = [mesh1, mesh2]
         
-        # Compute areas and distribute points
+        # compute areas and distribute points
         areas = np.array([m.area for m in meshes])
         nr_points_per_piece = self._sample_points_by_area(areas)
         
@@ -206,13 +206,13 @@ class FracturePairsDataset(Dataset):
         for point_cloud, nr_points in zip(point_clouds, nr_points_per_piece):
             gt_point_cloud = point_cloud.copy()
             
-            # Center at origin
+            # center at origin
             point_cloud, gt_trans = self._recenter_point_cloud(point_cloud)
             
-            # Random rotation
+            # random rotation
             point_cloud, gt_quat = self._rotate_point_cloud(point_cloud)
             
-            # Shuffle points
+            # shuffle points
             point_cloud, gt_shuffle = self._shuffle_point_cloud(point_cloud, gt_point_cloud)
             
             assembled_pcs.append(point_cloud)
@@ -220,7 +220,7 @@ class FracturePairsDataset(Dataset):
             gt_translations.append(gt_trans)
             gt_rotations.append(gt_quat)
         
-        # Concatenate all pieces
+        # concatenate all pieces
         assembled_pcs = np.concatenate(assembled_pcs).astype(np.float32)
         gt_assembled_pcs = np.concatenate(gt_assembled_pcs).astype(np.float32)
         
@@ -228,10 +228,10 @@ class FracturePairsDataset(Dataset):
         gt_rotations = np.stack(gt_rotations, axis=0).astype(np.float32)
         points_per_part = np.array(nr_points_per_piece, dtype=np.int64)
         
-        # Validity mask (always both pieces valid)
+        # validity mask (always both pieces valid)
         valids_mask = np.ones(self.max_parts, dtype=np.float32)
         
-        # Fracture label thresholds
+        # fracture label thresholds
         label_thresholds = np.ones(self.num_points, dtype=np.float32) * self.fracture_label_threshold
         
         data_dict = {

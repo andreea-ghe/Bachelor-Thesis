@@ -18,7 +18,7 @@ def filter_weight_decay_params(model):
     Separate model parameters into two groups: those that will have weight decay applied,
     and those that will not (biases and LayerNorm/BatchNorm weights).
     """
-    # we need to sort the names so that we can save/load ckpts properly
+    # sort the names so that we can save/load ckpts properly
     norm_module_names = []
     bias_module_names = []
     for name, module in model.named_modules():
@@ -39,7 +39,7 @@ def filter_weight_decay_params(model):
 
     decay_name = []
     for name, param in model.named_parameters():
-        # include all parameters that are NOT in no_decay
+        # include all parameters that are not in no_decay
         if param.requires_grad and not tensor_in_list(param, no_decay):
             decay_name.append(name)
     decay_name.sort()

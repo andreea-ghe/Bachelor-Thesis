@@ -1,11 +1,4 @@
-"""
-Tests for the Django web application.
-
-Covers three layers:
-  1. Data layer   – Fracture model and discovery logic (fractures.py)
-  2. View layer   – API endpoints and page rendering (views.py)
-  3. Integration  – Predict endpoint fallback behaviour
-"""
+"""Tests for the Django web application."""
 
 import json
 from pathlib import Path
@@ -15,10 +8,6 @@ from django.test import Client, TestCase, override_settings
 
 from .fractures import Fracture, _make_id
 
-
-# ---------------------------------------------------------------------------
-# 1. Data layer – Fracture model
-# ---------------------------------------------------------------------------
 
 class FractureModelTest(TestCase):
     """Tests for the Fracture dataclass and helper functions."""
@@ -63,10 +52,6 @@ class FractureModelTest(TestCase):
             "core/meshes/two_pieces/BeerBottle/abc/fractured_0",
         )
 
-
-# ---------------------------------------------------------------------------
-# 2. View layer – Pages and API endpoints
-# ---------------------------------------------------------------------------
 
 def _make_fake_fracture(**overrides):
     """Create a Fracture instance with sensible defaults for testing."""
@@ -127,10 +112,6 @@ class FracturePiecesViewTest(TestCase):
         response = self.client.post("/api/fracture/abc123/")
         self.assertEqual(response.status_code, 405)
 
-
-# ---------------------------------------------------------------------------
-# 3. Integration – Predict endpoint fallback logic
-# ---------------------------------------------------------------------------
 
 class PredictViewTest(TestCase):
     """Tests for POST /api/predict/ and its GPU → precomputed → 503 fallback."""

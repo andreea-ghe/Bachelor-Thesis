@@ -99,13 +99,13 @@ class MatchingBaseModel(pytorch_lightning.LightningModule):
             func = torch.stack
         batch_sizes = func([out.pop('batch_size') for out in outputs]).type_as(outputs[0]['loss']) # [num_batches]
 
-        # Collect losses by key
+        # collect losses by key
         losses = {
             f'val/{k}': torch.stack([out[k] for out in outputs]).reshape(-1)
             for k in outputs[0] if k != 'batch_size'
         }
 
-        # Compute weighted averages
+        # compute weighted averages
         avg_loss = {
             k: (v * batch_sizes).sum() / batch_sizes.sum() for k, v in losses.items()
         }
@@ -127,7 +127,7 @@ class MatchingBaseModel(pytorch_lightning.LightningModule):
         """
         loss_dict = self.forward_pass(data_dict, mode='test')
         
-        # Convert tensors to CPU for saving
+        # convert tensors to CPU for saving
         save_dict = {k: v.cpu() if torch.is_tensor(v) else v for k, v in loss_dict.items()}
         self._test_outputs.append(save_dict)
         
@@ -148,7 +148,7 @@ class MatchingBaseModel(pytorch_lightning.LightningModule):
         if not outputs:
             return
 
-        # Save final checkpoint with all results
+        # save final checkpoint with all results
         final_checkpoint_path = os.path.join(self.config.OUTPUT_PATH, 'test_checkpoint_final.pt')
         torch.save(outputs, final_checkpoint_path)
         print(f"\n[Checkpoint] Saved final {len(outputs)} results to {final_checkpoint_path}")

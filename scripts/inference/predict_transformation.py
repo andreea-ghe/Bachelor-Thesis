@@ -1,14 +1,3 @@
-"""
-Run inference on a folder of OBJ pieces and evaluate assembly quality.
-
-Usage:
-    python -m scripts.inference.predict_transformation \
-        --cfg experiments/double_attn_scripts/everyday_eval.yaml \
-        --pieces_dir /path/to/object_folder_with_objs \
-        --save_dir results/viz_output \
-        --seed 42
-"""
-
 import os
 import argparse
 

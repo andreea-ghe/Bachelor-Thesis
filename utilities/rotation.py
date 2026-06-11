@@ -42,7 +42,7 @@ class Rotation3D:
         assert self._rot_type in self.ROT_TYPE, f"Rotation {self._rot_type} not supported."
         assert isinstance(self._rot, torch.Tensor), "Rotation must be a torch Tensor."
 
-        # We always make rotation in float32, otherwise quat won't be unit,
+        # always make rotation in float32, otherwise quat won't be unit,
         # and rmat won't be orthogonal.
         self._rot = self._rot.float()
 

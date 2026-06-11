@@ -55,7 +55,7 @@ def _get_model(config_path: str):
     return _model_cache[config_path]
 
 
-# Preprocessing (mirrors FracturePairsDataset / FractureAssemblyDataset)
+# preprocessing (mirrors FracturePairsDataset / FractureAssemblyDataset)
 def _distribute_points(areas: np.ndarray, total_points: int, min_points: int = 30):
     """Distribute sample budget across pieces proportionally to surface area."""
     total_area = np.sum(areas)

@@ -1,19 +1,3 @@
-"""
-Visualize kNN neighborhoods with and without Gabriel graph filtering.
-
-Produces a 1x4 figure showing a single piece's centroids and their
-neighborhood edges under four configurations:
-  1. Plain kNN (no filtering)
-  2. Gabriel r=0 (no protection — aggressive pruning)
-  3. Gabriel r=0.50 (50 % retention guarantee)
-  4. Gabriel r=0.75 (75 % retention guarantee)
-
-Usage:
-    python -m scripts.visualization.plot_gabriel_neighborhoods \
-        --mesh application/web/core/static/core/meshes/two_pieces/Bowl/594b22f21daf33ce6aea2f18ee404fd5/fractured_32/piece_0.obj \
-        [--num_points 1000] [--fps_ratio 0.15] [--K 16] [--seed 42]
-"""
-
 import argparse
 import sys
 from pathlib import Path
