@@ -1,0 +1,27 @@
+services:
+  web:
+    build:
+      context: application/web
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - SECRET_KEY=${SECRET_KEY:-django-insecure-dev-only-key}
+      - GPU_POD_URL=${GPU_POD_URL:-}
+
+  # The inference server requires a CUDA-capable GPU and the full ML stack
+  # (PyTorch, PyTorch Geometric, pytorch3d, GTSAM, etc.).
+  # It is not included in this Compose file because it cannot run on
+  # standard hardware. To use live inference:
+  #
+  #   1. Set up the ML environment on a GPU machine:
+  #        bash scripts/setup/setup_5090_env.sh
+  #
+  #   2. Start the inference server:
+  #        bash application/inference_server/start.sh
+  #
+  #   3. Set GPU_POD_URL to the server address before starting the web app:
+  #        GPU_POD_URL=http://<gpu-host>:8000 docker compose up web
+  #
+  # Without a GPU server, the web app serves precomputed results from
+  # its static cache (precomputed_results.json).
