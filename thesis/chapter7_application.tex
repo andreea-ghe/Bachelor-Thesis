@@ -140,7 +140,11 @@ Several validation mechanisms prevent invalid inference requests. On the Django 
 
 The prediction workflow follows a proxy-and-fallback design: Django acts as a proxy between the user interface and the FastAPI inference server, first attempting live GPU inference, then falling back to precomputed cached outputs if the GPU server is unreachable, and finally returning a structured error response if neither source is available. This ensures the demo never fails silently.
 
-Although the application is a local research demo rather than a production system, basic security measures are included: inference is restricted to predefined examples and supported model variants, request payloads are validated before processing, and browser-facing POST requests are protected through Django's CSRF mechanism.
+Although the application is a local research demo rather than a production system, basic security measures are included: inference is restricted to predefined examples and supported model variants, request payloads are validated before processing, and browser-facing POST requests are protected through Django's CSRF mechanism. Session cookies are configured with \texttt{HttpOnly} and \texttt{SameSite=Lax} flags to prevent cross-site scripting and request forgery.
+
+\paragraph{Concurrency.} The Django frontend is served via ASGI, which supports concurrent connections from multiple users browsing examples and viewing results simultaneously. The FastAPI inference server is deliberately configured with a single worker (\texttt{--workers 1}) because GPU memory can only hold one model instance at a time; inference requests are therefore serialized. This is an intentional design trade-off: for a research demo with low concurrent load, sequential GPU execution avoids out-of-memory errors while keeping the implementation simple.
+
+\paragraph{Scalability and portability.} The two-server architecture enables independent scaling: the lightweight Django frontend can be replicated across multiple instances behind a load balancer without affecting the GPU server. The Docker containerization of the web layer ensures portability across operating systems and deployment environments. The precomputed fallback mechanism additionally allows the demo to scale to any number of users without GPU resources, since cached results are served as static files.
 
 \section{Testing}
 
@@ -166,5 +170,25 @@ FastAPI & End-to-end inference (mocked) & 1 \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\section{Deployment}
+
+The web application is containerized using Docker to ensure it runs independently of the development environment. A \texttt{docker-compose.yaml} at the repository root defines the web service:
+
+\begin{verbatim}
+docker compose up web
+\end{verbatim}
+
+This builds a lightweight Python 3.12 image, installs the Django dependencies, collects static assets, and starts the server on port 8000. The precomputed results cache is bundled into the image, so the demo is fully functional without any GPU hardware. The full source code is publicly available at \url{https://github.com/andreea-ghe/Bachelor-Thesis}.
+
+To enable live inference, the FastAPI server must be deployed separately on a GPU-equipped machine. This server requires the full machine learning stack (PyTorch, PyTorch Geometric, pytorch3d, GTSAM) and a CUDA-capable GPU, which makes it unsuitable for a standard Docker container. The deployment steps are:
+
+\begin{enumerate}
+    \item Set up the ML environment on the GPU machine using the provided setup script (\texttt{scripts/setup/setup\_5090\_env.sh}).
+    \item Start the inference server: \texttt{bash application/inference\_server/start.sh}.
+    \item Point the web app to the GPU server by setting the \texttt{GPU\_POD\_URL} environment variable before starting the container.
+\end{enumerate}
+
+\noindent This separation reflects the architectural design: the web layer is lightweight and portable, while the inference layer requires specialized hardware. The fallback mechanism ensures the application remains usable in both configurations.
 
 Additional details on data organization, API endpoints, non-functional requirements, and deployment constraints are provided in Appendix~\ref{app:application}.
