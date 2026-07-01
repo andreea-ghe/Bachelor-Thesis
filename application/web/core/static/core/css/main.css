@@ -59,7 +59,7 @@ html {
     border-color: rgba(255, 255, 255, 0.25);
 }
 
-/* ── Hero CTA buttons ────────────────────────────────── */
+/* ── Hero CTA buttons (legacy) ───────────────────────── */
 .hero-cta {
     display: inline-block;
     width: 220px;
@@ -73,6 +73,25 @@ html {
 
 .hero-cta:hover {
     background-color: rgba(255, 255, 255, 0.06);
+}
+
+/* ── Hero CTA buttons (presentation style) ──────────── */
+.hero-cta-new {
+    display: inline-block;
+    text-align: center;
+    padding: 0.625rem 1.5rem;
+    font-size: 0.8125rem;
+    letter-spacing: 0.025em;
+    border: 1px solid rgba(200, 168, 110, 0.35);
+    border-radius: 9999px;
+    color: #f0ece4;
+    background: rgba(200, 168, 110, 0.08);
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.hero-cta-new:hover {
+    background-color: rgba(200, 168, 110, 0.18);
+    border-color: rgba(200, 168, 110, 0.55);
 }
 
 /* ── Icon-only button ────────────────────────────────── */

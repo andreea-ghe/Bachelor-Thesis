@@ -12,25 +12,45 @@
 <body class="bg-bg-primary text-txt-primary font-sans">
 
     <!-- Hero section -->
-    <section class="min-h-screen flex flex-col items-center justify-center px-6 relative">
-        <div class="max-w-2xl text-center space-y-6">
-            <p class="text-xs tracking-widest uppercase text-txt-muted">Bachelor Thesis</p>
-            <h1 class="text-5xl font-semibold leading-tight">
-                3D Fracture Reassembly<br>with Deep Learning
-            </h1>
-            <p class="text-base text-txt-secondary max-w-lg mx-auto">
-                Four modular improvements to Jigsaw: surface-faithful neighborhoods,
-                gated attention, geometric bias, and dense pose refinement.
+    <section class="min-h-screen flex relative overflow-hidden bg-black">
+
+        <!-- Background artifact image (right side, like the PPT) -->
+        <div class="absolute inset-y-0 right-0 w-1/2 opacity-20"
+             style="background: url('{% static 'core/images/presentation/start.png' %}') center/cover no-repeat;">
+            <div class="absolute inset-0" style="background: linear-gradient(to right, #000000 0%, transparent 50%);"></div>
+        </div>
+
+        <!-- Content (left-aligned, like the PPT) -->
+        <div class="relative z-10 flex flex-col justify-center px-16 py-20 max-w-3xl min-h-screen">
+
+            <p class="text-sm tracking-[0.25em] uppercase mb-8" style="color: #c8a86e;">
+                Babe&#537;-Bolyai University
             </p>
-            <div class="flex flex-col items-center gap-3 pt-4">
-                <a href="#content" class="hero-cta">Explore the Demo</a>
-                <a href="{% static 'core/Bachelor_Thesis.pdf' %}" target="_blank" rel="noopener" class="hero-cta text-txt-secondary">Read the Thesis</a>
-                <a href="https://github.com/andreea-ghe/Bachelor-Thesis" target="_blank" rel="noopener" class="hero-cta text-txt-secondary">Access the Code</a>
-                <a href="https://drive.google.com/drive/folders/1VPH0Vg8zuNo9G-u5QzI8AKhF9wphQah-?usp=sharing" target="_blank" rel="noopener" class="hero-cta text-txt-secondary">Download Model Weights</a>
+
+            <h1 class="leading-[1.1] mb-8" style="font-family: 'Georgia', 'Times New Roman', serif; font-size: 3.5rem; font-weight: 700; color: #f0ece4;">
+                3D Object Reassembly<br>
+                of Broken Objects<br>
+                <em style="color: #c8a86e; font-style: italic;">using Deep Learning</em>
+            </h1>
+
+            <div class="w-16 h-0.5 mb-8" style="background: #c8a86e;"></div>
+
+            <div class="mb-10">
+                <p class="text-lg font-semibold" style="color: #c8a86e;">Gheorghe Andreea-Ioana</p>
+                <p class="text-sm mt-1" style="color: #9ab0bc;">
+                    Advisors: Chi&#537; Raluca-Diana &middot; Andreica Anca-Mirela
+                </p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 pt-2 max-w-sm">
+                <a href="#content" class="hero-cta-new">Explore the Demo</a>
+                <a href="{% static 'core/Bachelor_Thesis.pdf' %}" target="_blank" rel="noopener" class="hero-cta-new">Read the Thesis</a>
+                <a href="https://github.com/andreea-ghe/Bachelor-Thesis" target="_blank" rel="noopener" class="hero-cta-new">Access the Code</a>
+                <a href="https://drive.google.com/drive/folders/1VPH0Vg8zuNo9G-u5QzI8AKhF9wphQah-?usp=sharing" target="_blank" rel="noopener" class="hero-cta-new">Model Weights</a>
             </div>
         </div>
 
-        <div class="absolute bottom-10 animate-bounce text-txt-muted">
+        <div class="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce" style="color: #9ab0bc;">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <path d="M12 5v14m0 0l-6-6m6 6l6-6" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>

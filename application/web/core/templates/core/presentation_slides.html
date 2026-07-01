@@ -5,7 +5,7 @@
             <button id="slide-prev" class="btn-icon" disabled>
                 {% include "components/icons/arrow_narrow_up.html" %}
             </button>
-            <span id="slide-counter" class="text-xs text-txt-muted tabular-nums">1 / 14</span>
+            <span id="slide-counter" class="text-xs text-txt-muted tabular-nums">1 / 13</span>
             <button id="slide-next" class="btn-icon">
                 {% include "components/icons/arrow_narrow_down.html" %}
             </button>
@@ -14,7 +14,7 @@
 
     <div id="slide-container" class="flex-1 flex items-start justify-center px-6 pb-6 overflow-y-auto">
         <img id="slide-image"
-             src="{% static 'core/images/presentation/Slide1.JPG' %}"
+             src="{% static 'core/images/presentation/Slide2.PNG' %}"
              alt="Presentation slide"
              class="w-full rounded-lg shadow-lg"
              style="max-width: 100%; height: auto;">
@@ -23,7 +23,7 @@
     <script>
     (function() {
         const TOTAL_SLIDES = 14;
-        let current = 1;
+        let current = 2;
 
         const img = document.getElementById('slide-image');
         const counter = document.getElementById('slide-counter');
@@ -32,14 +32,14 @@
         const STATIC = '{% get_static_prefix %}';
 
         function update() {
-            img.src = STATIC + 'core/images/presentation/Slide' + current + '.JPG';
-            counter.textContent = current + ' / ' + TOTAL_SLIDES;
-            prevBtn.disabled = current === 1;
+            img.src = STATIC + 'core/images/presentation/Slide' + current + '.PNG';
+            counter.textContent = (current - 1) + ' / ' + (TOTAL_SLIDES - 1);
+            prevBtn.disabled = current === 2;
             nextBtn.disabled = current === TOTAL_SLIDES;
         }
 
         prevBtn.addEventListener('click', function() {
-            if (current > 1) { current--; update(); }
+            if (current > 2) { current--; update(); }
         });
         nextBtn.addEventListener('click', function() {
             if (current < TOTAL_SLIDES) { current++; update(); }
@@ -48,7 +48,7 @@
         document.addEventListener('keydown', function(e) {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
             if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
-                if (current > 1) { current--; update(); }
+                if (current > 2) { current--; update(); }
             } else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
                 if (current < TOTAL_SLIDES) { current++; update(); }
             }
